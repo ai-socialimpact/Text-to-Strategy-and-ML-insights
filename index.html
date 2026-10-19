@@ -6,14 +6,44 @@ title: SEARCH NIRMAN Directory
 <h1>Project Output Files</h1>
 <p>Click on any file below to view the page:</p>
 
-<ul>
-  {% for file in site.pages %}
-    {% if file.url contains '.html' and file.url != '/index.html' %}
-      <li>
-        <a href="{{ file.url | relative_url }}">
-          {{ file.path | replace: "SEARCH/NIRMAN/Output/", "" }}
-        </a>
-      </li>
-    {% endif %}
-  {% endfor %}
+<ul id="file-list">
+  <li>Loading files...</li>
 </ul>
+
+<script>
+  // Dynamically targets your specific repo path
+  const username = "ai-socialimpact";
+  const repo = "Text-to-Strategy-and-ML-insights";
+  const folderPath = "SEARCH/NIRMAN/Output";
+
+  fetch(`https://github.com{username}/${repo}/contents/${folderPath}`)
+    .then(response => {
+      if (!response.ok) throw new Error("Failed to fetch folder contents");
+      return response.json();
+    })
+    .then(data => {
+      const listElement = document.getElementById('file-list');
+      listElement.innerHTML = ""; // Clear loading message
+
+      // Filter to only show .html files
+      const htmlFiles = data.filter(file => file.name.endsWith('.html'));
+
+      if (htmlFiles.length === 0) {
+        listElement.innerHTML = "<li>No HTML files found in this directory.</li>";
+        return;
+      }
+
+      // Render each file as a functioning link
+      htmlFiles.forEach(file => {
+        const li = document.createElement('li');
+        // Creates the clean relative URL path for GitHub Pages
+        const relativeUrl = `${folderPath}/${file.name}`;
+        
+        li.innerHTML = `<a href="${relativeUrl}">${file.name}</a>`;
+        listElement.appendChild(li);
+      });
+    })
+    .catch(error => {
+      document.getElementById('file-list').innerHTML = `<li>Error loading directory list: ${error.message}</li>`;
+    });
+</script>
