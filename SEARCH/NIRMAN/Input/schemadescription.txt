@@ -1,0 +1,698 @@
+====================================================================
+NIRMAN DATA ANALYSIS CONTEXT 
+====================================================================
+
+CONTEXT
+--------------------------------------------------------------------
+To answer the natural-language question, here is the context document.
+
+The below document contains 
+1. Domain context 
+2. Introduction about the 2 tables  
+3. ONE SHOT EXAMPLE of Natural Language Query to JavaScript Conversion
+4. AUTHORITATIVE SCHEMA of two Tables: There are 2 YAML blocks, one for each table. The YAML blocks are delimited by the tag, '<TABLE YAML DEMOGRAPHICS Starts>'
+5. More details such as Suggested Steps, Domain Guidance etc
+
+Important Notes:
+1. The AUTHORITATIVE SCHEMA section (2 YAML blocks) has the most accurate Ground Truth about the 2 tables such as the Ground Truth info about column names, etc.
+2. User input is a natural-language question. The below context document especially the AUTHORITATIVE SCHEMA will be useful to understand the User's natural-language question, and perform any task. Examples of tasks are User Query Refinement,   Text to Analytics , Text to Data retrieval, Text to Statistics, Text to ML. Example of requested task could be to convert user's natural-language question into JavaScript code based on the AUTHORITATIVE SCHEMA. The task could be Text -> Danfo.js / TensorFlow.js JavaScript code generation (Web browser compatible code generation). Refer ONE SHOT EXAMPLE of Natural Language Query to JavaScript Conversion
+3. Info about the big picture: The system is a Web browser based JavaScript application. The system has asked LLM to convert User's Natural Language Query to JavaScript. Once the JavaScript code is generated, other modules of the system could execute the generated JavaScript code on the Web browser on the 2 CSV files. The other modules may have already loaded the CSV files. Refer ONE SHOT EXAMPLE of Natural Language Query to JavaScript Conversion. The JavaScript code specified in the ONE SHOT EXAMPLE is a LLM generated code, and that code was tested successfully in the previous version of this system.
+4. Use the JavaScript code specified in the section, ONE SHOT EXAMPLE of Natural Language Query to JavaScript Conversion.  While other sections of this context document may provide code samples, the ONE SHOT EXAMPLE provides the successfully tested code in the System. 
+5. It is recommended to use only the usable columns with zero missing values. Demographics has 11 usable columns, and 136 usable columns in Questionnaire (data_quality.usable_zero_missing). 
+6. In case the user question is about building a ML model, reason out a good plan to find the which columns could be used as ML features/target by analyzing data, and then based on volume of data available, plan a strategy for creating datasets, the reason and to employ appropriate set of ML models of both explainable ML models and TensorFlow.js, and plan how to answer user question after ML modelling. 
+
+
+DOMAIN
+--------------------------------------------------------------------
+NIRMAN is a youth social-leadership program run by SEARCH. It identifies
+and nurtures young people towards social-change careers. Two kinds of
+data exist:
+  - OBJECTIVE FACTS about a person (who they are, where they are from,
+    which cohort, what work they do today)  -> Demographics table
+  - SUBJECTIVE PSYCHOMETRICS (mindset, purpose, aspirations, insecurities,
+    income expectations), captured Pre and Post each workshop
+    -> Questionnaire table
+Typical questions: cohort counts and distributions, Pre vs Post change,
+sustained social action, predictors of a full-time social-impact career.
+This is single-arm observational data: report association and change,
+never causal proof that the workshop caused an outcome.
+
+THE TWO TABLES
+--------------------------------------------------------------------
+Table 1  prod_nirman_demographics
+         1 row per Participant_Id (unique), 2890 rows.
+         Identity, cohort/batch, education, current work outcome, native
+         geography, person-years of social action, Point-2/3 follow-up.
+	 Users may refer to this prod_nirman_demographics Table as Demographics Table
+
+Table 2  prod_nirman_questionnaire
+         1 row per (Participant_Id, Workshop_Level, Workshop_Phase),
+         4304 rows, 2177 participants, 181 columns.
+         Pre/Post survey items on career preference, life criteria,
+         insecurities, finances, and ~14 mindset themes.
+	 Users may refer to this prod_nirman_questionnaire Table as Questionnaire Table
+
+JOIN RULE
+--------------------------------------------------------------------
+Join key: Participant_Id (demographics) <-> Participant_Id (questionnaire).
+  - Cast Participant_Id to STRING in BOTH frames before any merge, groupby or comparison. It looks numeric (1001-17176) but is a key.
+  - Relationship is one-to-many: demographics 1 row -> questionnaire many rows.
+  - Not every participant appears in both tables. Joining shrinks and skews N - always recompute and report the effective N after a merge.
+  - Note: Both tables contain same column names: `Participant_Id`, `Participant_Name`, `Workshop_Name`, and `Workshop_Batch_Number`
+  - Demographics covers batches 1–17; questionnaire only 7–17.  
+  - In both tables, Workshop_Name is one of these values: A,B,C,D,E,F,G,H 
+
+
+====================================================================
+ONE SHOT EXAMPLE of Natural Language Query to JavaScript Conversion
+====================================================================
+User's Natural Language Query: "What is the total count of unique Participant_ID values in the Demographics table?"
+
+Output is the JavaScript code: 
+console.log("Step 1: Listing available filenames...");
+const filenames = Object.keys(data || {});
+
+console.log("Step 2: Locating Demographics table...");
+const demographicsFilename = filenames.find(name => name.toLowerCase().includes("prod_nirman_demographics"));
+
+console.log("Step 3:  Identifying column names and analyzing...");
+const demographicsRows = Array.isArray(data[demographicsFilename]) ? data[demographicsFilename] : [];
+const demographicsDf = new dfd.DataFrame(demographicsRows);
+const requiredColumns = ["Participant_ID"];
+const foundColumns = demographicsDf.columns;
+console.log("Total rows in Demographics:", demographicsRows.length);
+
+console.log("Step 4: Returning answers...");
+return {
+  summary: {
+    total_unique_participants: uniqueParticipantCount,
+    table_used: "Demographics",
+  }
+};
+ 
+
+AUTHORITATIVE SCHEMA
+--------------------------------------------------------------------
+The two YAML blocks below are the ONLY ground truth for table names,
+column names, allowed values, scales, data-quality tiers and ML guidance.
+Never invent a column. If a required column is not in the YAML, say so
+and propose the closest valid alternative.
+
+
+
+*******************************************************************
+*******************************************************************
+*******************************************************************
+<TABLE YAML DEMOGRAPHICS Starts>
+
+AUTHORITATIVE SCHEMA DESCRIPTION OF TABLE #1
+--------------------------------------------------------------------
+====================================================================
+TABLE #1: prod_nirman_demographics 
+====================================================================
+
+table: prod_nirman_demographics
+
+meta:
+  purpose: "NIRMAN participant registry - objective facts: identity, cohort, education,
+            current work outcome, native geography, Point-2/3 follow-up."
+  grain: "1 row per Participant_Id (unique)"
+  rows: 2890
+  join: "Participant_Id <-> prod_nirman_questionnaire.Participant_Id (string to string;
+         questionnaire has many rows per participant)"
+  quality_tiers: "Sections below are ordered by data quality. usable = no missing values
+                  (safe default). partially_usable = a handful of nulls. low_coverage =
+                  materially incomplete but the only source for time / district /
+                  sustainment / follow-up. excluded = do not use."
+
+load_rules:
+  - "Participant_Id is a STRING key (numeric-looking, 1001-17176). Force string on load. Never aggregate."
+  - "Workshop_Name value 'F' auto-parses as boolean. Force string on load."
+  - "No empty or whitespace-only strings exist. Every gap is a true null - not 'No', not 'Not Known'."
+  - "Current_Age and Age_At_Workshop use 0 as UNKNOWN. Filter > 0 before any mean/median/model."
+
+# =====================================================================
+# USABLE - no missing values. RECOMMENDED for counts, group-by, filters, ML features.
+# =====================================================================
+usable_columns:
+
+  person:
+    Participant_Id:   {type: string,  role: primary_key}
+    Gender:           {type: string,  values: [FEMALE, MALE]}
+    Current_Age:      {type: integer, range: "0-39", note: "0 = unknown"}
+    Age_At_Workshop:  {type: integer, range: "0-32", note: "age at first (Point-1) workshop; 0 = unknown"}
+
+  cohort:
+    Workshop_Batch_Number:    {type: integer, range: "1-17", note: "cohort id; higher = more recent"}
+    Workshops_Attended_Count: {type: integer, range: "1-4",  note: "workshop dosage (Point 1/2/3/4)"}
+
+  education:
+    Educational_Stream_Category:
+      type: string
+      values: ["Arts/Commerce/Science/Pharmacy", "Engineering", "Medical", "Other"]
+      note: "Rollup for medical vs non-medical splits. 'Medical' here EXCLUDES Pharmacy."
+    Education_Status:
+      type: string
+      values: ["Graduate", "Student", "Not Known"]
+      note: "'Not Known' is a real category, not a null."
+
+  outcome:
+    Current_Status_Of_Work:
+      type: string
+      values: ["Social Impact Work", "Previously SIW", "Educational Break", "Student",
+               "Other Work", "Different Trajectory", "Not Sure"]
+      note: "PRIMARY outcome. Undated snapshot of present work status."
+
+  geography_quality_flags:
+    State_Match_Status:    {type: string, values: [OK, International]}
+    District_Match_Status: {type: string, values: [OK, Unmatched],
+                            note: "Require 'OK' for any district-level cut."}
+
+# =====================================================================
+# PARTIALLY USABLE - very few nulls. Safe to use; drop nulls of that column alone.
+# =====================================================================
+partially_usable_columns:
+
+  Educational_Stream:
+    type: string
+    values: ["Arts", "Commerce", "Engineering", "Journalism / Media / Film-Making", "Law",
+             "Management", "Medical / Public Health", "Pharmacy", "Science", "Social Work"]
+    note: "Detailed stream. Medical value here is 'Medical / Public Health', NOT 'Medical'."
+
+  Native_State:
+    type: string
+    distinct: 26
+    examples: [Maharashtra, Madhya Pradesh, Uttar Pradesh, Karnataka, Telangana]
+    note: "Maharashtra-dominant. Includes non-Indian values (e.g. 'Gambia');
+           those rows carry State_Match_Status = 'International'."
+
+# =====================================================================
+# LOW COVERAGE - materially incomplete, but the ONLY source for time, district,
+# sustainment and follow-up analysis.
+# RULE for all: filter to non-null, report the effective N, never impute 0.
+# =====================================================================
+low_coverage_columns:
+
+  time:
+    Workshop_Financial_Year:
+      type: string
+      values: ["FY 2019-20", "FY 2021-22", "FY 2022-23", "FY 2023-24",
+               "FY 2024-25", "FY 2025-26", "FY 2026-27"]
+      note: "Primary time axis. FY 2020-21 genuinely absent."
+    Workshop_Month_Number: {type: float,  range: "1-12 (calendar month)",
+                            note: "Sort key within Workshop_Financial_Year."}
+    Workshop_Name:         {type: string, values: [A, B, C, D, E, F, G, H],
+                            note: "Workshop instance within a batch."}
+
+  geography:
+    Native_District:
+      type: string
+      distinct: 35
+      examples: [Pune, Kolhapur, Nagpur, Gadchiroli, Mumbai]
+      note: "Mostly Maharashtra. Always pair with District_Match_Status == 'OK'."
+
+  sustainment:
+    Person_Years_Of_Social_Action:
+      type: float
+      range: "0-18 in 0.5 steps"
+      note: "Populated only where social action was recorded (majority null).
+             Use for '3+ years sustained' questions."
+
+  followup:   # Point 2 / Point 3 = later-stage workshops (questionnaire Workshop_Level 0.2 / 0.3)
+    Point_2_Workshop_Invited:  {type: string, values: ["Y", "N", "?"],
+                                note: "Exclude null and '?' from invitation-rate denominators."}
+    Point_2_Workshop_Attended: {type: string, values: ["Y"],
+                                note: "Null = not attended or not tracked."}
+    Point_3_Workshop_Invited:  {type: string, values: ["Same Batch", "Invited Later",
+                                                       "Consider Later", "Yes", "No"]}
+    Point_3_Workshop_Attended: {type: string, values: ["Y", "Yes"]}
+
+# =====================================================================
+# QUERY GUIDANCE
+# =====================================================================
+common_filters: [Gender, Education_Status, Educational_Stream_Category, Current_Status_Of_Work,
+                 Workshop_Batch_Number, Workshops_Attended_Count, Workshop_Financial_Year,
+                 Native_State, District_Match_Status]
+
+filter_value_traps:
+  medical:      "Educational_Stream_Category == 'Medical'  OR  Educational_Stream == 'Medical / Public Health'. Never mix spellings."
+  attended:     "value in ['Y','Yes']"
+  invited:      "value in ['Y','Yes','Same Batch','Invited Later']"
+  not_known:    "Education_Status 'Not Known' is a category, not a null."
+  zero_age:     "Current_Age / Age_At_Workshop == 0 means unknown, not a real age."
+
+analysis_rules:
+  time_order:         "Sort by Workshop_Batch_Number, where 17 is most recent. 7 is many years back"
+  district_analysis:  "Group by Native_District only where District_Match_Status == 'OK'."
+  exposure_years:     "years_since_workshop = Current_Age - Age_At_Workshop (both must be > 0)."
+  experienced_cohort: "Current_Status_Of_Work in ['Social Impact Work','Previously SIW','Educational Break']."
+  censoring:          "Recent Workshop_Batch_Number cohorts have had less time to realise outcomes -
+                       control for batch or exposure years."
+  effective_n:        "Any filter on a low_coverage column changes N - always report it."
+
+# =====================================================================
+# ML GUIDANCE
+# =====================================================================
+ml_guidance:
+  classification_target: Current_Status_Of_Work
+  label_map:
+    positive:          ["Social Impact Work"]
+    engaged_then_left: ["Previously SIW"]        # use for sustained-vs-dropout questions
+    leaning_positive:  ["Educational Break"]     # state your assignment choice
+    negative:          ["Other Work", "Different Trajectory"]
+    censor_or_exclude: ["Student", "Not Sure"]   # outcome not yet realised
+  regression_target: Person_Years_Of_Social_Action
+  predictors_core:     [Gender, Age_At_Workshop, Educational_Stream_Category, Education_Status,
+                        Workshop_Batch_Number, Workshops_Attended_Count, Educational_Stream, Native_State]
+  predictors_optional: [Workshop_Name, Workshop_Financial_Year, Native_District]  # low coverage - shrinks N
+  cautions:
+    - "Positive class is a minority - report base rate, use class weights, score with AUC/recall not accuracy."
+    - "Point 2/3 attendance is invitation-gated: self-selected exposure, not a randomised treatment."
+    - "Joining the questionnaire table shrinks and skews N - always state the effective N."
+    - "No transition dates exist; volunteering -> part-time -> full-time paths can only be approximated."
+
+# =====================================================================
+# EXCLUDED - present in CSV, DO NOT USE
+# =====================================================================
+excluded_columns:
+  Participant_Name:      "masked PII ('A***')"
+  Workshop_Type:         "constant 'NIRMAN'"
+  Tehsil_Match_Method:   "data-provenance flag only"
+  Raw_Native_State:      "un-normalised audit copy - use Native_State"
+  Raw_Native_District:   "un-normalised audit copy, contains state names - use Native_District"
+  Raw_Native_Tehsil:     "un-normalised audit copy"
+  Native_Tehsil_Town:    "too granular, poor coverage - use Native_District / Native_State"
+  Workshop_Month_Name:   "fiscal-indexed label, unsortable - use Workshop_Month_Number"
+  Workshop_Month_Year:   "unsortable label - use Workshop_Financial_Year + Workshop_Month_Number"
+  Point_2_Workshop_Name: "very sparse, mixed-type codes - use the Invited/Attended flags"
+  Point_3_Workshop_Name: "very sparse, mixed-type codes - use the Invited/Attended flags"
+
+====================================================================
+
+</ END OF DEMOGRAPHICS TABLE YAML>
+*******************************************************************
+*******************************************************************
+*******************************************************************
+
+<TABLE YAML questionnaire Starts>
+
+AUTHORITATIVE SCHEMA DESCRIPTION OF TABLE #2
+--------------------------------------------------------------------
+====================================================================
+TABLE #2: prod_nirman_questionnaire 
+====================================================================
+table: prod_nirman_questionnaire
+title: NIRMAN psychometric survey — Pre vs Post workshop
+grain: 1 row per (Participant_Id, Workshop_Level, Workshop_Phase)
+rows: 4304
+participants: 2177
+columns: 181
+join: prod_nirman_demographics on Participant_Id
+
+# ============================================================ 1. READ RULES
+read_rules:
+  string_columns: [Participant_Id, Participant_Name, Workshop_Name, Workshop_Phase,
+                   Career_Plan_Social_Action_Engagement]
+  numeric_columns: all others
+  critical:
+    - Participant_Id must be read/cast as string on BOTH tables before any join or groupby.
+    - Workshop_Name must be read as string; the value "F" otherwise parses as boolean false.
+    - "Danfo.js: missing values are NaN; most aggregations need an explicit dropNa."
+
+# ============================================================ 2. CLEANING (do before any statistic or model)
+cleaning:
+  zero_means_not_answered: set 0 -> NaN in every scored column
+  zero_is_valid_in: [Financial_Years_To_Independence]
+  out_of_range_to_nan:
+    above_8_on_rank_scale: [Career_Preference_Own_Business, Career_Preference_Social_Entrepreneurship_Or_Ngo,
+                            Career_Preference_Academia, Life_Criteria_Work_Satisfaction]
+    above_5_on_agreement_scale: [Mindset_Knows_Personal_Values, Mindset_Emotionally_Mature_Adult,
+                                 Mindset_Self_Actualization_Linked_To_Society,
+                                 Mindset_Understands_Flourishing_Youth_Meaning,
+                                 Mindset_Clear_Professional_Life_Sector, Metric_Life_Satisfaction_Global]
+  income_columns: free-typed monthly INR with extreme outliers — use median/quantiles, or clip to 5,000–1,000,000 before any mean
+
+# ============================================================ 3. SCALES
+scales:
+  rank_1_to_8:        1 = first choice ... 8 = last choice. LOWER NUMBER = STRONGER preference/importance; invert before correlating.
+  agreement_1_to_5:   1 = strongly disagree ... 5 = strongly agree (agree >= 4, disagree <= 2)
+  insecurity_1_to_10: 1 = not insecure ... 10 = highly insecure (high >= 7, low <= 3)
+  income_inr_monthly: free-typed rupee amount
+  years_0_to_10:      Financial_Years_To_Independence
+
+# ============================================================ 4. FILTERS & ENUMERATIONS
+# all zero-missing EXCEPT Career_Plan_Social_Action_Engagement (4 nulls)
+filters:
+  Workshop_Phase: ["Pre", "Post"]                    # primary comparison dimension
+  Workshop_Level: {"0.1": Point 1 workshop, "0.2": Point 2 workshop, "0.3": Point 3 workshop}
+  Workshop_Name: ["A", "B", "C", "D", "E", "F", "G", "H"]
+  Workshop_Batch_Number: [7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17]
+  Career_Plan_Social_Action_Engagement:              # main outcome; match these exact strings
+    Fulltime as a career: 5
+    Part time: 4
+    Volunteering frequently: 3
+    Occasionally: 2
+    Monetary contribution: 1
+    Not yet decided / confused: null                 # treat as NaN in ordinal models
+  notes:
+    - Workshop_Level keys are quoted here but the column is numeric — compare with parseFloat (0.1 / 0.2 / 0.3).
+
+# ============================================================ 5. HEADLINE COLUMNS (clean, high-signal — try these first)
+headline_columns:
+  [Participant_Id, Workshop_Phase, Workshop_Level, Career_Plan_Social_Action_Engagement,
+   Metric_Life_Satisfaction_Global, Financial_Expected_Income_Age_30,
+   Life_Criteria_Cause_Of_Work, Life_Criteria_Financial_Security,
+   Career_Preference_Social_Entrepreneurship_Or_Ngo, Career_Preference_Working_In_Ngo,
+   Insecurity_Monetary_Compensation, Insecurity_Parental_Response,
+   Mindset_Found_Life_Purpose, Mindset_Visualizes_Self_As_Changemaker,
+   Mindset_Social_Self_Efficacy_Confidence]
+headline_columns_notes:
+  - "dropNa required: Insecurity_Monetary_Compensation and Insecurity_Parental_Response (~371 nulls each)."
+  - "dropNa required: Career_Plan_Social_Action_Engagement (4 nulls)."
+
+# ============================================================ 6. THEMES
+# items              -> zero missing, recommended for analytics
+#                       (exceptions: the whole `insecurities` block and Mindset_Follows_Moral_Resolutions)
+# alt_wording_items  -> same construct, different phrasing; limited quality (dropNa first)
+# RULE: never put an item and its alt paraphrase into the same theme score.
+#  Comments: Example: Career_Preference_Government_Service with may have any these data values 1,2,3,4,5,6,7,8. So the scale: rank_1_to_8.
+
+career_preference:
+  scale: rank_1_to_8
+  items: [Career_Preference_Government_Service, Career_Preference_Private_Industry_Job,
+          Career_Preference_Own_Business, Career_Preference_Social_Entrepreneurship_Or_Ngo,
+          Career_Preference_Working_In_Ngo, Career_Preference_Academia,
+          Career_Preference_Undecided, Career_Preference_Other]
+
+career_criteria_importance:
+  scale: rank_1_to_8                                   
+  items: [Life_Criteria_Cause_Of_Work, Life_Criteria_Work_Satisfaction, Life_Criteria_Career_Growth,
+          Life_Criteria_Financial_Security, Life_Criteria_Financial_Prosperity, Life_Criteria_Job_Security,
+          Life_Criteria_Work_Life_Balance, Life_Criteria_Geographical_Location,
+          Life_Criteria_Fame_And_Recognition]
+
+insecurities:
+  scale: insecurity_1_to_10
+  quality: limited — ~371 nulls per item; dropNa first, report N   # kept because several questions target insecurities
+  items: [Insecurity_Monetary_Compensation, Insecurity_Parental_Response, Insecurity_Social_Acceptability,
+          Insecurity_Suitable_Life_Partner, Insecurity_Underutilized_Talent_And_Skills,
+          Insecurity_Less_Comfortable_Lifestyle, Insecurity_No_Visible_Impact,
+          Insecurity_Professionally_Left_Out, Insecurity_Lack_Of_Life_Satisfaction]
+
+finance_expectations:
+  scale: income_inr_monthly (+ years_0_to_10 for the last item)
+  items: [Financial_Expected_Income_Age_25, Financial_Expected_Income_Age_30,
+          Financial_Planning_Sheet_Income, Financial_Planning_Sheet_Income_Halved,
+          Financial_Years_To_Independence]
+
+purpose_and_direction:
+  scale: agreement_1_to_5
+  items: [Mindset_Has_Life_Purpose, Mindset_Found_Life_Purpose, Mindset_Knows_Swa_Dharma,
+          Mindset_Clear_Long_Term_Sector, Mindset_Thought_Through_Life_Direction,
+          Mindset_Clarity_On_Purpose_Finding_Process, Mindset_Purpose_Finding_Is_Urgent_Priority,
+          Mindset_Excited_About_Life_Purpose_Discovery, Mindset_Excited_By_Purpose_Pursuit_Process,
+          Mindset_Excited_By_Life_Possibilities_In_20s, Mindset_Purpose_Is_Meaningful_Social_Difference,
+          Mindset_Daily_Intentional_Purpose_Linked_Living, Mindset_Active_Meaning_Making]
+  alt_wording_items: [Mindset_Clear_Sense_Of_Purpose, Mindset_Clear_Professional_Life_Sector,
+          Mindset_Has_Idea_About_Life_Direction, Mindset_Understands_Purpose_Identification_Urgency,
+          Mindset_Anxiety_About_Finding_Purpose, Mindset_Visualizes_Five_Career_Paths,
+          Mindset_Visualizes_Five_Life_Possibilities, Mindset_Spends_Day_In_Meaningful_Pursuits]
+
+meaning_vs_happiness:
+  scale: agreement_1_to_5
+  items: [Mindset_Understands_Goal_Vs_Purpose, Mindset_Understands_Scientific_Purpose_Definition,
+          Mindset_Understands_Purpose_Importance_And_Benefits, Mindset_Understands_Happiness_Vs_Meaning,
+          Mindset_Understands_Happy_Vs_Meaningful_Life, Mindset_Distinguishes_Meaning_Vs_Pleasure_Seeking,
+          Mindset_Prosocial_Purpose_Boosts_Wellbeing, Mindset_Doubts_Social_Purpose_Wellbeing_Impact,
+          Mindset_Bucket_List_Happiness_Approach, Mindset_Understands_Flourishing_Youth_Meaning]
+  alt_wording_items: [Mindset_Knows_How_To_Become_Flourishing_Youth]
+
+social_commitment_and_changemaker_identity:
+  scale: agreement_1_to_5
+  items: [Mindset_Social_Change_Responsibility, Mindset_Committed_To_Social_Change_Movement,
+          Mindset_Committed_To_Youth_Social_Change_Community, Mindset_Visualizes_Self_As_Changemaker,
+          Mindset_Visualizes_Social_Sector_Contribution, Mindset_Visualizes_Social_Sector_Career,
+          Mindset_Visualizes_Social_Sector_Career_Despite_Norms, Mindset_Visualizes_Future_Youth_Inspiration,
+          Mindset_Career_Social_Work_Integration, Mindset_Social_Contribution_Is_Deepest_Quest,
+          Mindset_Social_Engagement_Crucial_For_Meaning, Mindset_Self_Actualization_Linked_To_Society,
+          Mindset_Finds_Social_Problem_Solving_Exciting, Mindset_Inspired_To_Create_Social_Impact,
+          Mindset_Inspired_By_Known_Changemakers, Mindset_Has_Inspiring_Social_Role_Models,
+          Mindset_Elevation_Motivates_Social_Action, Mindset_Gratitude_Drives_Social_Contribution,
+          Mindset_Aware_Of_Personal_Motivations_For_Social_Action, Mindset_Has_Larger_Social_Dream,
+          Mindset_Takes_Stand_On_Social_Issues, Mindset_Translates_Social_Intentions_To_Action,
+          Mindset_Social_Self_Efficacy_Confidence, Mindset_Knows_Ways_To_Help_Those_In_Need,
+          Mindset_Loneliness_While_Contemplating_Social_Change, Mindset_Privilege_Implies_Obligation,
+          Mindset_Acknowledges_Personal_Privilege]
+  alt_wording_items: [Mindset_Committed_To_Social_Change, Mindset_Youth_In_Social_Sector_Is_Societal_Need]
+
+social_knowledge_and_competence:
+  scale: agreement_1_to_5
+  items: [Mindset_Understands_Social_Issues_And_Severity, Mindset_Knowledge_Of_Social_Problem_Solving_Approaches,
+          Mindset_Understands_Social_Problem_Solving_Vs_Work, Mindset_Knows_Impactful_Organisation_Functioning,
+          Mindset_Understands_Social_Sector_Need_And_Role, Mindset_Reads_Moral_And_Political_Philosophy,
+          Mindset_Poor_Understanding_Of_Socioeconomic_Issues]
+  alt_wording_items: [Mindset_Understands_Social_Change_Approaches,
+          Mindset_Knows_Social_Problem_Solving_Building_Blocks, Mindset_Can_Analyse_Social_Change_Intervention]
+
+values_and_moral_reasoning:
+  scale: agreement_1_to_5
+  items: [Mindset_Knows_Personal_Values, Mindset_Applies_Value_Based_Decision_Criteria,
+          Mindset_Has_Guiding_Life_Philosophy, Mindset_Has_Guiding_Philosophy,
+          Mindset_Believes_Morals_Are_Absolute, Mindset_Believes_Morals_Are_Relative,
+          Mindset_Applies_Categorical_Moral_Framework, Mindset_Moral_Test_For_Life_Decisions,
+          Mindset_Follows_Moral_Resolutions, Mindset_Firm_Stand_On_Values_Despite_Others,
+          Mindset_Income_Inequality_Is_Justified, Mindset_Own_Efforts_Over_Birth_Circumstances,
+          Mindset_Chance_Over_Effort_In_Life_Outcome, Mindset_Alcohol_Safe_Within_Limits]
+  alt_wording_items: [Mindset_Has_Values_For_Life_Decisions, Mindset_Identified_Daily_Moral_Resolutions,
+          Mindset_Firm_On_Values_Against_Norms, Mindset_Firm_Stand_On_Values_Despite_Opposition,
+          Mindset_Sole_Credit_For_Own_Success]
+  notes: Mindset_Follows_Moral_Resolutions has 2 nulls — dropNa before averaging.
+
+courage_agency_autonomy:
+  scale: agreement_1_to_5
+  items: [Mindset_Courage_Against_Conventional_Careers, Mindset_Courage_To_Live_Authentically,
+          Mindset_Confident_In_Life_Experimentation, Mindset_Life_Choice_Independent_Of_Peers,
+          Mindset_Parental_Approval_Mandatory_For_Career, Mindset_Parental_Agreement_Mandatory_For_Decisions,
+          Mindset_Prefers_Safety_And_Security_Path, Mindset_Preoccupied_With_Safety_And_Security,
+          Mindset_Steps_Toward_Independent_Responsible_Adulthood, Mindset_Emotionally_Mature_Adult]
+
+support_community_mentorship:
+  scale: agreement_1_to_5
+  items: [Mindset_Has_Mentorship_Support_For_Future, Mindset_Has_Mentor_For_Life_Matters,
+          Mindset_Values_Growth_Mentors, Mindset_Has_Like_Minded_Peer_Network,
+          Mindset_Belongs_To_Caring_Community, Mindset_Has_Failure_Support_System,
+          Mindset_Has_Reflection_Opportunities, Mindset_Lacks_Reflection_Opportunities]
+
+wellbeing_self:
+  scale: agreement_1_to_5
+  items: [Metric_Life_Satisfaction_Global, Mindset_Happiness_And_Self_Esteem,
+          Mindset_Comfortable_Expressing_Feelings]
+  notes: Metric_Life_Satisfaction_Global = "All things considered I am satisfied with my life".
+
+money_attitudes:
+  scale: agreement_1_to_5
+  items: [Financial_Attitude_Secure_About_Future, Financial_Attitude_Confident_Future_Earnings,
+          Financial_Attitude_Money_Equals_Happiness, Financial_Attitude_Unbothered_By_Future_Earnings,
+          Financial_Knows_Threshold_Vs_Aspirational_Income, Financial_Knows_Needs_Vs_Aspirational_Income,
+          Mindset_Values_Work_Freedom_Over_Financial_Gain, Mindset_Distinguishes_Needs_Vs_Wants,
+          Mindset_Unclear_Needs_Vs_Wants, Mindset_Considers_Needs_Before_Purchases]
+  alt_wording_items: [Financial_Attitude_Anxiety_About_Aspirations, Mindset_Life_Beyond_Materialistic_Pleasures]
+
+citizenship_and_environment:
+  scale: agreement_1_to_5
+  items: [Mindset_Can_Enact_Active_Citizen_Duty, Mindset_Values_Harmony_With_Nature,
+          Mindset_Urgency_To_Act_On_Climate_Change]
+  alt_wording_items: [Mindset_Empowered_As_Active_Citizen_With_State]
+
+action_plans:                                     # concrete commitments, action_plans are Post-workshop only
+  scale: agreement_1_to_5
+  items: [Action_Plan_Purpose_Journey, Action_Plan_Social_Contribution_6_Months,
+          Action_Plan_Personal_Flourishing_6_Months, Action_Plan_Reduce_Carbon_Footprint,
+          Action_Identified_Books_To_Read]
+  alt_wording_items: [Action_Plan_Purpose_Journey_1_Year, Action_Plan_Social_Change_Journey_1_Year]
+
+# ============================================================ 7. REVERSE-CODED (apply 6 - x before averaging into a theme)
+reverse_coded:
+  [Mindset_Unclear_Needs_Vs_Wants, Mindset_Poor_Understanding_Of_Socioeconomic_Issues,
+   Mindset_Lacks_Reflection_Opportunities, Mindset_Believes_Morals_Are_Relative,
+   Mindset_Doubts_Social_Purpose_Wellbeing_Impact, Mindset_Chance_Over_Effort_In_Life_Outcome,
+   Mindset_Parental_Approval_Mandatory_For_Career, Mindset_Parental_Agreement_Mandatory_For_Decisions,
+   Mindset_Prefers_Safety_And_Security_Path, Mindset_Preoccupied_With_Safety_And_Security,
+   Mindset_Anxiety_About_Finding_Purpose, Mindset_Loneliness_While_Contemplating_Social_Change,
+   Mindset_Income_Inequality_Is_Justified, Mindset_Bucket_List_Happiness_Approach,
+   Mindset_Sole_Credit_For_Own_Success, Financial_Attitude_Money_Equals_Happiness,
+   Financial_Attitude_Anxiety_About_Aspirations]
+
+# ============================================================ 8. ANALYSIS RECIPES
+recipes:
+  pre_post_pairing: split rows by Workshop_Phase, suffix _pre/_post, inner-merge on Participant_Id within the same Workshop_Level (a merge, not a groupby)
+  delta: <col>_delta = <col>_post - <col>_pre            # the "internal change" measure
+  theme_score: mean of a theme's `items` after reverse-coding; theme_delta = post - pre
+  insecurity_index: mean of the 9 insecurity items (dropNa first)
+  is_fulltime: Career_Plan_Social_Action_Engagement == "Fulltime as a career" -> 1/0
+  switched_to_fulltime: is_fulltime_post == 1 AND is_fulltime_pre == 0 (restrict to pre == 0)
+  point1_cohort: Workshop_Level == 0.1
+
+ml_guidance:
+  targets: [is_fulltime, switched_to_fulltime, Career_Plan_Social_Action_Engagement (ordinal 1-5),
+            Metric_Life_Satisfaction_Global_delta, Financial_Expected_Income_Age_30_delta,
+            demographics.Current_Status_Of_Work, demographics.Person_Years_Of_Social_Action]
+  predictors: Pre-phase items/theme scores + demographics (Gender, Age_At_Workshop, Educational_Stream_Category, Native_State, Workshop_Batch_Number, Workshop_Name)
+  leakage: >-
+    never feed Post-phase columns, deltas, or demographics Point_2/Point_3/Person_Years
+    into a long-term outcome. Exception: if the question says "immediately after the
+    workshop", Post items are allowed, long-term follow-up fields are not.
+  dimensionality: prefer the 15 theme scores (or PCA) for TensorFlow.js; use raw items only for univariate Pre/Post tests or ranked feature importance.
+  reporting: report effective N after the Pre-Post merge and after dropNa; this is single-arm observational data — report association/prediction, not workshop causation.
+
+# ============================================================ 9. DATA QUALITY (read last)
+data_quality:
+  usable_zero_missing: >-
+    all keys, filters and every list under `items:` EXCEPT the insecurities block
+    (~371 nulls each) and Mindset_Follows_Moral_Resolutions (2 nulls).
+  partially_usable_few_nulls: [Career_Plan_Social_Action_Engagement, Mindset_Follows_Moral_Resolutions]
+  limited_quality_retained: insecurities block + all `alt_wording_items` lists — dropNa before use, report N
+  low_variance_weak_predictors:      # only 2-5 distinct responses; inflated means
+    [Mindset_Clear_Professional_Life_Sector, Mindset_Knows_How_To_Become_Flourishing_Youth,
+     Mindset_Committed_To_Social_Change, Mindset_Youth_In_Social_Sector_Is_Societal_Need,
+     Mindset_Understands_Social_Change_Approaches, Mindset_Knows_Social_Problem_Solving_Building_Blocks,
+     Mindset_Can_Analyse_Social_Change_Intervention, Mindset_Empowered_As_Active_Citizen_With_State,
+     Action_Plan_Purpose_Journey_1_Year, Action_Plan_Social_Change_Journey_1_Year]
+  not_usable_do_not_analyse:
+    poor_coverage: [Insecurity_Future_Comfort_Reduction, Mindset_Responsibility_To_Give_Back_To_Society,
+                    Mindset_Maximize_Materialistic_Pleasures, Mindset_Privilege_Drives_Contribution]
+    not_collected_constant: [Participant_Name, Mindset_Eco_Friendly_Lifestyle_Changes,
+                    Mindset_Compassion_Motivates_Social_Action, Mindset_Righteous_Anger_Motivates_Social_Action,
+                    Mindset_Understands_Social_Sector_Unique_Roles, Mindset_Actively_Cultivating_Mentor_Relationship]
+
+</ END OF questionnaire TABLE YAML>
+*******************************************************************
+*******************************************************************
+*******************************************************************
+
+====================================================================
+SUGGESTED STEPS FOR THE TEXT-TO-DATAFRAME / ANALYTICS TASK
+====================================================================
+1. CLASSIFY the question:
+   (a) descriptive count / distribution, (b) Pre vs Post change,
+   (c) association / statistical test, (d) ML train or predict.
+
+2. PICK THE TABLE(S): demographics for facts, questionnaire for mindset,
+   both only if the question genuinely spans the two. Decide up front
+   whether a join is needed.
+
+3. MAP WORDS TO COLUMNS using the YAML only. Resolve the user's phrasing
+   against the YAML `values:` lists, `filters:`, `headline_columns` and
+   `themes`. Quote exact strings, e.g. "Social Impact Work",
+   "Fulltime as a career", "FY 2024-25", Workshop_Phase "Pre"/"Post".
+
+4. CHECK THE QUALITY TIER of every column you plan to use:
+   - demographics: usable -> partially_usable -> low_coverage.
+     Never use anything in excluded_columns.
+   - questionnaire: prefer headline_columns and the `items:` lists.
+     Treat the insecurities block and all alt_wording_items as limited
+     quality (dropNa first, report N). Never use
+     not_usable_do_not_analyse columns. Flag low_variance_weak_predictors
+     if used as ML features.
+
+5. WRITE THE LOAD / CAST STEP:
+   - Participant_Id, Workshop_Name, Workshop_Phase,
+     Career_Plan_Social_Action_Engagement -> string
+     (Workshop_Name "F" otherwise parses as boolean).
+   - Workshop_Level is numeric: compare with parseFloat (0.1 / 0.2 / 0.3).
+   - Workshop_Batch_Number is an integer; sort by it for time order
+     (17 = most recent).
+
+6. WRITE THE CLEANING STEP (mandatory before any statistic or model):
+   - Questionnaire: 0 means "not answered" -> set to NaN in every scored
+     column (exception: Financial_Years_To_Independence, where 0 is valid).
+   - Apply out_of_range_to_nan rules (>8 on rank items, >5 on agreement items).
+   - Income columns are free-typed INR: use median/quantiles, or clip to
+     5,000-1,000,000 before any mean.
+   - Demographics: Current_Age and Age_At_Workshop use 0 = unknown;
+     filter > 0 before any mean/median/model.
+   - Every gap is a true null - never impute it as "No" or 0.
+   - Danfo.js: missing values are NaN; call dropNa explicitly before
+     aggregations, correlations or tensor conversion.
+
+7. APPLY SCALE SEMANTICS before interpreting any number:
+   - rank_1_to_8: 1 = first choice, 8 = last. LOWER = STRONGER preference.
+     Invert before correlating or averaging with other scales.
+   - agreement_1_to_5: 1 = strongly disagree, 5 = strongly agree
+     (agree >= 4, disagree <= 2).
+   - insecurity_1_to_10: 1 = not insecure, 10 = highly insecure
+     (high >= 7, low <= 3).
+   - Reverse-code the listed items (6 - x) before folding them into a
+     theme score.
+
+8. BUILD THE COMPUTATION with Danfo.js:
+   - Filters -> df.loc / boolean masks.
+   - Counts -> unique Participant_Id counts, not row counts, whenever the
+     question says "how many participants".
+   - Group-by -> df.groupby([...]).col([...]).mean()/count().
+   - Pre vs Post -> split by Workshop_Phase, suffix _pre/_post, INNER MERGE
+     on Participant_Id within the same Workshop_Level (a merge, not a
+     groupby). delta = post - pre.
+   - theme_score = mean of a theme's `items` after reverse-coding;
+     theme_delta = post - pre.
+   - District cuts require District_Match_Status == "OK".
+   - Any filter on a low_coverage demographics column changes N - say so.
+
+9. STATISTICS: for Pre vs Post use a paired test on the merged frame;
+   for group comparisons use an unpaired test; report n, mean/median,
+   effect size or delta, and the test used. Round displayed numbers to 2
+   decimals. Do not report p-values as proof of causation.
+
+10. VALIDATE before returning: every column exists in the YAML, every
+    literal matches an allowed value, string casts and dropNa are present,
+    the grain is correct (participant vs response row), and the effective
+    N is printed.
+
+====================================================================
+SUGGESTED STEPS FOR THE TEXT-TO-ML TASK (TensorFlow.js)
+====================================================================
+1. Identify the target from the YAML ml_guidance:
+   - Demographics outcome: Current_Status_Of_Work (classification) using
+     the label_map (positive = "Social Impact Work";
+     "Previously SIW" = engaged-then-left; "Educational Break" =
+     leaning positive - state your choice; "Other Work" /
+     "Different Trajectory" = negative; "Student" / "Not Sure" =
+     censor or exclude).
+   - Regression: Person_Years_Of_Social_Action.
+   - Questionnaire outcomes: is_fulltime, switched_to_fulltime,
+     Career_Plan_Social_Action_Engagement as ordinal 1-5, or any _delta.
+2. Choose predictors: demographics predictors_core plus Pre-phase
+   questionnaire items or, preferably, the ~14 theme scores (or PCA)
+   to keep dimensionality low for TensorFlow.js.
+3. Enforce leakage rules: never feed Post-phase columns, deltas, or
+   Point_2/Point_3/Person_Years fields into a long-term outcome model.
+   Post items are allowed only if the question explicitly asks about the
+   change immediately after the workshop.
+4. Clean first (step 6 above), then encode: one-hot categorical features,
+   standardise numeric features, convert to tensors with dropNa applied.
+5. Split train/test, build a small tf.sequential model (or logistic
+   regression), and train with class weights - the positive class is a
+   minority.
+6. Score with AUC / recall / confusion matrix, not accuracy alone. Report
+   the base rate and the effective N after merge and dropNa.
+7. State caveats: Point 2/3 attendance is invitation-gated (self-selected,
+   not randomised); recent batches are censored (less time to realise
+   outcomes) - control for Workshop_Batch_Number or exposure years
+   (Current_Age - Age_At_Workshop, both > 0); no transition dates exist.
+
+====================================================================
+VALUE TRAPS  
+====================================================================
+- Medical: Educational_Stream_Category == "Medical" (excludes Pharmacy)
+  OR Educational_Stream == "Medical / Public Health". Never mix spellings.
+- Attended flags: value in ["Y", "Yes"].
+  Invited flags: value in ["Y", "Yes", "Same Batch", "Invited Later"].
+  Exclude null and "?" from invitation-rate denominators.
+- Education_Status "Not Known" is a real category, not a null.
+- Age 0 = unknown, not an age.
+- Questionnaire 0 = not answered, not a low score.
+- FY 2020-21 is genuinely absent from Workshop_Financial_Year.
+- Workshop_Level is numeric (0.1 / 0.2 / 0.3), not text.
+- Rank items: lower number = stronger preference.
+
+

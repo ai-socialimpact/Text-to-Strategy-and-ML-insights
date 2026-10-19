@@ -1,0 +1,9 @@
+
+The USER_QUERY can be classified into the following categories:
+
+1. Text-to-Insights  
+2. Text-to-Statistics  
+3. Text-to-ML  
+4. Text-to-Charts  
+5. Other -  Categories are not exhaustive
+

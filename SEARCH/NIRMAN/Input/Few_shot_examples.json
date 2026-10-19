@@ -1,0 +1,25 @@
+[
+
+{
+  "category": "Text to Data Reterival (javascript)",
+  "output_type": "javascript",
+  "processing_nature": "Text to JavaScript (Danfo.js) simple row count on prod_nirman_questionnaire",
+  "domain_topic": "Survey response volume in the Questionnaire table",
+  "user_question": "How many total survey responses are there in the Questionnaire table?",
+  "refined_question": "From the Questionnaire table (prod_nirman_questionnaire, grain = 1 row per Participant_Id + Workshop_Level + Workshop_Phase), return the total number of response rows. No filtering or cleaning is required because this is a plain row count.",
+  "javascript_code": "console.log(\"Step 1: Listing available filenames...\");\nconst filenames = Object.keys(data || {});\nconsole.log(\"Filenames found:\", filenames);\n\nconsole.log(\"Step 2: Locating Questionnaire table...\");\nconst questionnaireFilename = filenames.find(name => name.toLowerCase().includes(\"prod_nirman_questionnaire\"));\nconsole.log(\"Questionnaire filename:\", questionnaireFilename);\n\nconsole.log(\"Step 3: Counting total response rows...\");\nconst questionnaireRows = Array.isArray(data[questionnaireFilename]) ? data[questionnaireFilename] : [];\nconst totalResponseRows = questionnaireRows.length;\nconsole.log(\"Total response rows in Questionnaire:\", totalResponseRows);\n\nconsole.log(\"Step 4: Returning answers...\");\nreturn {\n  summary: {\n    total_survey_responses: totalResponseRows,\n    table_used: \"Questionnaire\",\n    grain: \"1 row per (Participant_Id, Workshop_Level, Workshop_Phase)\"\n  }\n};"
+},
+
+{
+  "category": "Query Refinement",
+  "output_type": "Query",
+  "processing_nature": "Refine query when asked about workshop year",
+  "domain_topic": "",
+  "user_question": "count of girl participants  over various years",
+  "refined_question": "Count girls by Workshop_Batch_Number and show the year alongside it where recorded",
+  "justification": "Year data has missing data, the Workshop_Batch_Number is a more reliable field. The year can be shown alongside the count for context."
+}
+
+
+ 
+]
