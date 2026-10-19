@@ -1,13 +1,19 @@
 ---
 layout: default
-title:  SEARCH NIRMAN
+title: SEARCH NIRMAN Directory
 ---
 
-<h1>All Pages</h1>
+<h1>Project Output Files</h1>
+<p>Click on any file below to view the page:</p>
+
 <ul>
   {% for file in site.pages %}
     {% if file.url contains '.html' and file.url != '/index.html' %}
-      <li><a href="{{ file.url | relative_url }}">{{ file.name }}</a></li>
+      <li>
+        <a href="{{ file.url | relative_url }}">
+          {{ file.path | replace: "SEARCH/NIRMAN/Output/", "" }}
+        </a>
+      </li>
     {% endif %}
   {% endfor %}
 </ul>
