@@ -1,0 +1,15 @@
+---
+layout: default
+title:  SEARCH NIRMAN
+---
+
+ 
+
+<h1>All Pages</h1>
+<ul>
+  {% for file in site.pages %}
+    {% if file.url contains '.html' and file.url != '/index.html' %}
+      <li><a href="{{ file.url | relative_url }}">{{ file.path }}</a></li>
+    {% endif %}
+  {% endfor %}
+</ul>
