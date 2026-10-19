@@ -1,49 +1,120 @@
----
-layout: default
-title: SEARCH NIRMAN Directory
----
-
-<h1>Project Output Files</h1>
-<p>Click on any file below to view the page:</p>
-
-<ul id="file-list">
-  <li>Loading files...</li>
-</ul>
-
-<script>
-  // Dynamically targets your specific repo path
-  const username = "ai-socialimpact";
-  const repo = "Text-to-Strategy-and-ML-insights";
-  const folderPath = "SEARCH/NIRMAN/Output";
-
-  fetch(`https://github.com{username}/${repo}/contents/${folderPath}`)
-    .then(response => {
-      if (!response.ok) throw new Error("Failed to fetch folder contents");
-      return response.json();
-    })
-    .then(data => {
-      const listElement = document.getElementById('file-list');
-      listElement.innerHTML = ""; // Clear loading message
-
-      // Filter to only show .html files
-      const htmlFiles = data.filter(file => file.name.endsWith('.html'));
-
-      if (htmlFiles.length === 0) {
-        listElement.innerHTML = "<li>No HTML files found in this directory.</li>";
-        return;
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Text-to-Strategy and ML Insights</title>
+  <style>
+    :root {
+      --bg: #f7f8f5;
+      --surface: #ffffff;
+      --text: #1d2a2a;
+      --muted: #5b6b6b;
+      --line: #d9dfdb;
+      --accent: #0f6b5c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #121a1a;
+        --surface: #1a2424;
+        --text: #e6eeec;
+        --muted: #93a6a3;
+        --line: #2c3a3a;
+        --accent: #5fd0b8;
       }
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 3rem 1.25rem;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.6;
+    }
+    main { max-width: 42rem; margin: 0 auto; }
+    h1 { font-size: 1.9rem; line-height: 1.2; margin: 0 0 0.5rem; }
+    p.intro { margin: 0 0 2rem; color: var(--muted); }
+    ul#file-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+    }
+    #file-list li { padding: 0.75rem 1rem; border-bottom: 1px solid var(--line); }
+    #file-list li:last-child { border-bottom: none; }
+    #file-list a { color: var(--accent); text-decoration: none; word-break: break-word; }
+    #file-list a:hover { text-decoration: underline; }
+    #file-list a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+    .status { color: var(--muted); }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Text-to-Strategy and ML Insights</h1>
+    <p class="intro">HTML outputs from the NIRMAN analysis. Select a file to open it.</p>
+    <ul id="file-list">
+      <li class="status">Loading files…</li>
+    </ul>
+  </main>
 
-      // Render each file as a functioning link
-      htmlFiles.forEach(file => {
-        const li = document.createElement('li');
-        // Creates the clean relative URL path for GitHub Pages
-        const relativeUrl = `${folderPath}/${file.name}`;
-        
-        li.innerHTML = `<a href="${relativeUrl}">${file.name}</a>`;
-        listElement.appendChild(li);
-      });
-    })
-    .catch(error => {
-      document.getElementById('file-list').innerHTML = `<li>Error loading directory list: ${error.message}</li>`;
-    });
-</script>
+  <script>
+    const username = "ai-socialimpact";
+    const repo = "Text-to-Strategy-and-ML-insights";
+    const folderPath = "SEARCH/NIRMAN/Output";
+    const listElement = document.getElementById('file-list');
+
+    function showMessage(text) {
+      listElement.textContent = "";
+      const li = document.createElement('li');
+      li.className = "status";
+      li.textContent = text;
+      listElement.appendChild(li);
+    }
+
+    async function loadFiles() {
+      try {
+        // GitHub REST API endpoint for folder contents
+        const response = await fetch(
+          `https://api.github.com/repos/${username}/${repo}/contents/${folderPath}`
+        );
+
+        if (response.status === 403) {
+          throw new Error("GitHub API rate limit reached. Try again in a few minutes.");
+        }
+        if (!response.ok) {
+          throw new Error(`Failed to fetch folder contents (status ${response.status})`);
+        }
+
+        const data = await response.json();
+        const htmlFiles = Array.isArray(data)
+          ? data.filter(file => file.name.endsWith('.html'))
+          : [];
+
+        if (htmlFiles.length === 0) {
+          showMessage("No HTML files found in this directory.");
+          return;
+        }
+
+        listElement.textContent = "";
+
+        htmlFiles.forEach(file => {
+          const li = document.createElement('li');
+          const a = document.createElement('a');
+          // Relative link so it works on GitHub Pages
+          a.href = encodeURI(`${folderPath}/${file.name}`);
+          a.textContent = file.name;
+          li.appendChild(a);
+          listElement.appendChild(li);
+        });
+      } catch (error) {
+        showMessage(`Error loading directory list: ${error.message}`);
+      }
+    }
+
+    loadFiles();
+  </script>
+</body>
+</html>
