@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Strategic Action Report — How should we select participants for the next workshop to maximize impact
+
+To decide who to invite to the next workshop, first find which early answers (Pre-phase, WorkshopLevel 0.1) go with later Social Impact Work. Then test whether those answers work as a practical shortlist. Then check that the shortlist is stable and fair. The three queries below do this in order: (1) plain-language odds ratios for the top rank fields, (2) a hold-out test of a simple screening score, (3) a robustness and subgroup check. All three use only Pre-phase answers joined to Demographics on ParticipantId (cast to string), batches 10-17, with the outcome CurrentStatusOfWork ('Social Impact Work' = 1 vs 'Other Work' and 'Different Trajectory' = 0; 'Student' and 'Not Sure' excluded). Rank answers are inverted (9 - rank) so higher means a stronger preference. Zeros are set to missing before inversion, and ranks above 8 are treated as missing. WorkshopsAttendedCount, Point2/Point3 fields and PersonYearsOfSocial_Action are excluded because they happen after the first workshop and would leak the outcome. Every query reports the base rate and effective N, and states that the results show association, not proof that an answer or the workshop caused the outcome. Use the results as one input to selection, not as an automatic filter.
+
+
+Does a simple screening score pick out likely Social Impact Work participants? Hold-out lift test
+
+Business Value: Shows whether a few early answers can improve selection in practice. It reports how much more likely the top-scored group is to end up in Social Impact Work than a random invite list, and whether that holds on newer batches. If lift is small, leadership learns that the answers are only mild signals and that outreach, follow-up support or other criteria matter more. If lift is large, the score can help prioritise invitations and follow-up.
+
+Class-weighted Logistic Regression with stratified 5-fold cross-validation and a time-aware hold-out (train batches 10-14, test batches 15-17). Scored with AUC, recall and decile or quantile lift versus the base rate.
+
+Using the same joined Pre-phase, Workshop_Level 0.1, batches 10-17 dataset (Participant_Id as string, Age_At_Workshop &gt; 0, rank zeros to NaN, ranks above 8 to NaN, ranks inverted as 9 - rank, Student and Not Sure excluded, target Current_Status_Of_Work 'Social Impact Work' = 1 vs 'Other Work' and 'Different Trajectory' = 0), build a transparent screening score from the logistic regression using the inverted Career_Preference_Working_In_Ngo, Career_Preference_Academia, Career_Preference_Private_Industry_Job, Career_Preference_Social_Entrepreneurship_Or_Ngo and Life_Criteria_Cause_Of_Work, with Workshop_Batch_Number as a control. Use a class-weighted Logistic Regression with stratified 5-fold cross-validation, and also a time-aware check that trains on batches 10-14 and tests on batches 15-17. Report AUC and recall, not accuracy. Rank held-out participants by predicted probability and report, for the top 20%, top 40% and bottom 20%, the Social Impact Work rate versus the overall base rate (lift) and the number of participants. State the base rate and the effective N after the join, filters and dropNa for the train and test sets. Compare the score against a no-skill baseline (random selection). Explain in plain English what the lift means for a volunteer, for example 'if we prioritise the top 20% of scores, about X in 10 end up in Social Impact Work versus Y in 10 overall'. Note that recent batches have had less time to realise outcomes (censoring). Add a caution that this shows association, not proof of cause, and that the score should support human judgement rather than replace it.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      margin: 0;
+      padding: 32px 16px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      padding: 36px 40px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05);
+    }
+    .header {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 22px;
+      margin-bottom: 24px;
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: #e0e7ff;
+      color: #3730a3;
+      border: 1px solid #c7d2fe;
+    }
+    .badge-audience { background: #f3e8ff; color: #6b21a8; border-color: #d8b4fe; }
+    .badge-success { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .badge-consult { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .question-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 14px 0 10px 0;
+    }
+    .question-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    h1.report-question {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+      color: #0f172a;
+      line-height: 1.45;
+    }
+    .subtitle { color: #475569; font-size: 13px; margin-top: 4px; }
+    .audience-note {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: #334155;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 20px 0 28px 0;
+    }
+    .kpi-card {
+      background: #f8fafc;
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .kpi-val { font-size: 24px; font-weight: 800; color: #0f172a; }
+    .kpi-lbl { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-top: 4px; letter-spacing: 0.04em; }
+    .verdict-box {
+      border-left: 5px solid #059669;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left-width: 5px;
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 24px;
+    }
+    .verdict-title { font-size: 18px; font-weight: 800; color: #166534; margin: 0 0 10px 0; }
+    .verdict-text { font-size: 13.5px; color: #1e293b; line-height: 1.65; }
+    details.collapsible-section {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #ffffff;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    details.collapsible-section summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: #f8fafc;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      transition: background 0.15s ease;
+    }
+    details.collapsible-section summary:hover {
+      background: #f1f5f9;
+    }
+    details.collapsible-section[open] summary {
+      background: #f1f5f9;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    details.collapsible-section summary::-webkit-details-marker {
+      display: none;
+    }
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .summary-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    .summary-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .summary-chevron {
+      font-size: 10px;
+      color: #64748b;
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    details.collapsible-section[open] .summary-chevron {
+      transform: rotate(180deg);
+    }
+    .collapsible-body {
+      padding: 20px;
+      background: #ffffff;
+    }
+    .step-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .step-title { font-size: 14.5px; font-weight: 700; color: #0f172a; }
+    .step-num { background: #4f46e5; color: #ffffff; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+    .sub-box { background: #ffffff; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; font-size: 12.5px; color: #334155; }
+    .sub-lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 4px; letter-spacing: 0.04em; }
+    .choice-badge { display: inline-block; padding: 3px 8px; background: #e0e7ff; color: #3730a3; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #c7d2fe; }
+    .replan-badge { display: inline-block; padding: 2px 8px; background: #fae8ff; color: #86198f; border-radius: 6px; font-size: 10px; font-weight: 800; margin-left: 6px; }
+    .rec-card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px 20px; margin-bottom: 18px; }
+    .rec-title { font-size: 15px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .rec-easy { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #14532d; font-size: 13px; line-height: 1.6; }
+    .rec-tech { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #1e3a8a; font-size: 12.5px; line-height: 1.5; }
+    .prompt-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #38bdf8; word-break: break-word; user-select: all; margin-top: 6px; }
+    .pill { display: inline-block; background: #e2e8f0; color: #1e293b; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-family: monospace; font-weight: 700; margin-right: 6px; margin-bottom: 4px; border: 1px solid #cbd5e1; }
+    .inquiry-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .inquiry-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; }
+    .inquiry-query { font-size: 14px; font-weight: 700; color: #0f172a; margin: 4px 0 10px 0; }
+    .inquiry-response { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 13px; color: #1e293b; line-height: 1.6; margin-bottom: 10px; }
+    .chart-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="badge-bar">
+        <span class="badge">Strategic Master Dossier</span>
+        <span class="badge badge-audience">Tailored For: Easy to understand for College graduate volunteer</span>
+        <span class="badge badge-success">Confidence: 58%</span>
+        <span class="badge badge-consult">2 Post-Execution Inquiries Documented</span>
+      </div>
+      <div class="question-block">
+        <div class="question-label">
+          <span>🎯</span>
+          <span>Core Strategic Question</span>
+        </div>
+        <h1 class="report-question">How should we select participants for the next workshop to maximize impact
+
+To decide who to invite to the next workshop, first find which early answers (Pre-phase, WorkshopLevel 0.1) go with later Social Impact Work. Then test whether those answers work as a practical shortlist. Then check that the shortlist is stable and fair. The three queries below do this in order: (1) plain-language odds ratios for the top rank fields, (2) a hold-out test of a simple screening score, (3) a robustness and subgroup check. All three use only Pre-phase answers joined to Demographics on ParticipantId (cast to string), batches 10-17, with the outcome CurrentStatusOfWork ('Social Impact Work' = 1 vs 'Other Work' and 'Different Trajectory' = 0; 'Student' and 'Not Sure' excluded). Rank answers are inverted (9 - rank) so higher means a stronger preference. Zeros are set to missing before inversion, and ranks above 8 are treated as missing. WorkshopsAttendedCount, Point2/Point3 fields and PersonYearsOfSocial_Action are excluded because they happen after the first workshop and would leak the outcome. Every query reports the base rate and effective N, and states that the results show association, not proof that an answer or the workshop caused the outcome. Use the results as one input to selection, not as an automatic filter.
+
+
+Does a simple screening score pick out likely Social Impact Work participants? Hold-out lift test
+
+Business Value: Shows whether a few early answers can improve selection in practice. It reports how much more likely the top-scored group is to end up in Social Impact Work than a random invite list, and whether that holds on newer batches. If lift is small, leadership learns that the answers are only mild signals and that outreach, follow-up support or other criteria matter more. If lift is large, the score can help prioritise invitations and follow-up.
+
+Class-weighted Logistic Regression with stratified 5-fold cross-validation and a time-aware hold-out (train batches 10-14, test batches 15-17). Scored with AUC, recall and decile or quantile lift versus the base rate.
+
+Using the same joined Pre-phase, Workshop_Level 0.1, batches 10-17 dataset (Participant_Id as string, Age_At_Workshop &gt; 0, rank zeros to NaN, ranks above 8 to NaN, ranks inverted as 9 - rank, Student and Not Sure excluded, target Current_Status_Of_Work 'Social Impact Work' = 1 vs 'Other Work' and 'Different Trajectory' = 0), build a transparent screening score from the logistic regression using the inverted Career_Preference_Working_In_Ngo, Career_Preference_Academia, Career_Preference_Private_Industry_Job, Career_Preference_Social_Entrepreneurship_Or_Ngo and Life_Criteria_Cause_Of_Work, with Workshop_Batch_Number as a control. Use a class-weighted Logistic Regression with stratified 5-fold cross-validation, and also a time-aware check that trains on batches 10-14 and tests on batches 15-17. Report AUC and recall, not accuracy. Rank held-out participants by predicted probability and report, for the top 20%, top 40% and bottom 20%, the Social Impact Work rate versus the overall base rate (lift) and the number of participants. State the base rate and the effective N after the join, filters and dropNa for the train and test sets. Compare the score against a no-skill baseline (random selection). Explain in plain English what the lift means for a volunteer, for example 'if we prioritise the top 20% of scores, about X in 10 end up in Social Impact Work versus Y in 10 overall'. Note that recent batches have had less time to realise outcomes (censoring). Add a caution that this shows association, not proof of cause, and that the score should support human judgement rather than replace it.</h1>
+      </div>
+      <div class="subtitle">
+        Project: <strong>NIRMAN</strong> &middot; Generated on 10/28/2026 &middot; Multi-Step Progressive Analytics
+      </div>
+    </div>
+
+    <!-- Audience Note -->
+    <div class="audience-note">
+      <strong>Audience Comprehension Level:</strong> Easy to understand for College graduate volunteer<br/>
+      Clear, structured, professional explanations covering business metrics, proportions, and logic with practical context.
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-val">58%</div>
+        <div class="kpi-lbl">Strategic Confidence</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">5 / 5</div>
+        <div class="kpi-lbl">Empirical Steps Completed</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">Text-to-ML</div>
+        <div class="kpi-lbl">Framework Mode</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">210</div>
+        <div class="kpi-lbl">Dataset Columns Audited</div>
+      </div>
+      
+      <div class="kpi-card">
+        <div class="kpi-val">2</div>
+        <div class="kpi-lbl">Follow-up Clarifications</div>
+      </div>
+      
+      
+      <div class="kpi-card">
+        <div class="kpi-val">2</div>
+        <div class="kpi-lbl">Visual Charts Added</div>
+      </div>
+      
+    </div>
+
+    <!-- 1. STRATEGIC VERDICT & EASY-TO-UNDERSTAND TAKEAWAYS (PROMINENT AT TOP) -->
+    <div class="verdict-box">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #047857; margin-bottom: 4px;">
+        1. Strategic Verdict &amp; Easy-to-Understand Takeaways
+      </div>
+      <div class="verdict-title">Use the five early answers as a gentle tie-breaker, not a filter: they modestly improve the odds of picking future Social Impact Work participants (cross-validated AUC about 0.65). Hold-out lift and fairness are still unverified, so no one should be excluded because of their score.</div>
+      <div class="verdict-text">
+        Early Pre-workshop answers carry a real but modest signal about who later ends up in Social Impact Work (SIW). In the 256 training participants (batches 10-14, 103 SIW, base rate 40.23%), three answers held up after batch-stratification and a multiple-testing correction. Participants who later work in SIW ranked 'Working in an NGO' and 'Academia' higher, and 'Private industry job' lower, than those who did not. 'Social entrepreneurship/NGO' was borderline and 'Cause of work' was not reliable. Each answer on its own separates the groups only weakly: single-answer AUCs were 0.55-0.63, where 0.50 is a coin flip.
+
+Combining the five answers into one screening score (Model C, ranks only) gave a cross-validated AUC of about 0.65 on the training batches. Put simply, if you pick one future-SIW person and one non-SIW person at random, the score ranks the SIW person higher about 65 times in 100, against 50 for chance. A batch-only baseline scored 0.46, so the signal comes from the answers and not from batch differences. This is a mild signal. It is useful for ordering a list, but it is not strong enough to decide on its own who gets in.
+
+The final test is not yet confirmed. The test was a one-shot hold-out on batches 15-17 (186 participants, 96 SIW, base rate 51.61%), plus stability, censoring and fairness checks. The reported evidence has no hold-out lift numbers, so we cannot yet say 'the top 20% of scores gives X in 10 SIW versus Y in 10 overall'. Step 5 was routed to an audit of the outcome funnel and recovery of hold-out labels. Until that completes, use the score only as a tie-breaker alongside human judgement. All findings are associations, not proof that an answer or the workshop causes the outcome. Recent batches have had less time to reach SIW, which is a censoring effect.
+      </div>
+    </div>
+
+    <!-- 5. STRATEGIC CLARITY & FOLLOW-UP CONSULTATION LOG (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #0284c7;">5</span>
+          <span>5. Strategic Clarity &amp; Follow-Up Consultation Log</span>
+          <span class="badge badge-consult" style="margin-left: 6px;">2 Inquiries</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Post-execution follow-up consultations answering specific questions, framing subsequent analytical queries, auditing column metadata, and clarifying empirical results.
+        </p>
+
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #2
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 04:55 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "what is the takeaway, business values, user's question and answer"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Takeaway, business value, your question and the answer</h2>
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">1. The short takeaway</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Five early answers give a weak-to-moderate hint about who will later do Social Impact Work (SIW). The hint is not strong or proven enough to screen people out.</strong>
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Use the answers as a <strong>gentle tie-breaker</strong> when you have more good candidates than seats.</li><li style="margin-bottom: 5px;">Do <strong>not</strong> use them as a gate, a cut-off or an automatic filter.</li><li style="margin-bottom: 5px;">The final hold-out test (on newer batches) <strong>did not give a trustworthy result</strong>, because almost no newer participants had a known outcome. Treat the score as unproven.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">2. Your question</h3>
+
+        <blockquote style="border-left: 4px solid #3b82f6; background: #eff6ff; padding: 12px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; font-size: 12px; color: #1e40af; line-height: 1.6;">
+          <em>"How should we select participants for the next workshop to maximize impact?"</em>
+        </blockquote>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The specific sub-question was: <strong>does a simple score built from five Pre-workshop ranking answers pick out likely SIW participants better than random invitations, and does that hold on newer batches?</strong>
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The five answers, each a ranking the person gave before the workshop:
+      </p>
+    
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Working in an NGO</li><li style="margin-bottom: 5px;">Academia</li><li style="margin-bottom: 5px;">Private industry job</li><li style="margin-bottom: 5px;">Social entrepreneurship / NGO</li><li style="margin-bottom: 5px;">"Cause of work" (how much a cause matters when choosing work)</li>
+        </ol>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>How the answers were prepared.</strong>
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Ranks were flipped (9 − rank), so a higher number means a stronger preference.</li><li style="margin-bottom: 5px;">The outcome is 1 for "Social Impact Work" and 0 for "Other Work", "Different Trajectory", "Previously SIW" or "Educational Break".</li><li style="margin-bottom: 5px;">"Student" and "Not Sure" people were removed, because their outcome isn't known yet.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">3. The answer, step by step</h3>
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">a) Which answers go with later SIW? (training batches 10–14, 256 people, 103 SIW = 40.2%)</h4>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Answer</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Direction for people who later did SIW</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Holds up after strict statistical checks?</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Working in an NGO</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Ranked <strong>higher</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Yes</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Academia</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Ranked <strong>higher</strong> (surprising, may be a fluke)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Yes</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Private industry job</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Ranked <strong>lower</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Yes</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Social entrepreneurship / NGO</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Ranked higher</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Borderline</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Cause of work</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">No clear difference</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">No</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>The differences are small.</strong> Looked at one at a time, each answer separates future-SIW from non-SIW people only slightly. The AUCs are 0.55–0.63, where <strong>AUC 0.50 is a coin flip</strong>.
+      </p>
+    
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">b) Combined into one score</h4>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">The combined score (called "Model C") has a cross-validated <strong>AUC of about 0.65</strong>.</li><li style="margin-bottom: 5px;"><strong>Plain English:</strong> pick one future-SIW person and one non-SIW person at random. The score ranks the SIW person higher about <strong>65 times in 100</strong>, versus 50 in 100 for guessing.</li><li style="margin-bottom: 5px;">A batch-only model scored <strong>0.46</strong>, which is no better than chance. So the signal comes from the answers, not from which batch someone was in.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>What this means for a volunteer.</strong> On the training data, the top third of scores contained about <strong>46%</strong> of all SIW people, versus 33% by chance. That works out to roughly <strong>5.5 in 10</strong> in the top third ending up in SIW, versus about <strong>4 in 10</strong> overall. This is the training-data estimate, not a hold-out result. It is a modest edge, not a crystal ball.
+      </p>
+    
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">c) The final test on newer batches did not work out</h4>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>The plan:</strong> train on batches 10–14 and test once on batches 15–17. The earlier funnel suggested 186 test people (96 SIW).</li><li style="margin-bottom: 5px;"><strong>What happened in the audit (Step 5):</strong> only <strong>12 people (5 SIW), all from batch 15</strong>, had usable labels. Batches 16 and 17 had none. Most recent participants are still "Student" or "Not Sure", so their outcomes aren't known yet (this is censoring).</li><li style="margin-bottom: 5px;"><strong>Result on those 12 people:</strong> AUC of 0.80 and a top-20% lift of 1.6. With 12 people this is basically noise. The confidence interval for AUC runs from about 0.5 to 1.0, and the lift is statistically indistinguishable from random picking (p ≈ 0.37).</li><li style="margin-bottom: 5px;"><strong>Stability checks:</strong> across leave-one-batch-out and rolling tests, AUC ranged from 0.46 to 0.73. Only 3 of the 9 adequately sized checks showed lift reliably above 1.</li><li style="margin-bottom: 5px;"><strong>Fairness (training predictions only):</strong> the score worked better for men (AUC 0.69) and Engineering (0.74) than for women (0.58) and Medical students (0.55). That is a warning sign against using it as a filter.</li>
+        </ul>
+      
+
+        <blockquote style="border-left: 4px solid #3b82f6; background: #eff6ff; padding: 12px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; font-size: 12px; color: #1e40af; line-height: 1.6;">
+          <strong>A discrepancy to be aware of.</strong> The summary describes a 186-person hold-out, but the audit found only 12 labelled people there. The reason for this gap is not yet resolved, so no hold-out figure should be quoted as reliable.
+        </blockquote>
+      
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">Pre-registered rule vs. the verdict</h4>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Step 5's strict pre-set rule labelled the score "<strong>do not use</strong>" for now, because the hold-out interval touched chance.</li><li style="margin-bottom: 5px;">The overall verdict is slightly gentler: "<strong>tie-breaker only, never a filter</strong>", because the training-data signal is real but modest.</li><li style="margin-bottom: 5px;">The two agree on the practical point: <strong>don't exclude anyone based on this score.</strong></li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">4. Business value</h3>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">What leadership learns</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Why it matters</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Early answers carry a real but mild signal (AUC ~0.65)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Questionnaire answers are worth keeping as one input, but they are not enough alone.</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Batch alone predicts nothing (AUC 0.46)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">The signal is not an artefact of timing.</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">The hold-out is unverified</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Don't promise "top 20% = X in 10" yet.</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Fairness gaps appear (women, Medical)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">A hard filter could entrench existing patterns and unfairly screen out groups.</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Recent batches lack outcomes</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Better follow-up and outcome tracking is worth as much as a better score.</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Since the answers are only mild signals, <strong>outreach, follow-up support and other selection criteria likely matter more</strong> than any score.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">5. What to do</h3>
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Invite broadly.</strong> Don't exclude anyone because of their score.</li><li style="margin-bottom: 5px;"><strong>Use the score only to break ties</strong> among otherwise similar candidates, alongside human judgement.</li><li style="margin-bottom: 5px;"><strong>Read scores as ranks, not percentages.</strong> Class weighting inflates the predicted probabilities (average prediction about 0.49 versus a true rate of 0.40).</li><li style="margin-bottom: 5px;"><strong>Recover the missing batch 16–17 outcomes</strong>, or wait for them to mature, and re-run the hold-out test.</li><li style="margin-bottom: 5px;"><strong>Review fairness</strong> for women and Medical students before any wider use.</li><li style="margin-bottom: 5px;"><strong>Take a qualitative look at "Academia".</strong> Its positive direction is unexpected.</li>
+        </ol>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">6. Caveats</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Association, not causation.</strong> The answers may reflect background, opportunity or motivation, and we can't tell whether the workshop itself changes anything.</li><li style="margin-bottom: 5px;"><strong>Censoring.</strong> Newer batches have had less time to reach SIW. Batch 17 has only 23 people.</li><li style="margin-bottom: 5px;"><strong>Selection.</strong> Only people with known outcomes are counted, and about 59% of joined participants in batches 10–14 were students and were excluded.</li><li style="margin-bottom: 5px;"><strong>Label choices matter.</strong> For example, counting "Educational Break" as SIW would raise the base rate to 58.6%.</li><li style="margin-bottom: 5px;"><strong>The rankings are ipsative.</strong> Ranking one option higher pushes the others down, so the answers are not independent.</li><li style="margin-bottom: 5px;"><strong>Small samples.</strong> Per-batch and subgroup numbers are unstable. The training AUC's bootstrap interval is wide (about 0.59–0.72).</li><li style="margin-bottom: 5px;"><strong>Confidence in the findings is 58%.</strong></li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>One-line summary:</strong> the five answers give a gentle nudge, not a verdict. Use them to break ties, never to turn anyone away, and wait for a proper hold-out test before relying on them more.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #1
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Strategic Visuals &amp; Charts
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 04:55 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "what is the takeaway, business values, user's question and answer. In simple words"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Generated 2 visual chart(s) illustrating the strategic findings.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 4. STRATEGIC VISUALIZATIONS & EMPIRICAL CHARTS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #d97706;">4</span>
+          <span>4. Strategic Visualizations &amp; Empirical Charts (2 Visualized)</span>
+          <span class="badge" style="background: #fef3c7; color: #92400e; border-color: #fde68a; margin-left: 6px;">2 Visuals</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Visual intelligence charts generated post-execution to illustrate empirical step metrics, distribution variances, and strategic performance.
+        </p>
+
+        
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Who Should We Invite? The Answer in Four Numbers</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              kpi Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">Question: can a few early answers (NGO work, academia, social entrepreneurship, private industry, cause of work) help us pick workshop participants who later do Social Impact Work (SIW)? Short answer: a little, but we have not proven it on newer batches. The four cards show how strong the signal is, how much it beats chance, how weak the final test was, and how confident we are.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Score Accuracy (AUC)</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin: 4px 0;">0.65</div>
+                  <div style="font-size: 11px; color: #475569;">0.50 is a coin flip, 1.0 is perfect. This is a modest signal.</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">SIW People Caught in Top Third</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #10b981; margin: 4px 0;">46%</div>
+                  <div style="font-size: 11px; color: #475569;">vs 33% by random picking (training data)</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Final Hold-Out Test Size</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #ef4444; margin: 4px 0;">12 of 186</div>
+                  <div style="font-size: 11px; color: #475569;">Newer batches had too few known outcomes. Test is inconclusive.</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Confidence in Verdict</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #f59e0b; margin: 4px 0;">58%</div>
+                  <div style="font-size: 11px; color: #475569;">Association only, not proof of cause</div>
+                </div>
+              
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> The early answers carry a real but small signal, enough to break ties between similar applicants. The final test on newer batches could not run properly because the labelled hold-out had only 12 of the planned 186 people (5 were SIW). So treat the score as a gentle tie-breaker, never as a filter, and do not exclude anyone because of their score.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Does the Score Beat Random Picking? Share of Future SIW Participants Found in the Top Third</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              bar Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">Out-of-fold results on training batches 10-14 (256 people, 40% SIW). Each bar shows the share of all SIW participants that land in the top third of scores. Pure chance gives about 33%. The batch-only model is the 'no useful answers' comparison.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Random Selection</span>
+                  <span style="font-weight: 800; color: #94a3b8;">33%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 33.3%; background: #94a3b8; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">No-skill benchmark</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Batch Only</span>
+                  <span style="font-weight: 800; color: #f59e0b;">34%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 33.5%; background: #f59e0b; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">No better than chance (lift 1.0)</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Answers + Batch</span>
+                  <span style="font-weight: 800; color: #8b5cf6;">43%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 43%; background: #8b5cf6; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Lift 1.29</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Answers Only (Model C)</span>
+                  <span style="font-weight: 800; color: #10b981;">46%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 46%; background: #10b981; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Best model, lift 1.39</span>
+              </div>
+            
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> Using the five answers, we find about 46 of every 100 future SIW participants in the top third, compared with 33 by chance. In plain words, a volunteer in the top-scored group is somewhat more likely to end up in Social Impact Work. That is a helpful nudge for prioritising invitations and follow-up, but it still misses more than half of SIW participants. Outreach, support and human judgement matter more than the score.
+            </div>
+          
+        </div>
+      
+      </div>
+    </details>
+
+    <!-- 3. GUIDANCE & RECOMMENDATIONS ON NEXT STEPS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #2563eb;">3</span>
+          <span>3. Guidance &amp; Recommendations on Next Steps (How to Proceed)</span>
+          <span class="badge" style="background: #dbeafe; color: #1e40af; border-color: #bfdbfe; margin-left: 6px;">5 Actions</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Tailored recommendations explaining what to do next. Includes both an easy-to-understand explanation and technical column names ready for cut-and-pasting into future questions.
+        </p>
+
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#1</span> Use the five-answer score only as a tie-breaker in invitations
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              The early answers give a small edge, not a crystal ball. Use them to order people who are otherwise similar. People who put 'Working in an NGO' and 'Academia' high, and 'Private industry job' low, tend more often to end up in Social Impact Work. Never turn anyone away because of their score.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Model C is a class-weighted L2 logistic regression on five inverted ranks (9 - rank; 0 and values above 8 set to NaN), standardised on training data, with no batch term. Training cross-validated AUC is about 0.65, against 0.46 for a batch-only baseline. The three Holm-surviving items are Working_In_Ngo (+), Academia (+) and Private_Industry_Job (−). Social entrepreneurship and Cause_Of_Work are weaker. Report scores as ranks or bands, not probabilities, because class weighting inflates predicted probabilities. This is association only, not causation.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Career_Preference_Academia</span><span class="pill">Career_Preference_Private_Industry_Job</span><span class="pill">Career_Preference_Social_Entrepreneurship_Or_Ngo</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Using Workshop_Level 0.1 and Workshop_Phase 'Pre' rows joined to Demographics on Participant_Id (cast to string), batches 10-14 for training, build a class-weighted L2 logistic regression on the inverted ranks (9 - rank, zeros and values above 8 set to NaN) of Career_Preference_Working_In_Ngo, Career_Preference_Academia, Career_Preference_Private_Industry_Job, Career_Preference_Social_Entrepreneurship_Or_Ngo and Life_Criteria_Cause_Of_Work. Target is Current_Status_Of_Work 'Social Impact Work' = 1 vs 'Other Work', 'Different Trajectory', 'Previously SIW' and 'Educational Break' = 0 ('Student' and 'Not Sure' excluded). Output a score band (top, middle, bottom third) per participant, with the base rate and effective N, in plain language and with an association-not-causation caveat.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#2</span> Complete the hold-out audit and lift test on batches 15-17
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              We still have not seen the key test: if we had used the score on newer batches, how much better would the top-ranked group have done than a random list? First, make sure the outcome labels for those 186 people are correct. Then run the test once and report it in plain terms, such as 'about X in 10 vs Y in 10'.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Audit the funnel: Pre/0.1 rows, de-duplication, join, Age_At_Workshop &gt; 0, batches 15-17, exclusion of Student and Not Sure, and dropNa on the five ranks. Expected test N is 186 with 96 SIW (51.61%). Fit Model C once on the 256 training rows and score the hold-out. Report AUC with a stratified 1,000-resample bootstrap CI, recall, and lift for the top 20%, top third, top 40% and bottom 20% against both the hold-out base rate and a shuffled-score null. The lift ceiling is 1.94. Repeat with batch 17 excluded.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Age_At_Workshop</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Career_Preference_Academia</span><span class="pill">Career_Preference_Private_Industry_Job</span><span class="pill">Career_Preference_Social_Entrepreneurship_Or_Ngo</span><span class="pill">Life_Criteria_Cause_Of_Work</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Audit the outcome funnel for Workshop_Batch_Number 15-17 (Participant_Id as string; Point-1 Pre rows; Age_At_Workshop &gt; 0; Student and Not Sure excluded) and print N after each step plus the Current_Status_Of_Work counts, confirming 186 participants and 96 'Social Impact Work'. Then fit the class-weighted L2 logistic regression on batches 10-14 using the five inverted rank answers, score batches 15-17 once, and report AUC with a bootstrap 95% CI, recall, and the Social Impact Work rate and lift versus the 51.61% base rate for the top 20%, top 40% and bottom 20% with participant counts. Explain in plain English: 'if we prioritise the top 20%, about X in 10 end up in Social Impact Work versus Y in 10 overall'.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#3</span> Check fairness across Gender and education stream before use
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Before the score influences who gets invited, confirm it does not systematically under-pick women or men, or people from particular study backgrounds. If one group gets flagged much less often or is missed more often, do not use the score for that group.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              For Gender (FEMALE, MALE) and Educational_Stream_Category (Arts/Commerce/Science/Pharmacy, Engineering, Medical, Other), report N, positives, base rate, share flagged in the top third and top 20%, selection ratio, recall ratio against the best group, precision and AUC. Compute AUC only with at least 20 people and at least 5 positives and 5 negatives. Flag N &lt; 20 as unreliable and any ratio below 0.8 as a potential disparity. Use hold-out predictions and pooled leave-one-batch-out predictions.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Gender</span><span class="pill">Educational_Stream_Category</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Participant_Id</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Using the frozen five-answer logistic regression score (trained on Workshop_Batch_Number 10-14, scored on 15-17 and by leave-one-batch-out), report for each Gender and each Educational_Stream_Category: N, number of 'Social Impact Work', base rate, share flagged in the top third and top 20%, selection ratio, recall, recall ratio versus the best group, precision, and AUC only where there are at least 20 people with 5 positives and 5 negatives. Flag any ratio below 0.8 and any group with N below 20, and state that results are associations, not proof of cause.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#4</span> Handle censoring and the unscored Student group
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Many participants, especially recent ones, are still students or have not had time to reach social impact work. Their outcomes are not known yet. Re-check the score as outcomes mature, and do not judge recent batches harshly.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              About 386 of 651 joined participants in batches 10-14 are 'Student' and 'Not Sure' participants are also excluded. This is selection on outcome availability. Run censoring sensitivity: refit on batches 10-12 and 10-13, score the hold-out without batch 17, and compute exposure_years = Current_Age - Age_At_Workshop (both &gt; 0) with AUC by exposure tertile. Check that the coefficient signs (NGO +, Academia +, Social entrepreneurship +, Private industry −) are stable across refits. Re-score Student and Not Sure participants when Current_Status_Of_Work updates.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Current_Age</span><span class="pill">Age_At_Workshop</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Education_Status</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Workshop_Financial_Year</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                For Workshop_Batch_Number 10-17, compute exposure_years = Current_Age - Age_At_Workshop (both &gt; 0) and report the Current_Status_Of_Work mix by batch and by Education_Status, including the share who are 'Student' or 'Not Sure'. Then report the AUC of the five-answer score by exposure_years tertile and after refitting on batches 10-12 and 10-13 only, and show whether the signs of the coefficients for Career_Preference_Working_In_Ngo, Career_Preference_Academia, Career_Preference_Social_Entrepreneurship_Or_Ngo and Career_Preference_Private_Industry_Job stay the same. Report N and the base rate each time.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#5</span> Pilot score-assisted selection and track outcomes prospectively
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              To learn whether the score really helps, try it on a small scale: for the next workshop, use it to order part of the invite list and keep a comparison group chosen the usual way. Then follow both groups over time. Observational data alone cannot prove the score or the workshop causes anything.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Design a pilot with a documented split: a score-ordered tie-break group and a usual-selection group. Record the score band at invitation, Gender, Educational_Stream_Category and Workshop_Batch_Number, and follow Current_Status_Of_Work at a fixed horizon. Compare SIW rates and lift with CIs. Add non-score criteria such as outreach and follow-up support. Keep Point_2/Point_3 attendance and Person_Years_Of_Social_Action out of any selection score because they are post-workshop and leak the outcome.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Workshop_Name</span><span class="pill">Gender</span><span class="pill">Educational_Stream_Category</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Workshop_Financial_Year</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                For future batches, once Current_Status_Of_Work is recorded, compare the Social Impact Work rate between participants invited with score-assisted tie-breaking (top, middle and bottom score bands from the five Pre answers) and those invited by the usual process, by Workshop_Batch_Number and Workshop_Financial_Year. Report N, base rate, lift with 95% bootstrap CI, and Gender and Educational_Stream_Category breakdowns. Do not use Workshops_Attended_Count, Point_2/Point_3 fields or Person_Years_Of_Social_Action as predictors, and state that the result is association, not proof of cause.
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 2. COMPLETE 5-STEP PROGRESSIVE EXPERIMENT TIMELINE & DECISIONS (COLLAPSIBLE BY DEFAULT, LAST IN SEQUENCE) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #4f46e5;">2</span>
+          <span>2. Complete 5-Step Progressive Experiment Timeline &amp; Decisions</span>
+          <span class="badge" style="background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; margin-left: 6px;">5 Steps</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Shows the exact question asked in each step, the choices proposed by the AI, the steering path chosen, and the empirical results.
+        </p>
+
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #1</span> Build the Clean Dataset, Outcome and Base Rate
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1. Load both tables and cast Participant_Id to string in both frames. Force Workshop_Name to string so the value 'F' is not read as boolean. 2. In the Questionnaire table, keep rows where parseFloat(Workshop_Level) == 0.1 and Workshop_Phase == 'Pre'. Keep one row per Participant_Id and report any duplicates. 3. Clean the five rank columns: Career_Preference_Working_In_Ngo, Career_Preference_Academia, Career_Preference_Private_Industry_Job, Career_Preference_Social_Entrepreneurship_Or_Ngo and Life_Criteria_Cause_Of_Work. Set 0 to NaN, set values above 8 to NaN, then invert as 9 - rank. 4. Inner-merge with Demographics on Participant_Id. Use the Demographics Workshop_Batch_Number and report any batch mismatch between the two tables. 5. Filter to Workshop_Batch_Number 10-17 and Age_At_Workshop &gt; 0. Keep only Current_Status_Of_Work in ['Social Impact Work', 'Other Work', 'Different Trajectory'], then build target = 1 for SIW and 0 otherwise. Log how many 'Student', 'Not Sure', 'Previously SIW' and 'Educational Break' participants are excluded. 6. Explicitly exclude Workshops_Attended_Count, all Point_2/Point_3 fields and Person_Years_Of_Social_Action. 7. dropNa on the five features plus the target. 8. Build a participant-count funnel showing the N left after each step. 9. Produce a per-batch table of N, SIW count, SIW rate and the share excluded as Student or Not Sure.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                After joining Point-1 Pre answers to Demographics and applying all filters, how many participants remain in the training batches (10-14) and test batches (15-17)? What share of them ended up in Social Impact Work, and how does that share change from batch to batch?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Training-only, batch-stratified univariate signal scan</strong>: <span style="color:#64748b;">Run the five inverted rank comparisons on the 256 training participants only, and keep the 186 test participants untouched for later validation. For each rank item, use a Mann-Whitney test with a rank-biserial effect size and a bootstrapped 95% confidence interval. Pair it with a batch-stratified test (van Elteren or Cochran-Mantel-Haenszel on rank levels), so a difference driven by changing batch composition is not mistaken for a real signal. Apply a Holm correction across the five items. Also flag that the ranks are compositional: raising one forces others down, so the directions are not independent. This protects the train/test split, accounts for the drift seen in Step 1, and gives honest effect sizes from a small sample.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Find Clues Without Peeking at the Answer Key &mdash; <em>Like a football coach who studies only last season's games to plan tactics, then saves this season's first match to see whether the plan really works. The coach also compares teams within the same league, so a strong league doesn't make a team look better than it is.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Pool all 442 for maximum statistical power</strong>: <span style="color:#64748b;">Run the univariate comparisons on the full 442-person cohort to gain power. With an n of 442 and modest effects, many items may not reach significance in 256 people alone. Batch is included as a covariate (an ordinal logistic or logistic model with each rank item plus batch fixed effects) to absorb the base-rate shift. The trade-off is that the test set no longer gives a clean out-of-sample check for feature selection. Later model evaluation would then need nested cross-validation or a fresh holdout.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Use Every Voice to Hear the Signal &mdash; <em>Like a cook who tastes the whole pot instead of just one spoonful, so subtle flavours are easier to notice. The catch is that there's nothing left over to serve a fresh taster for an honest second opinion.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Censoring check: restrict to mature batches</strong>: <span style="color:#64748b;">Recent batches have had less time to reach their outcomes, so the labels for batches 15–17 are probably less settled. Run the univariate scan on the most mature batches (10–12, n≈130–140) and compare it with the full training set (10–14). If an item's direction or size changes once the newer batches are added, that suggests the signal is tangled with follow-up time rather than with the participant. The scan will have less power, but it directly tests the main caveat from Step 1.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Only Judge the Cakes That Finished Baking &mdash; <em>Like tasting only the cakes that have been in the oven long enough, so you don't blame the recipe for a gooey middle that just needed more time.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Test exclusion bias before scanning signals</strong>: <span style="color:#64748b;">Removing Students and Not Sure cut about two-thirds of the matched rows. Before reading the signals, compare the five rank answers between the 442 included participants and the excluded group, by batch. If the excluded group answers very differently, any SIW signal found in the 442 may not generalise to new intakes, most of whom will start as Students. A secondary sensitivity check moves 'Previously SIW' into the positive class to see whether the item directions change.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check Who Left the Room First &mdash; <em>Like packing for a family holiday based only on what the adults said, then realising you should check whether the kids, who didn't fill in the form, want completely different things before you lock the suitcase.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Training-only, batch-stratified univariate signal scan</span>
+                  
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **How the data narrowed down:** We started with 2,157 Point-1 Pre questionnaire rows. They were already one row per participant, so de-duplication removed no one. All 2,157 matched a demographics record, and none had a missing work status. The big drop came from the exclusion rule. I removed &quot;Student&quot; and &quot;Not Sure&quot; because the ml_guidance label map treats those outcomes as not yet realised, which left 720 participants. Only &quot;Social Impact Work&quot; counts as the positive outcome. The other statuses (Previously SIW, Educational Break, Other Work, Different Trajectory) stay in the denominator. I used the demographics batch number throughout. Of the 720, 278 were in batches outside 10–17, so the analysis covers 442 people: 256 in the training group (batches 10–14) and 186 in the test group (batches 15–17).
+
+**What the shares show:** In the training group, 103 of 256 people (40.23%) were doing Social Impact Work. In the test group it was 96 of 186 (51.61%). By batch, the share moved up and down: 36.9% (batch 10), 46.51%, 38.64%, 36.17%, 47.37%, 48.98%, 55.38%, and 52.17% (batch 17). That is four increases and three decreases, with swings of up to about 11 percentage points. Batch 10 to batch 17 shows a net rise of 15.27 points, but the path is bumpy rather than a steady climb. Batch 17 has only 23 people, so its figure is unstable. Four caveats apply:
+
+- **Censoring:** Recent batches have had less time to reach these outcomes, so their shares could be understated. Their higher shares here are therefore not a clean sign of improvement.
+- **Excluded groups:** Removing &quot;Student&quot; and &quot;Not Sure&quot; (about two-thirds of the matched rows) changes who is counted. This could affect recent and older batches differently.
+- **Join bias:** Requiring a Point-1 Pre questionnaire shrinks the sample and may skew it relative to everyone in the registry.
+- **Status snapshot:** Work status is a single, undated snapshot.
+
+These are associations in observational data, not evidence that the program caused any change.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #2</span> Training-Only, Batch-Stratified Signal Scan of the Five Inverted Rank Answers
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1) Data: reuse the Step 1 pipeline exactly.
+- Point-1 Pre rows (parseFloat(Workshop_Level)===0.1, Workshop_Phase==='Pre'), with Participant_Id cast to string in both frames, inner-joined to Demographics.
+- Exclude 'Student' and 'Not Sure'. y=1 only for 'Social Impact Work'.
+- Use the demographics Workshop_Batch_Number and filter to batches 10-14 only.
+- Apply Age_At_Workshop&gt;0 and report how many rows this removes from the 256.
+
+2) Clean each of the five rank items:
+- Set 0 to NaN, set values above 8 to NaN, then invert as 9-rank so higher means a stronger preference.
+- Run per-feature dropNa, and report the per-feature N and SIW count. Also report the complete-case N across all five, which is the N Step 3 will use.
+
+3) Descriptives per feature:
+- Mean, median and IQR of the inverted score for SIW versus non-SIW.
+- Top-2 indicator (inverted score of 7 or more): SIW rate for top-2 versus the rest, compared with the 40.23% training base rate.
+
+4) Unstratified test:
+- Mann-Whitney U with tie-corrected normal approximation, implemented in plain JS with average ranks.
+- Rank-biserial r = 2*AUC-1, where single-feature AUC = U/(n1*n0).
+- 95% CI from 2,000 bootstrap resamples, stratified by batch × outcome, with a seeded PRNG (mulberry32).
+
+5) Batch-stratified primary test:
+- Van Elteren test: within each batch 10-14, compute the Wilcoxon rank-sum statistic, weight it by 1/(n_b+1), and sum the expectations and tie-corrected variances to get a Z and two-sided p.
+- Report the batch-stratified rank-biserial as the weighted mean of within-batch r.
+- Report direction consistency as the number of batches (out of 5) where r has the same sign as the pooled r.
+- Supplementary: a Cochran-Mantel-Haenszel test with a common odds ratio for top-2 versus the rest, stratified by batch, using a Robins-Breslow-Greenland 95% CI.
+
+6) Multiplicity:
+- Apply a Holm step-down correction across the five van Elteren p-values (primary family), and separately across the five Mann-Whitney p-values.
+- Classify each feature as one of: 'supported' (Holm p&lt;0.05 and direction matches the hypothesis), 'reversed', 'weak' (|r|&lt;0.1 or CI spans 0), or 'drift-sensitive' (unstratified result significant but stratified result not, or batch sign consistency of 3 or fewer out of 5).
+
+7) Compositional overlap:
+- Spearman correlation matrix of the five inverted items in training, using pairwise-complete data with per-pair N.
+- State that the four Career_Preference items share one ranking block. Raising one forces others down, so negative correlations are partly built in and the directions are not independent. Life_Criteria_Cause_Of_Work comes from a separate block.
+- Flag any pair with |rho| of 0.5 or more as a collinearity risk for Step 3.
+
+8) Guardrails:
+- Assert that no batch 15-17 row enters any computation, and log the test-set count as untouched (186).
+- Note censoring: older batches dominate training, and recent cohorts may differ.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Among the 256 training participants (batches 10-14, base rate 40.23% SIW), does each of the five inverted rank answers differ between later-SIW and non-SIW participants? The five answers are Career_Preference_Working_In_Ngo, Career_Preference_Social_Entrepreneurship_Or_Ngo, Career_Preference_Academia, Career_Preference_Private_Industry_Job and Life_Criteria_Cause_Of_Work. For each one: which way does the difference point, how large is it with a 95% CI, does it survive stratifying by Workshop_Batch_Number and a Holm correction across the five items, and how strongly do the items overlap?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Regularized CV score vs batch-only baseline</strong>: <span style="color:#64748b;">Run the planned Step 3 with safeguards suited to small, overlapping, rank-based data. Fit a class-weighted, L2-penalized logistic regression on all five inverted ranks plus batch dummies, with the penalty tuned inside each training fold. Ridge shrinkage stabilizes the coefficients because the items are mutually constrained rankings (for example, r = −0.31 between private industry and social entrepreneurship). Use repeated stratified 5-fold CV (e.g., 20 repeats) so the AUC estimate does not hinge on one split of 256 rows. Compare it directly against a batch-only model using the paired per-fold AUC difference with a confidence interval, plus a label-permutation test. Also report calibration, standardized coefficients and the share of SIW captured in the top score tertile. This answers whether the combined answers add ranking ability beyond batch timing, which is the real screening question.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Test the Combined Score Fairly &mdash; <em>Imagine you think your new pizza recipe beats plain cheese pizza. Instead of asking one friend, you hold many blind taste tests with different groups of people. Each group gets a slice of both, and you see whether yours really wins most of the time or just got lucky once.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Simple mission-vs-industry index, chosen within folds</strong>: <span style="color:#64748b;">Instead of five free coefficients, test a transparent hand-built index: NGO + Academia − Private industry, which can optionally add social entrepreneurship. Compare it against the full five-item model and the batch-only model under the same CV. To avoid optimistic bias, select the index items inside each training fold using the training-fold batch-adjusted tests. A fixed-weight index is easy to explain to program staff and less prone to overfitting with 103 positives. If it matches the full model's AUC, it is the better screening tool.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> One Easy Number Instead of Five &mdash; <em>Picking a team captain with a simple tally works like this: add a point for each good thing, take a point away for each worry. It's like a 'thumbs up minus thumbs down' count instead of a long judging sheet. It's easy for anyone to use, and if it works just as well, why make it complicated?</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Restrict to mature batches to remove censoring</strong>: <span style="color:#64748b;">Batches 13–14 have had less time to enter SIW, so some of their non-SIW members are really 'not yet' SIW. This label noise dilutes the signal and can distort batch effects. Re-run the combined CV model on batches 10–12 only, as the primary or a parallel analysis, and compare the AUC gain with the full-cohort result. If the signal strengthens in mature batches, censoring is hiding real predictive value. If it disappears, the full-cohort result may be driven by batch artifacts.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Only Count Finished Races &mdash; <em>Some runners are still on the track. It wouldn't be fair to say they 'lost' just because they haven't crossed the finish line yet. The newest groups in our study are like those runners: many simply haven't had time to land a social-impact job yet.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Stress-test the outcome definition first</strong>: <span style="color:#64748b;">The 256-person cohort depends on excluding Students and 'Not Sure', which removes most of the 651 participants. That label was reverse-engineered to match an expected count. Before investing in a score, refit the batch-adjusted item effects and a quick CV model under alternative labels: (a) Students and Not Sure counted as non-SIW, (b) 'Previously SIW' counted as SIW, and (c) an ordinal outcome of SIW &gt; other work &gt; student. Then check whether the NGO, academia and private industry directions hold. A screening score built on a fragile label will not generalize.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check the Scoreboard Rules First &mdash; <em>Before building a whole game plan around who 'won', make sure the result doesn't flip if the referee counts points a little differently. Our group of 256 people only exists because we left out students and the 'not sure' crowd, and those were most of the people. So we want to confirm that the winner stays the same under fair alternative rules.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Regularized CV score vs batch-only baseline</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 1 found an imbalanced, drifting base rate: 40.23% SIW in training batches 10-14 (N=256) versus 51.61% in test batches 15-17 (N=186), with batch-level swings of up to about 11 points. The original plan scanned all batches 10-17 with unstratified statistics, which would leak the hold-out set and could mistake shifts in batch composition for real signal. Following the human steering choice, Step 2 now runs only on the 256 training participants. It uses Mann-Whitney with rank-biserial effect sizes and stratified bootstrap CIs, a van Elteren batch-stratified test as the primary inference, and Holm correction across the five items. It also explicitly checks how far the rank answers compete with one another, so the later screening score is interpretable and the 186 test participants stay untouched for the Step 3 hold-out lift test.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **Cohort and labels.** After joining demographics (batches 10-14) to the Pre-phase, Point-1 questionnaire, 651 participants remained, with no duplicates and no missing or out-of-range rank values. The default labelling (Social Impact Work = 1, everything else = 0) gives 651 people and only a 15.82% SIW share, which does not match your cohort. The definition that does match is to **exclude &quot;Student&quot; and &quot;Not Sure&quot;** and to count &quot;Previously SIW&quot;, &quot;Educational Break&quot;, &quot;Other Work&quot; and &quot;Different Trajectory&quot; as non-SIW. That gives exactly **N = 256, with 103 SIW (40.23%) and 153 non-SIW**. Every item keeps all 256 rows after dropping missing values. Scores are 9 minus rank, so higher means a stronger preference.
+
+**What differs between SIW and non-SIW.** Differences are on a 1-8 scale, and the batch-adjusted figures are the main ones because recent batches have had less time to reach SIW.
+
+| Item | SIW minus non-SIW (batch-adjusted, 95% CI) | Adjusted p (Holm) | Survives at 0.05? |
+|---|---|---|---|
+| Working in an NGO | +0.65 (0.30 to 0.99) | 0.001 | Yes |
+| Private industry job | −0.68 (−1.11 to −0.26) | 0.01 | Yes |
+| Academia | +0.63 (0.20 to 1.06) | 0.01 | Yes |
+| Social entrepreneurship/NGO | +0.44 (0.01 to 0.88) | 0.09 | No (borderline) |
+| Cause of work | +0.31 (−0.12 to 0.75) | 0.16 | No |
+
+- **Direction:** Later-SIW participants ranked NGO work, academia and (weakly) social entrepreneurship higher, and private industry lower. The effect sizes are small to modest (Hedges' g 0.18 to 0.44, with 0.44 for NGO work the largest). Cause of work shows no clear difference.
+- **Overlap:** The two groups overlap heavily. The chance that a random SIW person scores higher than a random non-SIW person (AUC) is only 0.55 to 0.63, or 0.40 for private industry, where 0.50 means no difference. The distributions share about 74% to 87% of their area. These items shift the averages but cannot reliably tell individuals apart.
+- **Item correlations:** Private industry is negatively related to the other items (for example −0.31 with social entrepreneurship and −0.26 with academia), while social entrepreneurship and cause of work are mildly positive (0.23). The remaining correlations are near zero. Because these are rankings, placing one option high pushes the others down, so the items are not independent.
+
+**Caveats.** This is observational association, not causation. We cannot say these preferences lead to SIW. Work status is an undated snapshot, and batches 13-14 are censored, meaning they have had less time to enter SIW. Results also depend on excluding Student and Not Sure, which removes most of the 651 participants.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #3</span> Ridge-Penalized, Repeated-CV Screening Score vs a Batch-Only Baseline (Training Batches 10-14)
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">**1. Data.** Rebuild the Step 1/2 cohort exactly as before:
+- Participant_Id is cast to string on both tables.
+- Keep Workshop_Level 0.1 (compared via parseFloat) and Workshop_Phase 'Pre'.
+- Use the demographics Workshop_Batch_Number, restricted to 10-14.
+- Require Age_At_Workshop &gt; 0 and report how many rows this removes.
+- Rank zeros become NaN, ranks above 8 become NaN, then invert as 9 - rank.
+- Target: 'Social Impact Work' = 1. 'Previously SIW', 'Educational Break', 'Other Work' and 'Different Trajectory' = 0, matching the Step 1/2 definition that reproduces N = 256. Student and Not Sure are excluded.
+- Apply dropNa on the five features and print the effective N and base rate.
+
+**2. Features.**
+- Model A (batch-only): 4 one-hot batch dummies (11, 12, 13, 14; reference batch 10).
+- Model B (full): batch dummies plus the five inverted ranks.
+- Model C (answers-only, secondary): the five inverted ranks only.
+- Numeric ranks are z-scored using the training-fold mean and SD only. Batch dummies are not penalized, or are lightly penalized; state which.
+
+**3. Estimator.**
+- Implement logistic regression in plain JS/TF.js (tf.tidy, full-batch Adam or IRLS/Newton, at least 500 iterations, convergence tolerance 1e-6).
+- The loss is class-weighted binary cross-entropy, with w_pos = N/(2·n_pos) and w_neg = N/(2·n_neg) computed per training fold.
+- Add an L2 penalty λ·||β||² on the rank coefficients, with the intercept unpenalized.
+
+**4. Nested tuning.**
+- In each outer training fold, choose λ from {0.001, 0.01, 0.03, 0.1, 0.3, 1, 3, 10} by inner stratified 3-fold CV, maximizing mean inner AUC.
+- Ties go to the larger λ (the one-SE-style preference for more shrinkage).
+- Record the selected λ for every outer fold.
+
+**5. Outer CV.**
+- Run 20 repeats of stratified 5-fold CV with a seeded shuffle, giving 100 outer folds.
+- Stratify on the outcome crossed with batch, so every fold keeps about 40% SIW and a similar batch mix.
+- Models A, B and C are evaluated on identical fold assignments.
+- Store per-fold AUC (Mann-Whitney with tie handling) and out-of-fold probabilities for each repeat.
+
+**6. Metrics per model.**
+- Mean, SD and 2.5/97.5 percentiles across the 100 folds of AUC.
+- Pooled out-of-fold AUC per repeat, averaged across repeats.
+- Recall at the 0.5 threshold.
+- Recall and precision when flagging the top 20% and the top 33% of out-of-fold scores.
+- Lift, defined as precision divided by the base rate.
+- Top-tertile capture, defined as the share of all SIW participants falling in the top third of scores. The no-skill expectation is 33.3%.
+- Accuracy is not reported.
+
+**7. Incremental test (B vs A).**
+- Compute the paired per-fold difference ΔAUC = AUC_B - AUC_A.
+- Report its mean and a 95% CI using the Nadeau-Bengio corrected repeated-k-fold t-statistic. The variance is inflated by (1/k + n_test/n_train), because overlapping training sets make naive fold SDs too small.
+- Also report the share of folds with ΔAUC &gt; 0.
+
+**8. Permutation test.**
+- Shuffle the outcome labels within each batch, which preserves the batch-outcome association and the batch-only baseline. Do 500 permutations.
+- For each permutation, rerun one 5-fold CV of model B with λ fixed at the median selected λ, to keep compute bounded, and record ΔAUC versus model A.
+- p = (1 + #{permuted ΔAUC ≥ observed}) / 501. Also report a permutation p for model B's absolute AUC.
+
+**9. Calibration.**
+- Class weighting distorts the predicted probabilities. Prior-correct the out-of-fold logits by adding log(π/(1-π)), where π is the training base rate, since class weights equalize the classes.
+- Report the Brier score versus the no-skill Brier score π(1-π).
+- Report the calibration intercept and slope (logistic regression of y on the corrected logit).
+- Report a reliability table by score tertile: mean predicted versus observed SIW rate, with n.
+
+**10. Final transparent score.**
+- Refit model B on all 256 rows with the modal or median selected λ.
+- Report standardized coefficients (per 1 SD) and raw-scale odds ratios per 1-point stronger preference.
+- Add bootstrap 95% CIs for the coefficients: 500 resamples with λ fixed.
+- Report how often each coefficient's sign is stable across the 100 outer-fold fits.
+- Convert the coefficients to a points recipe: round β·(per-point scale) to integer points per answer, list the batch offsets separately, and give cut-points for the top and bottom tertiles.
+
+**11. Guardrails and decision rule.**
+- Print N, base rate and SIW count per fold.
+- No information from batches 15-17 is touched.
+- Pre-register the decision rule: the answers are considered to 'add value' only if mean ΔAUC ≥ 0.03, the corrected CI excludes 0, and the permutation p &lt; 0.05.
+- Otherwise, label the score a 'mild signal only', suitable to inform but not to filter invitations.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                The cohort is the 256 training participants: batches 10-14, Point-1 Pre answers, Student and Not Sure excluded, 103 SIW, base rate 40.23%. Does a class-weighted, L2-penalized logistic regression on the five inverted ranks plus batch dummies rank later-SIW participants above non-SIW participants better than a batch-only model? The five inverted ranks are Career_Preference_Working_In_Ngo, Career_Preference_Academia, Career_Preference_Private_Industry_Job, Career_Preference_Social_Entrepreneurship_Or_Ngo and Life_Criteria_Cause_Of_Work. Five things are measured under 20x repeated stratified 5-fold CV: (1) the paired AUC gain and its confidence interval, (2) a within-batch label-permutation p-value, (3) calibration, (4) standardized coefficients, and (5) the share of all SIW participants captured in the top score tertile.
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Re-run Step 3 with cohort audit and checks</strong>: <span style="color:#64748b;">Re-execute the ridge-penalized, repeated-CV comparison against the batch-only baseline before touching hold-out batches. Add explicit failure checks: assert the result object is non-empty and log row counts after each filter (join, Pre-phase Point 1, batches 10–14, exclusions, one row per person). Explain the gap between 651 (Step 2) and the expected 256. Then report the paired AUC gain with a confidence interval, the within-batch permutation p-value, fold-wise coefficient stability (including how the two NGO items split their weight) and top-tertile capture. Step 4's lift test only makes sense if a training-set gain has been shown. This prevents a broken or mis-filtered pipeline from contaminating the hold-out evaluation, which can only be used once.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Fix the Blank Screen and Double-Check Everything &mdash; <em>Your bathroom scale shows a blank screen. Before you trust it, you put in a new battery and test it with a bag of sugar you know weighs 1 kg. Only then do you step on it yourself.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Freeze a pre-specified model, go to hold-out</strong>: <span style="color:#64748b;">Skip further tuning on training data. Pre-register a fixed ridge model (five inverted ranks plus batch, a single pre-chosen penalty, class weighting) fit on batches 10–14 and apply it unchanged to batches 15–17. Compute the SIW rate in the top 20%, top 40% and bottom 20% against the held-out base rate and against a batch-only comparator. Use bootstrap CIs and a within-batch label-permutation null for 'better than random'. This is faster and keeps the hold-out honest, but it risks evaluating a model whose training-set signal was never confirmed.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Lock the Recipe and Serve It to New Guests &mdash; <em>You write down a recipe exactly and never taste or adjust it along the way. Then you serve it straight to a table of new guests and see if they like it.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Use simple unit-weighted rank score instead</strong>: <span style="color:#64748b;">Replace the ridge model with a transparent score: the sum (or mean) of the five inverted rankings. Optionally combine the two overlapping NGO items into one composite to avoid them splitting or masking each other's effect. With roughly 256 training rows and five correlated predictors, unit weights often generalize as well as fitted weights, need no tuning and are easy to explain to programme staff. Validate it with within-batch AUC on batches 10–14, then run the same top 20% / top 40% / bottom 20% lift test on batches 15–17.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Keep the Scorecard Simple &mdash; <em>When picking a restaurant, you just add up five star ratings instead of building a complicated secret formula. Surprisingly often, the simple sum picks just as well, and anyone can follow it.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Address censoring before hold-out evaluation</strong>: <span style="color:#64748b;">Batches 15–17 have had the least time to show SIW outcomes, so their base rate and lift will be biased downward and may be uneven across batches. Before the lift test, quantify follow-up time per batch. Then either restrict the hold-out to batches with adequate follow-up, compute lift within each batch and pool the results stratified by batch, or define a fixed-window outcome (SIW within N months of the programme) applied equally to all batches. This makes 'better than random' comparisons fair across old and new cohorts.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Give the Newcomers a Fair Clock &mdash; <em>Imagine judging a race but stopping the newest runners halfway while the earlier runners got to finish. Of course the newcomers look slower. It's fairer to give everyone the same amount of time.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Re-run Step 3 with cohort audit and checks</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 2 found that each of the five inverted rank answers carries only a small-to-modest signal: univariate AUCs were 0.55-0.63 (0.40 for private industry), and batch-adjusted differences were 0.3-0.7 points. The items are also mutually constrained, with correlations such as r = -0.31 between private industry and social entrepreneurship. With only 256 training rows, an unpenalized single-split 5-fold estimate would be noisy, and its coefficients would be unstable. Step 3 is therefore re-planned, per the steering choice, as follows. It stays inside the training batches 10-14 so that batches 15-17 remain an untouched hold-out for Step 4. It fits a class-weighted, ridge (L2) logistic regression with the penalty tuned by nested CV. It uses 20x repeated stratified 5-fold CV. It tests the incremental value of the answers over a batch-only baseline with a corrected paired AUC-difference confidence interval and a within-batch label-permutation test, and adds calibration and top-tertile capture so the result translates directly into a screening decision.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                I can't report findings yet because the analysis results came back as &quot;undefined&quot;. No output reached me: no cohort counts, AUCs, p-values, calibration figures or coefficients. Anything I wrote as a number would be invented, so I haven't included any. The most likely cause is that the analysis step failed or never ran, and it should be re-run before anything is interpreted.
+
+When results are available, here is how I would explain them.
+
+- **Cohort:** Each step should show how many participants remain, from the join, through Pre-phase Point 1, batches 10–14, the exclusions and one row per person. The final cohort should be checked against the expected N = 256, 103 positives and a 40.23% base rate. Any gap, and any batch mismatches between the two tables, should be reported plainly.
+- **Main question:** Do the five career-preference rankings predict who later does Social Impact Work beyond what batch alone explains? The paired AUC gain answers this. AUC is the chance that a randomly chosen SIW participant is scored higher than a randomly chosen non-SIW participant. 50% is a coin flip, and a gain near zero means the rankings add little.
+- **Permutation test:** The p-value shows whether the gain could plausibly arise by chance when labels are shuffled within each batch.
+- **Calibration:** This shows whether predicted probabilities are trustworthy. Class weighting pushes them above the 40.23% base rate, so they are better read as rankings than as literal risks.
+- **Coefficients:** These show which rankings matter and in which direction, and how stable that is across folds. The two NGO-related items overlap and may split or mask each other's effect.
+- **Top-tertile capture:** This shows how many of the 103 SIW participants land in the top third of scores, compared with the 33.3% expected by chance and with the batch-only model.
+
+All of this describes predictive association in single-arm observational data, not causal effects. Batch is controlled because later batches have had less time to show outcomes (censoring). If you can share the output, or confirm the analysis has been re-run, I'll write up the actual results.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #4</span> Audited Re-Run of the Training-Only Screening Score: Ridge Logistic vs Batch-Only Baseline with Cohort Funnel, Failure Checks and a Go/No-Go Gate for the Hold-Out
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1) LOAD/CAST: Find both tables by filename. Cast Participant_Id to String in both, and cast Workshop_Name and Workshop_Phase to String. Filter the questionnaire to Workshop_Phase === 'Pre' &amp;&amp; parseFloat(Workshop_Level) === 0.1, then de-duplicate to one row per Participant_Id. Inner-join to demographics using a JS Map keyed on the string ID, and take Workshop_Batch_Number from demographics.
+2) COHORT FUNNEL WITH ASSERTIONS: Log counts after each stage: Pre/0.1 rows, de-dup, join, non-null status, Age_At_Workshop &gt; 0, batches 10-14 before exclusion (expect ≈651), exclusion of Student/Not Sure (expect 256 with 103 positives), and dropNa on the five ranks. Each stage is wrapped in a try/catch that records the failing stage name. If N ≠ 256 or positives ≠ 103, do not abort. Instead, return a mismatch table, broken down by batch and by Current_Status_Of_Work, showing which filter (Age_At_Workshop &gt; 0, rank NaNs, batch source) causes the gap. Assert that no row has batch ≥ 15 in the training frame. Report the sealed test count (expect 186) without computing any label statistics on it.
+3) CLEANING: For all five rank items, set 0 to NaN, set values &gt; 8 to NaN, then compute 9 − rank. Code the target as 1 for 'Social Impact Work' and 0 for Previously SIW, Educational Break, Other Work and Different Trajectory, and state this label assignment. Do not use leakage fields (Workshops_Attended_Count, Point_2/3, Person_Years_Of_Social_Action).
+4) MODELS: Implement logistic regression in plain JS, either as batch gradient descent or Newton/IRLS, with an L2 penalty on the non-intercept weights (λ chosen from {0.01, 0.1, 1, 10} by inner 5-fold CV on the first repeat, then fixed). Use class weights w_pos = N/(2·N_pos) and w_neg = N/(2·N_neg). Model A uses batch one-hot dummies with batch 10 as the reference. Model B uses the five standardised ranks plus the batch dummies. Model C uses the five standardised ranks only. Compute z-score means and SDs from the training folds only. Use a seeded PRNG (mulberry32) to run 20 repetitions of stratified 5-fold CV, with folds stratified jointly on SIW × batch. Collect out-of-fold (OOF) probabilities in each repeat.
+5) METRICS: Compute the Mann-Whitney AUC of the OOF predictions per repeat for A, B and C, and the paired ΔAUC (B−A) per repeat. Report the mean and the 2.5/97.5 percentiles across repeats, plus a participant-level bootstrap of 1,000 resamples of the repeat-1 OOF predictions for a less optimistic CI. Run a within-batch permutation test: 200 shuffles of the labels within each batch, with the full CV (1 repeat) re-run each time to obtain the null distribution of ΔAUC. Use p = (count ≥ observed + 1)/(201). For calibration, report the Brier score, a calibration intercept and slope from logit(p_oof) regressed on the outcome, and observed vs mean-predicted rates by score tertile. Note that class weights inflate predicted probabilities, so scores should be read as ranks. For coefficient stability, collect 100 fits (20×5) and report each feature's mean, SD and % sign agreement. Report the correlation between the two NGO items and the joint distribution of their coefficients, showing whether one absorbs the other's weight. For top-tertile capture, report the share of the 103 SIW participants falling in the top third of OOF scores, for A, B and C, against the 33.3% expected by chance.
+6) GATE AND GUARD: Assemble the result object. Before returning, assert that it is non-null and that the funnel, metrics, coefficients and gate fields are all defined. If not, return {error, failedStage, partialCounts}. Include base rate, effective N, censoring note and association-not-causation caveat strings.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                The cohort is the 256 training participants (batches 10-14, Point-1 Pre answers, Student and Not Sure excluded, 103 SIW, base rate 40.23%), and the pipeline must be verified to reproduce exactly these counts. On this cohort, does a class-weighted, L2-penalised logistic regression on the five inverted ranks rank later-SIW participants above non-SIW participants better than chance? Two versions are tested: Model B uses the ranks plus batch dummies, and Model C uses the answers only. The comparison is against a batch-only Model A under 20x repeated stratified 5-fold CV. The five ranks are Career_Preference_Working_In_Ngo, Career_Preference_Academia, Career_Preference_Private_Industry_Job, Career_Preference_Social_Entrepreneurship_Or_Ngo and Life_Criteria_Cause_Of_Work. The analysis reports: (1) the paired AUC gain with a 95% CI; (2) a within-batch label-permutation p-value; (3) calibration; (4) fold-wise coefficient stability, including how the two NGO items split their weight; and (5) top-tertile capture of SIW participants. Batches 15-17 must not be touched.
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Lock ranks-only Model C, stress-test ranking stability</strong>: <span style="color:#64748b;">Adopt Model C (five ranks, no batch) as the single candidate score. Batch showed no signal and slightly hurt when added. Run the planned Step 5 checks entirely on rank-based metrics (AUC and top-third capture/lift), because the probabilities are miscalibrated. The checks are: (a) leave-one-batch-out training with scoring on the left-out batch, plus per-batch AUC; (b) AUC and top-third lift for women vs men and across education streams, with bootstrap CIs and minimum cell sizes reported, since N = 256 makes subgroups small; (c) a censoring sensitivity analysis that re-fits after excluding the most recent batch(es) and checks whether NGO, academia, social-entrepreneurship and private-industry coefficients keep their signs. End with a weighting rule: use the score only as a tie-breaker or minor component unless the lower CI bound of lift stays above 1 in every check.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Keep the Clue That Works, Then Shake It Hard &mdash; <em>In plain words: we keep only the score built from people's career-wish rankings, drop the useless group information, and only use the score to put people in order, not to give anyone a percentage. It's like picking the one recipe that tasted best, then cooking it in different kitchens for different guests to see if it still comes out right.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Recalibrate probabilities before fairness checks</strong>: <span style="color:#64748b;">Before testing fairness, refit Model C without balanced class weighting. Then apply nested-CV calibration (Platt scaling or logistic recalibration of the out-of-fold logit) so the mean prediction matches the 40% base rate and the calibration slope moves toward 1. Run the Step 5 subgroup and batch checks on both ranking (AUC, lift) and calibration (calibration-in-the-large and slope per subgroup). This matters if selectors will ever see a percentage, because a score can rank fairly but still systematically over-predict for one group.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Fix the Bathroom Scale First &mdash; <em>In plain words: the score is decent at saying who is more likely than whom, but the chances it gives are too high. For example, it said about 70% for some people when only about half of them actually went into social-impact work. We would fix those numbers first. It's like a bathroom scale that always reads 5 kg too heavy: it still tells you who is heavier, but you fix it before telling anyone their weight.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Build a transparent 4-item rank score</strong>: <span style="color:#64748b;">Drop the weak and unstable 'cause of work' item (only 90% sign consistency). Compare ridge Model C against a simple, explainable score that adds the inverted NGO, academia and social-entrepreneurship ranks and subtracts the private-industry rank, using unit or rounded weights. If the simple score's AUC and top-third lift are within the CI of Model C, prefer it for selection, since committees can audit it. Then run the same batch, sex, education-stream and censoring checks on the simple score. Because the rank items are ipsative (forced trade-offs), also check that a single contrast, such as NGO minus private industry, does not carry most of the signal.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Swap the Black Box for a Simple Checklist &mdash; <em>In plain words: instead of a computer-made formula, we try a simple tally anyone can understand. You get points for ranking NGOs, academia and social entrepreneurship highly, you lose points for ranking private companies highly, and we drop the one shaky question. It's like replacing a fancy coffee machine with a pour-over: if the coffee tastes almost the same, everyone can see exactly how it's made.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Audit cohort attrition and censoring bias first</strong>: <span style="color:#64748b;">The analysis cohort shrank from 651 joined participants in Step 2 to 256 with usable outcomes. Before judging stability, compare the excluded participants against the analyzed ones on batch, sex, education stream and the five rank items. Then model outcome availability, for example with inverse-probability-of-observation weights, and re-estimate Model C's AUC and lift with those weights. Also tabulate SIW rates by follow-up time for each batch to measure how much the recent batches' outcomes are under-counted. If attrition or censoring is strongly tied to the ranks, the Step 4 lift could be biased, so this should be resolved before recommending any selection weight.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check Who Left the Room &mdash; <em>In plain words: we started with 651 people but only knew how things turned out for 256 of them. Also, the newest groups haven't had much time to start social-impact careers yet. Before trusting the results, we check whether the people we're missing were different. It's like judging a restaurant only by the diners who stayed for dessert: you need to know whether the ones who left early were different.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Lock ranks-only Model C, stress-test ranking stability</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 3 produced no output (the result was 'undefined'), so there is still no training-set evidence that the five inverted ranks add anything beyond batch. Spending the one-time hold-out on batches 15-17 now would risk running a broken or mis-filtered pipeline on the test set. Following the steering choice, Step 4 becomes a defensive re-run of the Step 3 ridge/repeated-CV comparison. It adds hard assertions, a logged cohort funnel that reconciles 2,157 → 720 → 651 → 256 (the 651 is batches 10-14 before Student/Not Sure are excluded), a sealed test set, and an explicit go/no-go gate that decides whether the hold-out lift test (moved to Step 5) is justified.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                The cohort rebuilt exactly as specified: N = 256, 103 positives (40.23%), and the two tables agree on batch for every participant. The five rank items had no zeros or values above 8, so no rows were lost at that step. &quot;Educational Break&quot; is coded as not Social Impact Work (y = 0), along with Previously SIW, Other Work and Different Trajectory.
+
+Models using the career-preference ranks have modest but real predictive signal. Batch alone has none. Out-of-fold AUC, where 0.5 is a coin flip and 1.0 is perfect, averaged 0.651 for Model C (ranks only), 0.628 for Model B (ranks plus batch) and 0.459 for Model A (batch only). A scoring below 0.5 means batch carries no usable signal. The headline &quot;gains&quot; over A (+0.17 to +0.19 across repeats) are therefore inflated, because A sits below chance. The fairer reading is that C and B are about 0.13–0.15 above 0.5. Adding batch to the ranks did not help, since B is slightly below C. The within-batch permutation test supports a real signal. Shuffling labels inside each batch gave a null AUC for C of about 0.49, and none of the 1,000 shuffles matched the observed values (p ≈ 0.001, the smallest the test can report). Each shuffle was re-run with 5 CV repeats, not 20. In the top-third test, Model C captured about 46% of the 103 SIW participants (roughly 47) versus 33% by chance, a lift of 1.39. B captured 43% (lift 1.29) and A about 33.5% (lift 1.0, no better than chance). Among the ranks, interest in working in an NGO is the strongest positive driver. Academia and social entrepreneurship/NGO also point toward SIW, and ranking private industry highly points away from it. Signs were consistent in at least 99% of the 100 fits for those four items. The &quot;cause of work&quot; item is weak and less stable (90% consistent). NGO and social-entrepreneurship items do not compete for weight. They are barely correlated (r ≈ 0.08), neither flips sign, and NGO takes about two-thirds of their combined weight (66–68%).
+
+The predicted probabilities themselves should not be taken at face value. Balanced class weighting pushes them upward, so the average prediction is about 0.49 against a true rate of 0.40. The models are also overconfident (calibration slopes of 0.66 for B and 0.79 for C, where 1.0 is ideal). In the top quintile, B predicted about 70% but about 51% were actually SIW. Brier scores (0.234–0.239, where lower is better) are barely better than the 0.24 from always guessing the base rate. Use the models to rank people, not to quote risk percentages. The participant-level bootstrap intervals for AUC are wide (C: 0.59–0.72). All of this is predictive association in single-arm observational data, not causation. N is small, batches 10–14 have different follow-up times (so their outcomes are censored differently), and rank items are ipsative: ranking one item higher forces others lower, so they are not independent.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #5</span> Frozen Ranks-Only Model C: One-Shot Hold-Out Lift on Batches 15-17, Leave-One-Batch-Out and Rolling-Origin Stability, Censoring Sensitivity, Gender and Education-Stream Fairness, and a Pre-Registered Weighting Gate
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">0. **Rebuild and assert the cohort.** Cast Participant_Id to string in both frames. Keep Workshop_Phase 'Pre' and parseFloat(Workshop_Level) === 0.1. Join to Demographics on Participant_Id and use the demographics batch number for batches 10-17. Require Age_At_Workshop &gt; 0 and report how many rows this drops. For each rank item, set 0 to NaN and values above 8 to NaN, invert as 9 - rank, then dropNa. Exclude 'Student' and 'Not Sure'. Set y = 1 for 'Social Impact Work' and y = 0 for Previously SIW, Educational Break, Other Work and Different Trajectory. Assert train N = 256 / 103 positives and test N = 186 / 96 positives, and print the funnel. If the age filter changes the counts, report the new effective N and base rates and continue. Do not stop silently. Use a seeded RNG (mulberry32, fixed seed) for all resampling. Wrap each block in try/catch and return partial results with an error field, so the output is never 'undefined'.
+
+1. **Frozen Model C.** Implement logistic regression in plain JS or TF.js using batch gradient descent or IRLS. Standardise each feature with the training mean and SD only. Use an L2 penalty equal to the Step 4 lambda (default lambda = 1.0 on standardised features if it is not recoverable, and state which value was used). Use balanced class weights w_pos = N / (2·n_pos) and w_neg = N / (2·n_neg). Report standardised coefficients. Re-confirm training performance with stratified 5-fold CV (10 repeats): out-of-fold AUC and recall at the top-third cutoff, with no accuracy reported.
+
+2. **One-shot hold-out.** Fit on all 256 training participants and score the 186 hold-out participants once. Rank by score, breaking ties by Participant_Id string order. Use cutoffs top 20% = ceil(0.2n), top third, top 40% and bottom 20%. For each band report: n, number of SIW, SIW rate, lift = band rate / hold-out base rate, and capture (share of all hold-out SIW in the band). Note the lift ceiling of 1 / 0.5161 = 1.94. Report AUC using Mann-Whitney with tie handling. Report recall and precision at the top-20% and top-third cutoffs.
+
+3. **Uncertainty and the no-skill baseline.** Run 1,000 participant-level bootstrap resamples of the hold-out, stratified by y, and recompute AUC and each band's lift. Report percentile 95% CIs and the share of resamples where top-20% lift is above 1 and top-third lift is above 1. Then shuffle scores 1,000 times to build a random-selection null for top-20% lift. Report the null mean (about 1.0), its 2.5-97.5th percentiles and the empirical p-value.
+
+4. **Leave-one-batch-out within 10-14.** For each batch b in 10-14, train on the other four training batches and score batch b. Report per-batch n, positives, AUC and top-third lift. Mark AUC as unreliable if a batch has fewer than 10 positives or fewer than 10 negatives. Then pool the out-of-batch predictions, rank within each batch so batches with different base rates are not mixed, and report pooled AUC and top-third lift with a 1,000-resample bootstrap CI.
+
+5. **Forward rolling origin.** Run three splits: train 10-13 → test 14; train 10-14 → test 15; train 10-15 → test 16-17. Report AUC, top-20% lift and top-third lift with bootstrap CIs for each. Within the main hold-out, also report AUC for batches 15, 16 and 17 separately.
+
+6. **Censoring sensitivity.**
+   - (i) Re-fit Model C on batches 10-12 only and on batches 10-13 only, and score the full hold-out each time.
+   - (ii) Score the main model on the hold-out excluding batch 17 (batches 15-16).
+   - (iii) Report a coefficient sign table for the four key items (NGO +, academia +, social entrepreneurship +, private industry −) across all fits: the full fit, the 5 LOBO fits, the 3 rolling fits and the 2 censoring fits. Also report each sign's consistency over 200 bootstrap re-fits of the full training set.
+   - (iv) As a supplementary check, compute exposure_years = Current_Age − Age_At_Workshop (both &gt; 0) and report hold-out AUC within exposure-years tertiles. State the N lost to missing ages.
+
+7. **Fairness.** Use two prediction sets: the hold-out predictions and the pooled LOBO predictions. For each Gender value (FEMALE, MALE) and each Educational_Stream_Category value (Arts/Commerce/Science/Pharmacy, Engineering, Medical, Other), report:
+   - N, number of positives and base rate;
+   - share of the group flagged in the top third and top 20%, and the selection ratio (group share flagged / overall share flagged);
+   - recall within the group, and the recall ratio relative to the best group;
+   - precision within the group and top-third lift relative to the group's own base rate, with a 1,000-resample bootstrap CI;
+   - AUC, computed only if the group has at least 20 people and at least 5 positives and 5 negatives; otherwise mark it 'insufficient N'.
+   Flag any group with N &lt; 20 as unreliable. Flag a recall ratio or selection ratio below 0.8 as a potential disparity.
+
+8. **Monotonicity in place of calibration.** Split the hold-out into score quintiles and report n, number of SIW and observed SIW rate per quintile. Report the Spearman correlation between quintile index and SIW rate and whether the rates are monotone. Do not quote predicted probabilities as risks, and state that they are inflated by class weighting.
+
+9. **Pre-registered gate.**
+   - 'Helpful prioritisation aid' requires all of: the lower 95% CI of top-20% and top-third lift is above 1 on the hold-out; pooled LOBO top-third lift has a lower CI above 1; the 15-16 hold-out (batch 17 excluded) has a lower CI above 1; the four key coefficient signs are stable in at least 90% of fits; and no adequately sized subgroup has a recall ratio or selection ratio below 0.8.
+   - 'Tie-breaker / minor component' applies if the point lift is above 1 in most checks but any lower CI is at or below 1.
+   - 'Do not use' applies if the hold-out AUC CI includes 0.5 and the top-20% lift CI includes 1, or if a material subgroup disparity exists.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Model C is a class-weighted L2 logistic regression on the five inverted ranks with no batch term. It is frozen and trained once on the 256 training participants (batches 10-14, 103 SIW, base rate 40.23%) and then scored once on the untouched 186 hold-out participants (batches 15-17, 96 SIW, base rate 51.61%). The ranks are Career_Preference_Working_In_Ngo, Career_Preference_Academia, Career_Preference_Private_Industry_Job, Career_Preference_Social_Entrepreneurship_Or_Ngo and Life_Criteria_Cause_Of_Work. The sub-question has five parts. (a) Does Model C rank later-SIW participants above non-SIW participants in the hold-out, judged by AUC with a 95% CI, recall at the top-20% and top-third cutoffs, and lift for the top 20%, top third, top 40% and bottom 20% against both the hold-out base rate and a random-selection null? (b) Is this ranking stable under leave-one-batch-out refits within batches 10-14, under forward rolling-origin splits, and within each hold-out batch? (c) Does it survive censoring sensitivity, meaning re-fits that drop the most recent training batches and a hold-out that excludes batch 17 (N = 23)? Do the NGO, academia, social-entrepreneurship and private-industry coefficients keep their signs throughout? (d) Is it similar for FEMALE vs MALE and across Educational_Stream_Category groups, given minimum cell sizes? (e) Given all of this, does the lower 95% CI of lift exceed 1 in every check, which would earn the score 'prioritisation aid' status rather than 'tie-breaker only' or 'do not use'?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Audit the outcome funnel and recover hold-out labels</strong>: <span style="color:#64748b;">Trace every participant from 2,157 Pre rows to 1,219 with complete ranks, then 544 with a usable outcome, then 256 in training plus 12 in the hold-out. About 276 usable-outcome rows are unaccounted for. That gap, plus the shortfall from the 186-person hold-out the spec expected, suggests a join, batch-key or outcome-coding problem, not only censoring. Specifically: (a) cross-tab outcome status (SIW, non-SIW, Student, Not Sure, Previously SIW, Educational Break, missing) by batch 10–17; (b) check the demographics-to-questionnaire join for batches 15–17, since the demographics file may cover only batches 10–14; (c) find where the spec's 186/96 figures came from and which labelling produced them; (d) look for any later follow-up survey that could fill in batch 16–17 outcomes. Keep Model C's coefficients frozen and re-run the one-shot hold-out only if the recovered hold-out reaches a pre-set minimum, such as 60 people with 20 or more SIW. This is the cheapest way to turn an unevaluable result into a real test without breaking the pre-registration.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Find the Missing Test Papers &mdash; <em>A teacher planned to grade 186 exams but finds only 12 on the desk. Before deciding anything about the class, she checks the other classroom, the photocopier and the lost-and-found. The missing papers may have been misfiled rather than never written.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Reframe as time-to-SIW survival model</strong>: <span style="color:#64748b;">Many recent participants are still students or 'Not Sure', so treating them as excluded throws away information and biases the sample toward older batches. A discrete-time hazard model, or a Cox model on time since programme or graduation, treats them as right-censored instead. Batches 10–17 can then all contribute. The same five inverted rank items stay as predictors. Evaluate with batch-blocked cross-validation using Harrell's C and time-dependent AUC at a fixed horizon, for example 3 years. This uses the data more honestly, but it is a new model, so it needs its own pre-registered gate and a fresh, untouched evaluation batch.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Count the Runners Still on the Track &mdash; <em>Picture judging a marathon where many runners haven't finished yet. Instead of ignoring them, you note how far each has run so far and use that information too, so you don't only learn from the people who finished early.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Diagnose fairness gap for women and Medical</strong>: <span style="color:#64748b;">Out-of-fold AUC was 0.74 for Engineering and 0.69 for men, but only 0.58 for women and 0.55 for Medical students. Before any future deployment, find out why. Possible reasons: rank-item distributions differ by group (for example, academia preference may mean something different for Medical students); base rates differ; or the 'cause of work' item behaves inconsistently. Run calibration-in-the-large and slope by subgroup. Test gender×rank and stream×rank interactions with strong shrinkage, and do the qualitative check on academia's positive sign. Treat this as diagnostic only: subgroups are small, so any adjustment must be confirmed later on a matured hold-out.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check If the Ruler Is Bent for Some Groups &mdash; <em>Think of a shoe-size chart that fits most feet but pinches for some people. Before selling the shoes, you work out whose feet it doesn't fit and why, so nobody ends up with blisters.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Retire as screening tool; publish associations</strong>: <span style="color:#64748b;">Accept the 'do not use' verdict and stop chasing predictive performance for now. Write up Model C as a descriptive finding: preferences for NGO, academia and social entrepreneurship go with later SIW, and private-industry preference goes against it, with stability and fairness caveats. Pre-register a dated re-test once batches 16–17 have mature outcomes, with the frozen coefficients, metrics, sample-size floor and gate locked now. This avoids overfitting through repeated looks, but delivers no usable tool in the near term.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Write Down the Clue, Wait for the Proof &mdash; <em>It's like sealing your prediction for the championship in an envelope and only opening it when the season is over, instead of declaring a winner after two games.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Audit the outcome funnel and recover hold-out labels</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 4 found a modest but real training-only ranking signal for the ranks-only Model C (out-of-fold AUC about 0.65, bootstrap CI 0.59-0.72, permutation p about 0.001, top-third lift 1.39). It also found that batch adds nothing and that the class-weighted probabilities are inflated and overconfident (mean prediction 0.49 vs a 0.40 base rate, calibration slope 0.79). Step 5 is therefore re-planned around a frozen Model C and uses only rank-based metrics (AUC, recall at a cutoff, top-20%, top-third, top-40% and bottom-20% capture and lift). The predicted-vs-actual calibration table is replaced by an observed-rate-by-quintile monotonicity check. The steering's leave-one-batch-out, subgroup and censoring checks are added alongside the originally required one-shot time-aware hold-out on batches 15-17. The step ends with the steering's explicit gate: the score earns more than tie-breaker weight only if the lower 95% CI of lift stays above 1 in every check.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **Bottom line: the classification is &quot;do not use&quot; for now.** The training data matched the spec exactly: 256 people, 103 in Social Impact Work (SIW), a 40.23% base rate. The hold-out did not. Instead of 186 people (96 SIW, with 23 in batch 17), only 12 people (5 SIW) were left, all from batch 15. Batches 16 and 17 had no usable labelled rows. No alternative way of labelling &quot;Previously SIW&quot; or &quot;Educational Break&quot; fixed this, so I used the strict primary mapping (both count as non-SIW). The likely cause is that most recent-batch participants are still students or &quot;Not Sure&quot; and were excluded as censored. Of the 2,157 Pre-phase participants, 1,219 had complete rank data, and 544 of those had a usable outcome. The hold-out AUC of 0.80 looks good, but it rests on 12 people. AUC is the chance that a random SIW person is scored higher than a random non-SIW person, where 0.5 is a coin flip. Its 95% confidence interval runs from about 0.5 to 1.0, and the top-20% lift of 1.6 (the top slice has 1.6 times the average SIW rate) is statistically indistinguishable from random picking (p ≈ 0.37). The AUC interval touches 0.5, which triggers &quot;do not use&quot; under your rule.
+
+**The model's direction is sensible, but its ranking power is modest and unstable.**
+- **What the model says:** Higher preference for NGO work (+0.41), academia (+0.33) and social entrepreneurship (+0.21) goes with a higher chance of later SIW. Preference for private industry goes the other way (−0.20), and &quot;cause of work&quot; is weak (+0.08). This is association, not causation. Academia's positive sign is a bit surprising and is worth a qualitative look.
+- **Stability across batches:** In the leave-one-batch-out and rolling tests, AUC ranged from 0.46 to 0.73. Top-20% lift was often around 1.4–1.9, but its lower confidence bound exceeded 1 in only 3 of the 9 adequately sized checks. The other 10 checks had only 12 people or fewer, so they are shown but not counted. Only the 3 passing checks cleared the bar.
+- **Coefficient signs:** Dropping the most recent training batches did not flip the NGO, academia, social-entrepreneurship or private-industry signs. The few flips came from very small early training sets, and the &quot;cause&quot; sign flipped in some refits.
+- **Subgroups:** Hold-out subgroups were too small and were suppressed. Using out-of-fold training predictions as a secondary look, the score worked best for Engineering (AUC 0.74) and men (0.69). It was weak for women (0.58) and Medical students (0.55), which raises a fairness concern.
+
+The next step is to recover the missing batch 16–17 outcomes, or wait until they mature, and then re-test.
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 6. PROJECT DATASET COLUMN REFERENCE BANK (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #475569;">6</span>
+          <span>6. Project Dataset Column Reference Bank (210 Columns)</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 12.5px; color: #64748b; margin: 0 0 12px 0;">
+          Columns detected in your uploaded dataset. You can cut and paste any of these column names into subsequent questions:
+        </p>
+        <div>
+          <span class="pill">Participant_Name</span><span class="pill">Participant_Id</span><span class="pill">Gender</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Current_Age</span><span class="pill">Age_At_Workshop</span><span class="pill">Workshop_Name</span><span class="pill">Workshop_Type</span><span class="pill">Workshop_Month_Year</span><span class="pill">Workshop_Month_Name</span><span class="pill">Workshop_Month_Number</span><span class="pill">Workshop_Financial_Year</span><span class="pill">Workshops_Attended_Count</span><span class="pill">Educational_Stream</span><span class="pill">Educational_Stream_Category</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Person_Years_Of_Social_Action</span><span class="pill">Education_Status</span><span class="pill">Native_State</span><span class="pill">Native_District</span><span class="pill">Native_Tehsil_Town</span><span class="pill">Raw_Native_State</span><span class="pill">Raw_Native_District</span><span class="pill">Raw_Native_Tehsil</span><span class="pill">State_Match_Status</span><span class="pill">District_Match_Status</span><span class="pill">Tehsil_Match_Method</span><span class="pill">Point_2_Workshop_Name</span><span class="pill">Point_2_Workshop_Invited</span><span class="pill">Point_2_Workshop_Attended</span><span class="pill">Point_3_Workshop_Name</span><span class="pill">Point_3_Workshop_Invited</span><span class="pill">Point_3_Workshop_Attended</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Career_Preference_Government_Service</span><span class="pill">Career_Preference_Private_Industry_Job</span><span class="pill">Career_Preference_Own_Business</span><span class="pill">Career_Preference_Social_Entrepreneurship_Or_Ngo</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Career_Preference_Academia</span><span class="pill">Career_Preference_Undecided</span><span class="pill">Career_Preference_Other</span><span class="pill">Life_Criteria_Geographical_Location</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Life_Criteria_Work_Satisfaction</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Life_Criteria_Career_Growth</span><span class="pill">Life_Criteria_Work_Life_Balance</span><span class="pill">Life_Criteria_Financial_Prosperity</span><span class="pill">Life_Criteria_Fame_And_Recognition</span><span class="pill">Life_Criteria_Job_Security</span><span class="pill">Insecurity_Social_Acceptability</span><span class="pill">Insecurity_Monetary_Compensation</span><span class="pill">Insecurity_Parental_Response</span><span class="pill">Insecurity_Suitable_Life_Partner</span><span class="pill">Insecurity_Underutilized_Talent_And_Skills</span><span class="pill">Insecurity_Less_Comfortable_Lifestyle</span><span class="pill">Insecurity_No_Visible_Impact</span><span class="pill">Insecurity_Professionally_Left_Out</span><span class="pill">Insecurity_Lack_Of_Life_Satisfaction</span><span class="pill">Insecurity_Future_Comfort_Reduction</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Mindset_Happiness_And_Self_Esteem</span><span class="pill">Mindset_Understands_Social_Issues_And_Severity</span><span class="pill">Mindset_Has_Life_Purpose</span><span class="pill">Mindset_Clear_Long_Term_Sector</span><span class="pill">Mindset_Knows_Personal_Values</span><span class="pill">Mindset_Has_Mentorship_Support_For_Future</span><span class="pill">Mindset_Takes_Stand_On_Social_Issues</span><span class="pill">Mindset_Courage_Against_Conventional_Careers</span><span class="pill">Mindset_Knowledge_Of_Social_Problem_Solving_Approaches</span><span class="pill">Mindset_Reads_Moral_And_Political_Philosophy</span><span class="pill">Mindset_Translates_Social_Intentions_To_Action</span><span class="pill">Mindset_Knows_Swa_Dharma</span><span class="pill">Financial_Attitude_Secure_About_Future</span><span class="pill">Mindset_Social_Change_Responsibility</span><span class="pill">Mindset_Has_Like_Minded_Peer_Network</span><span class="pill">Mindset_Found_Life_Purpose</span><span class="pill">Mindset_Aware_Of_Personal_Motivations_For_Social_Action</span><span class="pill">Mindset_Career_Social_Work_Integration</span><span class="pill">Mindset_Active_Meaning_Making</span><span class="pill">Mindset_Has_Larger_Social_Dream</span><span class="pill">Mindset_Belongs_To_Caring_Community</span><span class="pill">Mindset_Understands_Social_Problem_Solving_Vs_Work</span><span class="pill">Mindset_Has_Failure_Support_System</span><span class="pill">Mindset_Finds_Social_Problem_Solving_Exciting</span><span class="pill">Mindset_Visualizes_Self_As_Changemaker</span><span class="pill">Mindset_Social_Engagement_Crucial_For_Meaning</span><span class="pill">Mindset_Has_Inspiring_Social_Role_Models</span><span class="pill">Mindset_Social_Self_Efficacy_Confidence</span><span class="pill">Mindset_Understands_Happiness_Vs_Meaning</span><span class="pill">Mindset_Emotionally_Mature_Adult</span><span class="pill">Mindset_Acknowledges_Personal_Privilege</span><span class="pill">Mindset_Distinguishes_Needs_Vs_Wants</span><span class="pill">Mindset_Visualizes_Future_Youth_Inspiration</span><span class="pill">Mindset_Has_Guiding_Life_Philosophy</span><span class="pill">Mindset_Confident_In_Life_Experimentation</span><span class="pill">Mindset_Has_Reflection_Opportunities</span><span class="pill">Metric_Life_Satisfaction_Global</span><span class="pill">Mindset_Believes_Morals_Are_Absolute</span><span class="pill">Mindset_Comfortable_Expressing_Feelings</span><span class="pill">Mindset_Prosocial_Purpose_Boosts_Wellbeing</span><span class="pill">Mindset_Understands_Flourishing_Youth_Meaning</span><span class="pill">Mindset_Understands_Scientific_Purpose_Definition</span><span class="pill">Mindset_Excited_By_Life_Possibilities_In_20s</span><span class="pill">Mindset_Purpose_Finding_Is_Urgent_Priority</span><span class="pill">Mindset_Understands_Happy_Vs_Meaningful_Life</span><span class="pill">Mindset_Understands_Goal_Vs_Purpose</span><span class="pill">Financial_Attitude_Money_Equals_Happiness</span><span class="pill">Mindset_Applies_Categorical_Moral_Framework</span><span class="pill">Mindset_Excited_By_Purpose_Pursuit_Process</span><span class="pill">Financial_Attitude_Unbothered_By_Future_Earnings</span><span class="pill">Mindset_Privilege_Implies_Obligation</span><span class="pill">Mindset_Values_Work_Freedom_Over_Financial_Gain</span><span class="pill">Mindset_Understands_Purpose_Importance_And_Benefits</span><span class="pill">Mindset_Social_Contribution_Is_Deepest_Quest</span><span class="pill">Mindset_Knows_Impactful_Organisation_Functioning</span><span class="pill">Mindset_Inspired_By_Known_Changemakers</span><span class="pill">Mindset_Visualizes_Social_Sector_Contribution</span><span class="pill">Financial_Knows_Threshold_Vs_Aspirational_Income</span><span class="pill">Mindset_Alcohol_Safe_Within_Limits</span><span class="pill">Action_Identified_Books_To_Read</span><span class="pill">Action_Plan_Reduce_Carbon_Footprint</span><span class="pill">Action_Plan_Personal_Flourishing_6_Months</span><span class="pill">Action_Plan_Social_Contribution_6_Months</span><span class="pill">Action_Plan_Purpose_Journey</span><span class="pill">Mindset_Knows_How_To_Become_Flourishing_Youth</span><span class="pill">Mindset_Visualizes_Five_Career_Paths</span><span class="pill">Mindset_Spends_Day_In_Meaningful_Pursuits</span><span class="pill">Mindset_Committed_To_Social_Change</span><span class="pill">Mindset_Has_Mentor_For_Life_Matters</span><span class="pill">Mindset_Has_Guiding_Philosophy</span><span class="pill">Mindset_Can_Analyse_Social_Change_Intervention</span><span class="pill">Financial_Attitude_Anxiety_About_Aspirations</span><span class="pill">Mindset_Knows_Social_Problem_Solving_Building_Blocks</span><span class="pill">Mindset_Clarity_On_Purpose_Finding_Process</span><span class="pill">Mindset_Firm_On_Values_Against_Norms</span><span class="pill">Mindset_Understands_Social_Change_Approaches</span><span class="pill">Mindset_Understands_Purpose_Identification_Urgency</span><span class="pill">Mindset_Has_Values_For_Life_Decisions</span><span class="pill">Mindset_Has_Idea_About_Life_Direction</span><span class="pill">Mindset_Identified_Daily_Moral_Resolutions</span><span class="pill">Action_Plan_Purpose_Journey_1_Year</span><span class="pill">Mindset_Clear_Professional_Life_Sector</span><span class="pill">Action_Plan_Social_Change_Journey_1_Year</span><span class="pill">Mindset_Empowered_As_Active_Citizen_With_State</span><span class="pill">Mindset_Clear_Sense_Of_Purpose</span><span class="pill">Mindset_Visualizes_Five_Life_Possibilities</span><span class="pill">Mindset_Life_Beyond_Materialistic_Pleasures</span><span class="pill">Mindset_Anxiety_About_Finding_Purpose</span><span class="pill">Mindset_Sole_Credit_For_Own_Success</span><span class="pill">Mindset_Youth_In_Social_Sector_Is_Societal_Need</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Opposition</span><span class="pill">Mindset_Follows_Moral_Resolutions</span><span class="pill">Mindset_Distinguishes_Meaning_Vs_Pleasure_Seeking</span><span class="pill">Mindset_Understands_Social_Sector_Need_And_Role</span><span class="pill">Mindset_Courage_To_Live_Authentically</span><span class="pill">Mindset_Thought_Through_Life_Direction</span><span class="pill">Mindset_Life_Choice_Independent_Of_Peers</span><span class="pill">Financial_Knows_Needs_Vs_Aspirational_Income</span><span class="pill">Mindset_Visualizes_Social_Sector_Career_Despite_Norms</span><span class="pill">Mindset_Elevation_Motivates_Social_Action</span><span class="pill">Mindset_Self_Actualization_Linked_To_Society</span><span class="pill">Mindset_Unclear_Needs_Vs_Wants</span><span class="pill">Mindset_Poor_Understanding_Of_Socioeconomic_Issues</span><span class="pill">Mindset_Lacks_Reflection_Opportunities</span><span class="pill">Mindset_Believes_Morals_Are_Relative</span><span class="pill">Mindset_Doubts_Social_Purpose_Wellbeing_Impact</span><span class="pill">Mindset_Parental_Approval_Mandatory_For_Career</span><span class="pill">Mindset_Prefers_Safety_And_Security_Path</span><span class="pill">Mindset_Eco_Friendly_Lifestyle_Changes</span><span class="pill">Mindset_Responsibility_To_Give_Back_To_Society</span><span class="pill">Mindset_Own_Efforts_Over_Birth_Circumstances</span><span class="pill">Mindset_Maximize_Materialistic_Pleasures</span><span class="pill">Mindset_Privilege_Drives_Contribution</span><span class="pill">Mindset_Knows_Ways_To_Help_Those_In_Need</span><span class="pill">Mindset_Compassion_Motivates_Social_Action</span><span class="pill">Mindset_Applies_Value_Based_Decision_Criteria</span><span class="pill">Mindset_Righteous_Anger_Motivates_Social_Action</span><span class="pill">Mindset_Understands_Social_Sector_Unique_Roles</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Others</span><span class="pill">Mindset_Chance_Over_Effort_In_Life_Outcome</span><span class="pill">Mindset_Gratitude_Drives_Social_Contribution</span><span class="pill">Mindset_Moral_Test_For_Life_Decisions</span><span class="pill">Financial_Attitude_Confident_Future_Earnings</span><span class="pill">Mindset_Visualizes_Social_Sector_Career</span><span class="pill">Mindset_Parental_Agreement_Mandatory_For_Decisions</span><span class="pill">Mindset_Values_Harmony_With_Nature</span><span class="pill">Mindset_Inspired_To_Create_Social_Impact</span><span class="pill">Mindset_Excited_About_Life_Purpose_Discovery</span><span class="pill">Mindset_Committed_To_Social_Change_Movement</span><span class="pill">Mindset_Purpose_Is_Meaningful_Social_Difference</span><span class="pill">Mindset_Committed_To_Youth_Social_Change_Community</span><span class="pill">Mindset_Can_Enact_Active_Citizen_Duty</span><span class="pill">Mindset_Preoccupied_With_Safety_And_Security</span><span class="pill">Mindset_Bucket_List_Happiness_Approach</span><span class="pill">Mindset_Daily_Intentional_Purpose_Linked_Living</span><span class="pill">Mindset_Urgency_To_Act_On_Climate_Change</span><span class="pill">Mindset_Loneliness_While_Contemplating_Social_Change</span><span class="pill">Mindset_Income_Inequality_Is_Justified</span><span class="pill">Mindset_Steps_Toward_Independent_Responsible_Adulthood</span><span class="pill">Mindset_Considers_Needs_Before_Purchases</span><span class="pill">Mindset_Values_Growth_Mentors</span><span class="pill">Mindset_Actively_Cultivating_Mentor_Relationship</span><span class="pill">Financial_Expected_Income_Age_25</span><span class="pill">Financial_Expected_Income_Age_30</span><span class="pill">Financial_Planning_Sheet_Income</span><span class="pill">Financial_Planning_Sheet_Income_Halved</span><span class="pill">Financial_Years_To_Independence</span>
+        </div>
+      </div>
+    </details>
+
+    <!-- 7. RISKS, MODEL CONSTRAINTS & GOVERNANCE (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #64748b;">7</span>
+          <span>7. Risks, Model Constraints &amp; Governance</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="margin: 0; font-size: 13px; color: #334155; line-height: 1.65;">
+          1) The hold-out result is missing: no hold-out AUC, lift, stability or fairness numbers are in the evidence, so the score cannot be called a 'prioritisation aid'. 2) The signal is modest: the five-answer score has a cross-validated AUC of about 0.65 and single answers range 0.55-0.63, with heavy overlap between groups. 3) Association, not causation: early answers may reflect background, opportunity or motivation, and the workshop's effect cannot be separated. 4) Censoring: recent batches have had less time to reach SIW, and batch 17 has only 23 people. 5) Selection: about 59% of joined participants in batches 10-14 are students and are not scored, so the results describe participants whose outcome is known, who may differ from those still to be classed. 6) Label choices matter: 'Previously SIW' and 'Educational Break' are counted as non-SIW, and other choices change the base rate (58.6% with Educational Break as positive). 7) The base rate rises from 40.23% in training to 51.61% in the hold-out, so lift is capped at about 1.94 there and is not comparable with training lift. 8) Rank answers are ipsative: raising one option pushes others down. 9) The 'Academia' direction is counter-intuitive and may be a sampling artefact. 10) Small per-batch N and cells make subgroup estimates unstable. 11) Class weighting inflates predicted probabilities, so treat scores as ranks, not risks. 12) The score may entrench existing patterns if used as a hard filter, so it should always support human judgement.
+        </p>
+      </div>
+    </details>
+
+    <!-- Sign-off Footer -->
+    <div class="footer">
+      Generated by <strong>Answer Strategically</strong> &bull; Answer Consistency Engine &bull; Tailored for Easy to understand for College graduate volunteer
+       &bull; Includes 2 Post-Execution Clarifications
+    </div>
+  </div>
+</body>
+</html>

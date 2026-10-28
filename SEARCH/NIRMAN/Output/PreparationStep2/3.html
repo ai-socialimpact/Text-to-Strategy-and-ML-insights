@@ -1,0 +1,2051 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Strategic Action Report — Feasibility test: can Pre-workshop mindset predict who switches to full-time?
+
+Using the prod_nirman_questionnaire table, restrict to Workshop_Level == 0.1 (Point 1) and Workshop_Batch_Number 11-17. Clean it first: set 0 to NaN in scored columns and apply the out-of-range rules. Pair Pre and Post rows per Participant_Id, build is_fulltime_pre and is_fulltime_post from Career_Plan_Social_Action_Engagement == 'Fulltime as a career', and keep only participants with is_fulltime_pre == 0. The target is switched_to_fulltime (is_fulltime_post == 1). Use PRE-phase features only: the theme scores (reverse-coded where listed) for social_commitment_and_changemaker_identity, purpose_and_direction, courage_agency_autonomy, support_community_mentorship, money_attitudes and career_criteria_importance (Life_Criteria_Cause_Of_Work inverted so higher means more important), plus Gender, Age_At_Workshop (&gt;0), Educational_Stream_Category and Workshop_Batch_Number from prod_nirman_demographics (join on Participant_Id as a string). Report the effective N after the merge and dropNa, and the base rate of switchers. Fit two class-weighted, L2-regularised logistic regressions with stratified 5-fold cross-validation: (A) demographics only, (B) demographics plus Pre mindset themes. Compare AUC, recall and the confusion matrix. Then list the top 5 standardised coefficients from model B. State plainly whether B beats A by a meaningful margin or whether Pre-workshop mindset has no demonstrable predictive power.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      margin: 0;
+      padding: 32px 16px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      padding: 36px 40px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05);
+    }
+    .header {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 22px;
+      margin-bottom: 24px;
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: #e0e7ff;
+      color: #3730a3;
+      border: 1px solid #c7d2fe;
+    }
+    .badge-audience { background: #f3e8ff; color: #6b21a8; border-color: #d8b4fe; }
+    .badge-success { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .badge-consult { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .question-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 14px 0 10px 0;
+    }
+    .question-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    h1.report-question {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+      color: #0f172a;
+      line-height: 1.45;
+    }
+    .subtitle { color: #475569; font-size: 13px; margin-top: 4px; }
+    .audience-note {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: #334155;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 20px 0 28px 0;
+    }
+    .kpi-card {
+      background: #f8fafc;
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .kpi-val { font-size: 24px; font-weight: 800; color: #0f172a; }
+    .kpi-lbl { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-top: 4px; letter-spacing: 0.04em; }
+    .verdict-box {
+      border-left: 5px solid #059669;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left-width: 5px;
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 24px;
+    }
+    .verdict-title { font-size: 18px; font-weight: 800; color: #166534; margin: 0 0 10px 0; }
+    .verdict-text { font-size: 13.5px; color: #1e293b; line-height: 1.65; }
+    details.collapsible-section {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #ffffff;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    details.collapsible-section summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: #f8fafc;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      transition: background 0.15s ease;
+    }
+    details.collapsible-section summary:hover {
+      background: #f1f5f9;
+    }
+    details.collapsible-section[open] summary {
+      background: #f1f5f9;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    details.collapsible-section summary::-webkit-details-marker {
+      display: none;
+    }
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .summary-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    .summary-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .summary-chevron {
+      font-size: 10px;
+      color: #64748b;
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    details.collapsible-section[open] .summary-chevron {
+      transform: rotate(180deg);
+    }
+    .collapsible-body {
+      padding: 20px;
+      background: #ffffff;
+    }
+    .step-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .step-title { font-size: 14.5px; font-weight: 700; color: #0f172a; }
+    .step-num { background: #4f46e5; color: #ffffff; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+    .sub-box { background: #ffffff; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; font-size: 12.5px; color: #334155; }
+    .sub-lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 4px; letter-spacing: 0.04em; }
+    .choice-badge { display: inline-block; padding: 3px 8px; background: #e0e7ff; color: #3730a3; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #c7d2fe; }
+    .replan-badge { display: inline-block; padding: 2px 8px; background: #fae8ff; color: #86198f; border-radius: 6px; font-size: 10px; font-weight: 800; margin-left: 6px; }
+    .rec-card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px 20px; margin-bottom: 18px; }
+    .rec-title { font-size: 15px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .rec-easy { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #14532d; font-size: 13px; line-height: 1.6; }
+    .rec-tech { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #1e3a8a; font-size: 12.5px; line-height: 1.5; }
+    .prompt-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #38bdf8; word-break: break-word; user-select: all; margin-top: 6px; }
+    .pill { display: inline-block; background: #e2e8f0; color: #1e293b; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-family: monospace; font-weight: 700; margin-right: 6px; margin-bottom: 4px; border: 1px solid #cbd5e1; }
+    .inquiry-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .inquiry-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; }
+    .inquiry-query { font-size: 14px; font-weight: 700; color: #0f172a; margin: 4px 0 10px 0; }
+    .inquiry-response { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 13px; color: #1e293b; line-height: 1.6; margin-bottom: 10px; }
+    .chart-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="badge-bar">
+        <span class="badge">Strategic Master Dossier</span>
+        <span class="badge badge-audience">Tailored For: Easy to understand for College graduate volunteer</span>
+        <span class="badge badge-success">Confidence: 30%</span>
+        <span class="badge badge-consult">5 Post-Execution Inquiries Documented</span>
+      </div>
+      <div class="question-block">
+        <div class="question-label">
+          <span>🎯</span>
+          <span>Core Strategic Question</span>
+        </div>
+        <h1 class="report-question">Feasibility test: can Pre-workshop mindset predict who switches to full-time?
+
+Using the prod_nirman_questionnaire table, restrict to Workshop_Level == 0.1 (Point 1) and Workshop_Batch_Number 11-17. Clean it first: set 0 to NaN in scored columns and apply the out-of-range rules. Pair Pre and Post rows per Participant_Id, build is_fulltime_pre and is_fulltime_post from Career_Plan_Social_Action_Engagement == 'Fulltime as a career', and keep only participants with is_fulltime_pre == 0. The target is switched_to_fulltime (is_fulltime_post == 1). Use PRE-phase features only: the theme scores (reverse-coded where listed) for social_commitment_and_changemaker_identity, purpose_and_direction, courage_agency_autonomy, support_community_mentorship, money_attitudes and career_criteria_importance (Life_Criteria_Cause_Of_Work inverted so higher means more important), plus Gender, Age_At_Workshop (&gt;0), Educational_Stream_Category and Workshop_Batch_Number from prod_nirman_demographics (join on Participant_Id as a string). Report the effective N after the merge and dropNa, and the base rate of switchers. Fit two class-weighted, L2-regularised logistic regressions with stratified 5-fold cross-validation: (A) demographics only, (B) demographics plus Pre mindset themes. Compare AUC, recall and the confusion matrix. Then list the top 5 standardised coefficients from model B. State plainly whether B beats A by a meaningful margin or whether Pre-workshop mindset has no demonstrable predictive power.</h1>
+      </div>
+      <div class="subtitle">
+        Project: <strong>NIRMAN</strong> &middot; Generated on 10/28/2026 &middot; Multi-Step Progressive Analytics
+      </div>
+    </div>
+
+    <!-- Audience Note -->
+    <div class="audience-note">
+      <strong>Audience Comprehension Level:</strong> Easy to understand for College graduate volunteer<br/>
+      Clear, structured, professional explanations covering business metrics, proportions, and logic with practical context.
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-val">30%</div>
+        <div class="kpi-lbl">Strategic Confidence</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">5 / 5</div>
+        <div class="kpi-lbl">Empirical Steps Completed</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">Text-to-ML</div>
+        <div class="kpi-lbl">Framework Mode</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">210</div>
+        <div class="kpi-lbl">Dataset Columns Audited</div>
+      </div>
+      
+      <div class="kpi-card">
+        <div class="kpi-val">5</div>
+        <div class="kpi-lbl">Follow-up Clarifications</div>
+      </div>
+      
+      
+      <div class="kpi-card">
+        <div class="kpi-val">4</div>
+        <div class="kpi-lbl">Visual Charts Added</div>
+      </div>
+      
+    </div>
+
+    <!-- 1. STRATEGIC VERDICT & EASY-TO-UNDERSTAND TAKEAWAYS (PROMINENT AT TOP) -->
+    <div class="verdict-box">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #047857; margin-bottom: 4px;">
+        1. Strategic Verdict &amp; Easy-to-Understand Takeaways
+      </div>
+      <div class="verdict-title">Not yet determined: the cohort is solid (N=1,085, 39.72% switchers), but no Model A or Model B result was produced, so we can neither claim Pre-workshop mindset predicts switching nor claim it has no power. The next run must fix the missing-value fault and report the A-vs-B comparison.</div>
+      <div class="verdict-text">
+        The feasibility test is unfinished, so it cannot yet say whether Pre-workshop mindset predicts who switches to full-time. We confirmed the study group: 1,085 participants from Point 1, batches 11-17, were not full-time before the workshop, and 431 of them (39.72%) said 'Fulltime as a career' afterwards. That is a healthy minority class for a prediction test, with plenty of both groups.
+
+No model result exists after that. Step 2's attempt to join demographics and drop missing values left 0 rows, which shows a pipeline fault, not a finding. Steps 3, 4 and 5 were designed to repair this and run Model A (demographics only) and Model B (demographics plus mindset), but they returned no results. So we have no AUC, no recall, no confusion matrix and no top-5 coefficients, and we will not guess them. In plain terms, AUC measures how well a model ranks a likely switcher above a non-switcher: 0.5 is a coin flip and 1.0 is perfect.
+
+There are useful clues for the rerun. The switch rate varies a lot by batch (31% in batch 15, 51% in batch 16), so demographics alone, which include batch, may already predict something. Starting plan also matters: 46% of 'Part time' people and 49% of 'Not yet decided' people switched, against 33% of 'Volunteering frequently' and 21% of 'Occasionally'. The right test is whether mindset adds to demographics, judged by the pre-registered rule: ΔAUC ≥ 0.03, a bootstrap CI above 0, and recall not lower than A's minus 0.02. That test has not yet been run.
+      </div>
+    </div>
+
+    <!-- 5. STRATEGIC CLARITY & FOLLOW-UP CONSULTATION LOG (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #0284c7;">5</span>
+          <span>5. Strategic Clarity &amp; Follow-Up Consultation Log</span>
+          <span class="badge badge-consult" style="margin-left: 6px;">5 Inquiries</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Post-execution follow-up consultations answering specific questions, framing subsequent analytical queries, auditing column metadata, and clarifying empirical results.
+        </p>
+
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #5
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 04:35 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "what is the takeaway and business value in simple words.  what is the question. what is the answer to user question. give intuition . Give the answer as short short and crisp and compact format"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Quick Summary</h2>
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">The question</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Can what people think and feel <em>before</em> the workshop (their "mindset") predict who will later say they want a full-time social-action career?</strong>
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The test looks only at people who were <em>not</em> planning full-time work beforehand. It compares two prediction models:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Model A</strong> uses only basic facts: gender, age, study stream and batch.</li><li style="margin-bottom: 5px;"><strong>Model B</strong> uses those same facts plus the Pre-workshop mindset scores.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        If B clearly beats A, mindset adds real predictive value.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">The answer</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>We don't know yet.</strong> The analysis did not finish. Models A and B never produced results, so there are no AUC, recall, confusion-matrix or coefficient numbers. It would be wrong to say mindset predicts switching, and equally wrong to say it doesn't.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">What we do know</h3>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Fact</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">People who could switch (not full-time before)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>1,085</strong></td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Switched to "Fulltime as a career" afterward</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>431 (39.72%)</strong></td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Not full-time before, so nothing to switch</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">365 (excluded)</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        About <strong>4 in 10</strong> of the people who started out not planning full-time said afterward that they were. That's a healthy split, with plenty of both groups to learn from.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">Why it stalled</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        A step that drops rows with missing values removed <strong>all</strong> rows (0 left). This is a pipeline bug, not a finding. Think of a checklist where one blank box disqualifies a form, and some box was blank on every form. The exact column responsible hasn't been identified.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">Intuition and clues for the rerun</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Batch matters.</strong> Switch rates range from 31% (batch 15) to 51% (batch 16). Demographics that include batch may already predict something.</li><li style="margin-bottom: 5px;"><strong>Starting plan matters.</strong> Switch rates were 49% for "Not yet decided," 46% for "Part time," 33% for "Volunteering frequently" and 21% for "Occasionally." Starting plan is not in the headline models, so it is only a side check.</li><li style="margin-bottom: 5px;"><strong>The bar for "mindset helps"</strong> was set in advance. All three conditions must hold:</li>
+        </ul>
+      
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">AUC rises by at least 0.03 (AUC: 0.5 is a coin flip, 1.0 is perfect).</li><li style="margin-bottom: 5px;">The bootstrap confidence interval stays above 0.</li><li style="margin-bottom: 5px;">Recall doesn't drop by more than 0.02.</li>
+        </ol>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">Business value</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Today:</strong> there is no evidence yet for targeting follow-up support using Pre-workshop mindset. The only solid number is that roughly 40% of non-full-time participants shift toward full-time.</li><li style="margin-bottom: 5px;"><strong>After the fix:</strong> if B clearly beats A, volunteers could spot likely switchers early and offer mentoring. If not, mindset surveys won't help with prediction, and effort is better spent elsewhere.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">Caveats</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Confidence is only <strong>30%</strong>.</li><li style="margin-bottom: 5px;">The outcome is a <em>stated plan</em> right after the workshop, not an actual job change.</li><li style="margin-bottom: 5px;">There is no control group, so the results show association, not cause.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">Next step</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Rerun with the missing-value bug fixed, using the original specification, and report A vs B with AUC, recall, the confusion matrix and the top 5 coefficients.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #4
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Strategic Visuals &amp; Charts
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 04:32 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "what is the takeaway and business value in simple words.  what is the question. what is the answer to user question. give intuition"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Generated 2 visual chart(s) illustrating the strategic findings.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #3
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 04:09 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "what is the Takeaway."
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">The Takeaway</h2>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>We don't yet know whether Pre-workshop mindset predicts who switches to full-time. The test was never completed, so the honest answer is "not determined."</strong> It is not a "no," and it is not a "yes."
+      </p>
+    
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">1. What we do know</h3>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Item</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Participants with both a Pre and a Post response (Point 1, batches 11–17)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">1,450</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Already planned full-time at Pre (can't "switch")</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">365</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Study group: not full-time at Pre</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>1,085</strong></td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Of those, said "Fulltime as a career" at Post (switchers)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>431</strong></td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Base rate of switchers</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>39.72%</strong> (about 4 in 10)</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The study group is a good size for a prediction test. About 40% switchers means there are plenty of examples of both outcomes, so the data itself is not the problem.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">2. What we don't know</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The question asked for these results, and none were produced:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">AUC for Model A (demographics only) and Model B (demographics plus mindset)</li><li style="margin-bottom: 5px;">Recall and the confusion matrix</li><li style="margin-bottom: 5px;">The top 5 coefficients</li><li style="margin-bottom: 5px;">Whether B beats A</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Why:</strong> after joining demographics and dropping missing values, the pipeline left <strong>0 rows</strong>. That is a <strong>bug, not a finding</strong>. Steps 3, 4 and 5 were meant to fix it and run the models, but they returned nothing. The dossier has not identified which column caused the 0-row result.
+      </p>
+    
+
+        <blockquote style="border-left: 4px solid #3b82f6; background: #eff6ff; padding: 12px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; font-size: 12px; color: #1e40af; line-height: 1.6;">
+          <strong>Analogy:</strong> We lined up the runners and confirmed the race track is fine, but the stopwatch broke before anyone ran. We can't say who is faster.
+        </blockquote>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">3. Clues for the rerun (not conclusions)</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Switch rates differ by batch.</strong> Batch 15 was lowest at about 31% and batch 16 highest at about 51%. Since batch is one of the demographic features, Model A might already predict something just from that. Recent batches have also had less time, which may distort the pattern.</li><li style="margin-bottom: 5px;"><strong>Starting plan matters.</strong> According to the dossier summary, about 46% of "Part time" starters and 49% of "Not yet decided" starters switched, against about 33% of "Volunteering frequently" and 21% of "Occasionally." Starting plan is not in the requested feature list, so it can only serve as a side check.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        These are raw group comparisons, not model results. They only suggest where signal might come from.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">4. How the final answer will be judged</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The dossier set a rule in advance. Mindset <strong>meaningfully helps</strong> only if all three hold:
+      </p>
+    
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>ΔAUC ≥ 0.03</strong> (B's AUC minus A's)</li><li style="margin-bottom: 5px;">The <strong>bootstrap 95% confidence interval for ΔAUC stays above 0</strong></li><li style="margin-bottom: 5px;">B's <strong>recall is no lower than A's minus 0.02</strong></li>
+        </ol>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        If not, the conclusion would be: <em>"Pre-workshop mindset has no demonstrable predictive power beyond demographics in this sample."</em> If B's AUC is 0.55 or below, the signal is near chance overall.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        For reference, <strong>AUC</strong> is the chance the model ranks a random switcher above a random non-switcher. 0.5 is a coin flip and 1.0 is perfect. <strong>Recall</strong> is the share of real switchers the model catches.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">5. Cautions on the process</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>The setup drifted from your specification.</strong> Steps 4 and 5 changed how career criteria are scored (all nine ranks inverted instead of just Life<em>Criteria</em>Cause<em>Of</em>Work), the batch encoding, and the regularisation. The rerun should follow your original spec, and any change should be labelled a sensitivity check.</li><li style="margin-bottom: 5px;"><strong>Even a good result shows association, not cause.</strong> There is no control group, and the "switch" is a self-reported plan right after the workshop, not an actual job change.</li><li style="margin-bottom: 5px;"><strong>Confidence is low (30%).</strong> With 431 positives and about 10 features, AUC estimates will be a bit noisy, and theme scores may overlap and make coefficients unstable.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">6. What to do next</h3>
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Rerun with a <strong>column-by-column missing-value check</strong>, so the culprit behind the 0 rows is named.</li><li style="margin-bottom: 5px;">Drop missing values only on the columns actually used, not across the whole table.</li><li style="margin-bottom: 5px;">Reset the pipeline to your spec, then run Model A, then B on identical folds.</li><li style="margin-bottom: 5px;">Report ΔAUC with its confidence interval, the confusion matrices, and the top 5 standardised coefficients.</li>
+        </ol>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Bottom line for volunteers:</strong> the group of 1,085 people and the 39.72% switch rate are solid. The prediction question is still open until the rerun produces actual model results.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #2
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 04:00 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "In simple easy to understand words, what was the question, what is the answer."
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">The question and the answer</h2>
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">The question</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Some people come into the workshop <strong>not</strong> planning a full-time social-action career. By the end, some of them say "Fulltime as a career." The question was:
+      </p>
+    
+
+        <blockquote style="border-left: 4px solid #3b82f6; background: #eff6ff; padding: 12px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; font-size: 12px; color: #1e40af; line-height: 1.6;">
+          <strong>Can we tell, from someone's answers <em>before</em> the workshop, who is likely to make that switch?</strong>
+        </blockquote>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The test works like this:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Model A</strong> is a prediction model that uses only basic background facts: gender, age, field of study, and which batch the person was in.</li><li style="margin-bottom: 5px;"><strong>Model B</strong> uses the same background facts plus the person's <strong>pre-workshop mindset scores</strong>. These cover social commitment, sense of purpose, courage and independence, support and mentorship, attitudes to money, and what they value in a career.</li><li style="margin-bottom: 5px;"><strong>The comparison:</strong> if B predicts clearly better than A, mindset adds real predictive information. If not, mindset has no demonstrable predictive power.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">The answer: not yet known</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>The test did not finish, so we cannot say whether mindset predicts switching.</strong> The models never produced results. The dossier gives a confidence of only 30%, and that confidence is about the <em>process</em>, not about any finding on mindset.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">It would be wrong to say "mindset predicts switching."</li><li style="margin-bottom: 5px;">It would equally be wrong to say "mindset doesn't matter."</li><li style="margin-bottom: 5px;">The honest status is "not tested yet."</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">What we did learn</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The study group was built successfully:
+      </p>
+    
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Item</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Number</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Participants with both a Pre and a Post response</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">1,450</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Already planning full-time before the workshop (excluded, since they can't "switch")</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">365</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>People who could switch (our study group)</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>1,085</strong></td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Of those, said "Fulltime as a career" afterwards</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>431</strong></td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Base rate of switchers</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>39.72%</strong>, about 4 in 10</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        About 4 in 10 is a healthy split. We have plenty of switchers and plenty of non-switchers, so the data is suitable for a prediction test.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Two other patterns showed up. They are clues, not results from the model:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Batch matters.</strong> The switch rate was lowest in batch 15 (about 31%) and highest in batch 16 (about 51%). Batch is part of Model A, so Model A might predict something on its own.</li><li style="margin-bottom: 5px;"><strong>Starting plan matters.</strong></li><li style="margin-bottom: 5px;">46% of "Part time" people switched.</li><li style="margin-bottom: 5px;">49% of "Not yet decided" people switched.</li><li style="margin-bottom: 5px;">33% of "Volunteering frequently" people switched.</li><li style="margin-bottom: 5px;">21% of "Occasionally" people switched.</li><li style="margin-bottom: 5px;">This was not one of the features the question allowed, so it is only a side note.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">What went wrong</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        After the study group was built, the step that joins in the demographics and removes rows with missing values <strong>left 0 rows</strong>. Nobody can build a model from zero rows.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">This is a <strong>pipeline fault</strong>, not a finding. It does not mean switchers and non-switchers look alike.</li><li style="margin-bottom: 5px;">A likely cause is one column that is empty for everyone, so "drop any row with a gap" deletes every row. The dossier has not yet identified which column.</li><li style="margin-bottom: 5px;">Steps 3, 4 and 5 tried to fix this and run the models, but they returned no results. So there is no AUC, no recall, no confusion matrix, and no list of top-5 influences.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">How the answer will be judged once it runs</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        An analogy: Model A is a weather forecast using only the date and location. Model B adds a look at the sky. The question is whether looking at the sky improves the forecast by a meaningful amount, or just by luck.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>AUC</strong> is the chance that the model ranks a real switcher above a non-switcher. 0.5 is a coin flip and 1.0 is perfect.</li><li style="margin-bottom: 5px;"><strong>Recall</strong> is the share of real switchers the model catches.</li><li style="margin-bottom: 5px;"><strong>Pre-agreed rule:</strong> "B beats A meaningfully" only if all three hold:</li>
+        </ul>
+      
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">AUC improves by <strong>at least 0.03</strong>.</li><li style="margin-bottom: 5px;">The improvement is reliably above zero (the bootstrap confidence interval stays above 0).</li><li style="margin-bottom: 5px;">B's recall is not worse than A's by more than 0.02.</li>
+        </ol>
+      
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">If any of these fails, the conclusion would be that mindset shows <strong>no demonstrable added predictive power</strong>.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        (Step 5's narrative mentioned 0.02 as the threshold. The dossier's rule, and the one to use, is 0.03.)
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">What to do next</h3>
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Find the column that wipes out every row.</strong> Check missing values column by column.</li><li style="margin-bottom: 5px;"><strong>Rerun with the exact specification from the goal.</strong> Earlier attempts drifted from it. They changed how career criteria were inverted, how batch was encoded, and the regularisation strength. Any such change should be reported as an extra sensitivity check, not mixed into the main result.</li><li style="margin-bottom: 5px;"><strong>Report A vs B</strong> with AUC, recall, the confusion matrix, the top-5 coefficients, and the confidence interval on the difference.</li>
+        </ol>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">Cautions for later</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">The "switch" is a <strong>plan stated right after the workshop</strong>, not a real job change.</li><li style="margin-bottom: 5px;">There is <strong>no control group</strong>, so results show association, not that the workshop caused anything.</li><li style="margin-bottom: 5px;">With about 1,085 people and 431 switchers, AUC estimates will be somewhat noisy.</li><li style="margin-bottom: 5px;">Mindset themes may overlap with each other, which can make individual coefficients unstable.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>In one sentence:</strong> we asked whether pre-workshop mindset predicts who switches to full-time, and the answer is "unknown for now." The study group is solid (1,085 people, 39.72% switchers), but a data-cleaning bug stopped the models from running.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #1
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Strategic Visuals &amp; Charts
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 03:58 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "add many visual to represent the answer"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Generated 2 visual chart(s) illustrating the strategic findings.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 4. STRATEGIC VISUALIZATIONS & EMPIRICAL CHARTS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #d97706;">4</span>
+          <span>4. Strategic Visualizations &amp; Empirical Charts (4 Visualized)</span>
+          <span class="badge" style="background: #fef3c7; color: #92400e; border-color: #fde68a; margin-left: 6px;">4 Visuals</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Visual intelligence charts generated post-execution to illustrate empirical step metrics, distribution variances, and strategic performance.
+        </p>
+
+        
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">The Question and the Honest Answer: Can Pre-Workshop Mindset Predict Who Switches?</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              kpi Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">THE QUESTION: Among people who did NOT plan a full-time social-action career before the workshop, can their pre-workshop mindset scores (purpose, courage, community support, money attitudes and so on) predict who will say they want full-time afterward, beyond what age, gender, stream and batch already tell us? THE ANSWER SO FAR: not yet known. The group is built and verified, but the two models (A: demographics only, B: demographics plus mindset) never returned results, so there is no A-vs-B comparison.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">At-risk cohort (could switch)</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin: 4px 0;">1,085</div>
+                  <div style="font-size: 11px; color: #475569;">Not full-time at Pre; verified</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Switched to full-time</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #10b981; margin: 4px 0;">39.7%</div>
+                  <div style="font-size: 11px; color: #475569;">431 of 1,085 at Post (self-reported intent)</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Models with results (A and B)</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #ef4444; margin: 4px 0;">0 of 2</div>
+                  <div style="font-size: 11px; color: #475569;">No AUC, recall or coefficients yet</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Confidence in a verdict</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #f59e0b; margin: 4px 0;">30%</div>
+                  <div style="font-size: 11px; color: #475569;">Cohort solid; prediction untested</div>
+                </div>
+              
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> In simple words: we know who could switch (1,085 people) and how many did (about 4 in 10). We cannot yet say whether mindset predicts it, and we should not claim it does or doesn't. Business value: until the run completes, don't build a 'pick likely switchers' screening tool on mindset scores. Fix the missing-value fault, run Model A vs B, and decide from the AUC gain. The pre-agreed bar is a gain of at least 0.03 with a confidence interval above zero.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Where the 431 Switchers Came From (Their Starting Plan)</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              donut Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">Share of the 431 people who moved to 'Fulltime as a career' by their pre-workshop plan. Counts: Part time 189, Volunteering frequently 137, Not yet decided / confused 75. The remaining 30 are grouped as Other (derived as 431 minus the rest).</p>
+          
+          <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-around; gap: 20px; padding: 14px 0;">
+            <div style="position: relative; width: 180px; height: 180px; flex-shrink: 0;">
+              <svg viewBox="0 0 220 220" width="180" height="180" style="display: block;">
+                <circle cx="110" cy="110" r="70" fill="transparent" stroke="#2563eb" stroke-width="26" stroke-dasharray="192.89 246.93" stroke-dashoffset="0.00" transform="rotate(-90 110 110)"/><circle cx="110" cy="110" r="70" fill="transparent" stroke="#10b981" stroke-width="26" stroke-dasharray="139.72 300.10" stroke-dashoffset="-192.89" transform="rotate(-90 110 110)"/><circle cx="110" cy="110" r="70" fill="transparent" stroke="#f59e0b" stroke-width="26" stroke-dasharray="76.45 363.37" stroke-dashoffset="-332.61" transform="rotate(-90 110 110)"/><circle cx="110" cy="110" r="70" fill="transparent" stroke="#8b5cf6" stroke-width="26" stroke-dasharray="30.76 409.07" stroke-dashoffset="-409.07" transform="rotate(-90 110 110)"/>
+                <circle cx="110" cy="110" r="54" fill="#ffffff" />
+                <text x="110" y="105" text-anchor="middle" font-size="10.5" font-weight="800" fill="#64748b" letter-spacing="0.05em">DISTRIBUTION</text>
+                <text x="110" y="125" text-anchor="middle" font-size="16" font-weight="800" fill="#0f172a">100%</text>
+              </svg>
+            </div>
+            <div style="flex: 1; min-width: 220px;">
+              
+            <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; margin-bottom: 8px;">
+              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: #2563eb; margin-top: 3px; flex-shrink: 0;"></span>
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; font-weight: 700; color: #1e293b;">
+                  <span>Part time</span>
+                  <span style="color: #2563eb; font-weight: 800;">44% (189)</span>
+                </div>
+                <span style="font-size: 11px; color: #64748b; display: block;">Largest source of switchers</span>
+              </div>
+            </div>
+          
+            <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; margin-bottom: 8px;">
+              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: #10b981; margin-top: 3px; flex-shrink: 0;"></span>
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; font-weight: 700; color: #1e293b;">
+                  <span>Volunteering frequently</span>
+                  <span style="color: #10b981; font-weight: 800;">32% (137)</span>
+                </div>
+                <span style="font-size: 11px; color: #64748b; display: block;">Already regularly active</span>
+              </div>
+            </div>
+          
+            <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; margin-bottom: 8px;">
+              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: #f59e0b; margin-top: 3px; flex-shrink: 0;"></span>
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; font-weight: 700; color: #1e293b;">
+                  <span>Not yet decided / confused</span>
+                  <span style="color: #f59e0b; font-weight: 800;">17% (75)</span>
+                </div>
+                <span style="font-size: 11px; color: #64748b; display: block;">Undecided before the workshop</span>
+              </div>
+            </div>
+          
+            <div style="display: flex; align-items: flex-start; gap: 8px; font-size: 12px; margin-bottom: 8px;">
+              <span style="display: inline-block; width: 12px; height: 12px; border-radius: 3px; background: #8b5cf6; margin-top: 3px; flex-shrink: 0;"></span>
+              <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; font-weight: 700; color: #1e293b;">
+                  <span>Other starting plans</span>
+                  <span style="color: #8b5cf6; font-weight: 800;">7% (30)</span>
+                </div>
+                <span style="font-size: 11px; color: #64748b; display: block;">Remainder, derived by subtraction</span>
+              </div>
+            </div>
+          
+            </div>
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> Intuition: most switchers were already partly engaged. Part-time and frequent volunteers make up about 76% of switchers, and undecided people another 17%. This suggests the workshop mostly tips people who are already close. The open question is whether mindset scores can tell WHICH of these people will tip, and that is exactly what the unfinished Model B must show. This is an association in a single group with no control, based on stated intentions rather than actual career moves.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Cohort Funnel: From Raw Rows to the At-Risk Switcher Group</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              bar Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">Verified participant counts at each cohort-building stage in Step 1, expressed as a share of the 1,462 Point 1 participants (batches 11-17). Values are scaled to 0-100 against that starting point. Funnel stages are labelled with raw counts.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Point 1 participants (batches 11-17)</span>
+                  <span style="font-weight: 800; color: #2563eb;">1,462</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 100%; background: #2563eb; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">2,912 rows after Level 0.1 and batch filter</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Paired Pre + Post</span>
+                  <span style="font-weight: 800; color: #06b6d4;">1,450</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 99.2%; background: #06b6d4; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">10 Pre-only and 2 Post-only participants excluded</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">At-risk (not full-time at Pre)</span>
+                  <span style="font-weight: 800; color: #8b5cf6;">1,085</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 74.2%; background: #8b5cf6; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">365 already full-time at Pre, so they cannot switch</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Switched to full-time</span>
+                  <span style="font-weight: 800; color: #10b981;">431</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 29.5%; background: #10b981; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">39.72% of the at-risk group</span>
+              </div>
+            
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> The cohort is solid: 1,085 at-risk participants and 431 switchers. Every cohort count reproduced, but no Model A or Model B result exists, so the funnel is the only verified output and no predictive claim can be made.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Evidence Scorecard: What Is Established vs. Still Missing</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              kpi Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">Top-level status of the feasibility test after 5 steps. The cohort and base rate are verified. Model A and B results were never produced because of the missing-value fault and empty outputs.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Switcher Base Rate</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #10b981; margin: 4px 0;">39.72%</div>
+                  <div style="font-size: 11px; color: #475569;">431 of 1,085 at-risk participants</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Effective N After Dropna</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #ef4444; margin: 4px 0;">0 rows</div>
+                  <div style="font-size: 11px; color: #475569;">Naive dropNa removed every row; the cohort of 1,085 is intact before it</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Model A / B AUC Results</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #f59e0b; margin: 4px 0;">None</div>
+                  <div style="font-size: 11px; color: #475569;">No results produced; no predictive claim possible</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Verdict Confidence</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin: 4px 0;">30%</div>
+                  <div style="font-size: 11px; color: #475569;">Verdict is undetermined until the models run</div>
+                </div>
+              
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> The question 'can Pre-workshop mindset predict switching?' is still open. The next run must fix the pipeline and report the A-vs-B AUC comparison, including ΔAUC and its bootstrap CI.
+            </div>
+          
+        </div>
+      
+      </div>
+    </details>
+
+    <!-- 3. GUIDANCE & RECOMMENDATIONS ON NEXT STEPS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #2563eb;">3</span>
+          <span>3. Guidance &amp; Recommendations on Next Steps (How to Proceed)</span>
+          <span class="badge" style="background: #dbeafe; color: #1e40af; border-color: #bfdbfe; margin-left: 6px;">5 Actions</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Tailored recommendations explaining what to do next. Includes both an easy-to-understand explanation and technical column names ready for cut-and-pasting into future questions.
+        </p>
+
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#1</span> Find the cause of the 0-row dropNa before any modelling
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Earlier, the step that removes rows with missing answers removed every row. This usually means one column is empty or one score gets cancelled by a single missing item. Count the missing values column by column and only require the columns we actually use.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Rebuild the cohort with plain JS arrays and Maps. Cast Participant_Id with String(x).trim(). Filter on |Workshop_Level - 0.1| &lt; 1e-6 and batch 11-17. Clean with 0 -&gt; NaN on scored item columns only, then the &gt;8 rank rules and &gt;5 agreement rules. Pair Pre and Post and keep is_fulltime_pre == 0 (expect 1,085 rows, 431 positives). Build a feature whitelist and print per-column NaN count and % for it. Separately print the retained N under a naive all-column dropNa and under the whitelist-only dropNa. Then flag every column that is 100% NaN. Confirm the demographics join matches 1,085 of 1,085. Replace the demographics Workshop_Batch_Number with a renamed copy to avoid a column clash.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Gender</span><span class="pill">Age_At_Workshop</span><span class="pill">Educational_Stream_Category</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Using prod_nirman_questionnaire (Workshop_Level == 0.1, Workshop_Batch_Number 11-17) joined to prod_nirman_demographics on string Participant_Id, rebuild the Pre/Post-paired cohort with is_fulltime_pre == 0 (expect N=1,085, 431 switchers). Print count and % missing for each of Gender, Age_At_Workshop (&gt;0), Educational_Stream_Category, Workshop_Batch_Number and each Pre theme score, then state N retained by a naive all-column dropNa versus a whitelist-only dropNa and name the column that caused the earlier 0-row result. Return a serializable checkpoint object and never an undefined value.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#2</span> Run the A-vs-B comparison on the same people and folds
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Fit two simple models on exactly the same people. Model A knows only who the person is. Model B also knows their Pre-workshop mindset. If B is not clearly better at spotting switchers, mindset adds nothing we can demonstrate.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Build common-sample complete cases on the 4 demographic features, the 6 Pre theme scores (mean of non-null `items`, at least 80% answered, reverse-coded with 6 - x where listed) and the target. Use mulberry32 seed 42 for stratified 5-fold CV and save the fold per Participant_Id. Fit class-weighted L2 logistic regression (w_c = N/(2*N_c), intercept unpenalised), z-scoring on training folds only. Report pooled out-of-fold AUC (Mann-Whitney with ties), recall, precision and confusion matrix at 0.5 for A and B. Compute ΔAUC with a 1,000-resample paired bootstrap of participants (seed 7) and report B's top 5 standardised coefficients with odds ratios and fold-sign consistency (k/5). Apply the pre-registered rule: ΔAUC ≥ 0.03, CI lower bound &gt; 0, recall_B ≥ recall_A - 0.02; otherwise report no demonstrable predictive power. Also state if B's AUC ≤ 0.55.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Gender</span><span class="pill">Age_At_Workshop</span><span class="pill">Educational_Stream_Category</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Mindset_Visualizes_Self_As_Changemaker</span><span class="pill">Mindset_Found_Life_Purpose</span><span class="pill">Mindset_Courage_Against_Conventional_Careers</span><span class="pill">Mindset_Has_Mentor_For_Life_Matters</span><span class="pill">Financial_Attitude_Secure_About_Future</span><span class="pill">Life_Criteria_Cause_Of_Work</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                On the at-risk cohort (Workshop_Level == 0.1, batches 11-17, is_fulltime_pre == 0, N=1,085), build a common complete-case sample using Gender, Age_At_Workshop (&gt;0), Educational_Stream_Category, Workshop_Batch_Number and the 6 Pre theme scores (social_commitment_and_changemaker_identity, purpose_and_direction, courage_agency_autonomy, support_community_mentorship, money_attitudes, career_criteria_importance). Report effective N and switcher base rate. Fit class-weighted L2 logistic regression with seeded stratified 5-fold CV for Model A (demographics only) and Model B (demographics + themes) on identical folds. Report AUC, recall, precision, confusion matrix, ΔAUC with a paired bootstrap 95% CI, B's top 5 standardised coefficients with odds ratios, and state plainly whether B beats A by ΔAUC &gt;= 0.03 with CI lower bound &gt; 0 or whether Pre-workshop mindset shows no demonstrable predictive power.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#3</span> Use the goal's definition of career_criteria_importance
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              The workshop asks people to rank life priorities, so every person's ranks add up to the same number. Averaging all the rankings gives everyone almost the same score. Use only the 'cause of work' ranking, flipped so a bigger number means more important.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Set career_criteria_importance = 9 - Life_Criteria_Cause_Of_Work after cleaning (0 -&gt; NaN, &gt;8 -&gt; NaN). Do not average the nine Life_Criteria items. If a broader view is wanted, run it as a sensitivity check using the individual inverted rank items or a few chosen ones, and test the variance of any composite first. Report the missing count for this single item.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Life_Criteria_Work_Satisfaction</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Life_Criteria_Career_Growth</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                For Workshop_Level == 0.1, batches 11-17, Pre rows, compute career_criteria_importance as 9 - Life_Criteria_Cause_Of_Work (after 0 -&gt; NaN and &gt;8 -&gt; NaN). Report its mean, SD and missing count by switched_to_fulltime, and show the SD of an all-nine-Life_Criteria averaged composite to demonstrate why that composite is nearly constant.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#4</span> Test cohort and starting-plan effects as sensitivity checks
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Some workshop batches and some starting career plans had far more switchers than others. Check how much of any model's skill comes just from knowing the batch or the starting plan, so mindset is not credited for it.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Run (i) a batch-only model, (ii) Model A with Workshop_Batch_Number as numeric versus one-hot (reference 15), and (iii) a sensitivity Model C adding the Pre starting plan (Career_Plan_Social_Action_Engagement, encoded as an ordinal 1-5 or as category dummies, with 'Not yet decided / confused' as its own level). Keep the headline A-vs-B comparison as specified. Report ΔAUC for A -&gt; B and A -&gt; B + plan on the same folds. Observed switch rates by Pre plan (Part time 45.9%, Not yet decided 48.7%, Volunteering frequently 32.9%, Monetary contribution 31.3%, Occasionally 21.1%) and by batch (31.3% to 50.9%) suggest these may be strong signals. Remember the outcome is an immediate post-workshop intention, not later behaviour.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Workshop_Batch_Number</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Workshop_Phase</span><span class="pill">Workshop_Level</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                On the at-risk cohort (Workshop_Level == 0.1, batches 11-17, is_fulltime_pre == 0), compare out-of-fold AUC and recall under identical seeded stratified 5-fold CV for: (1) a Workshop_Batch_Number-only model, (2) Model A demographics, (3) Model B demographics + 6 Pre themes, and (4) Model B + Pre Career_Plan_Social_Action_Engagement. Report ΔAUC with paired bootstrap 95% CIs between each step, so we can see how much of the signal comes from batch and starting plan rather than mindset.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#5</span> Freeze the verdict rule and report it as an association
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Decide in advance what 'meaningfully better' means so the answer cannot be bent after seeing results. Always describe findings as patterns, not proof that the workshop caused anyone's choice.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Pre-registered rule: 'B beats A' needs ΔAUC ≥ 0.03, a paired-bootstrap CI lower bound &gt; 0, and recall_B ≥ recall_A - 0.02. If ΔAUC &gt; 0 but the CI includes 0, or ΔAUC &lt; 0.03, report 'no demonstrable predictive power beyond demographics in this sample'. If AUC_B ≤ 0.55, report near-chance overall. Include a label-shuffle check (AUC within 0.5 ± 0.05) and report standardised coefficients with fold-sign consistency, flagging theme correlations above 0.6 as collinearity. State that the data are single-arm observational and use self-reported intentions immediately after the workshop.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Workshop_Phase</span><span class="pill">Workshop_Level</span><span class="pill">Participant_Id</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Apply this fixed verdict rule to the Model A vs Model B comparison on the Point 1, batches 11-17, is_fulltime_pre == 0 cohort: B beats A meaningfully only if ΔAUC &gt;= 0.03, the paired bootstrap 95% CI lower bound &gt; 0, and recall_B &gt;= recall_A - 0.02; otherwise say plainly that Pre-workshop mindset has no demonstrable predictive power beyond demographics. Include a label-shuffled AUC check, the pairwise correlations among the 6 theme scores, and a caveat that this is an observational association based on immediate post-workshop self-reported Career_Plan_Social_Action_Engagement.
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 2. COMPLETE 5-STEP PROGRESSIVE EXPERIMENT TIMELINE & DECISIONS (COLLAPSIBLE BY DEFAULT, LAST IN SEQUENCE) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #4f46e5;">2</span>
+          <span>2. Complete 5-Step Progressive Experiment Timeline &amp; Decisions</span>
+          <span class="badge" style="background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; margin-left: 6px;">5 Steps</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Shows the exact question asked in each step, the choices proposed by the AI, the steering path chosen, and the empirical results.
+        </p>
+
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #1</span> Building the Study Group: Who Could Switch, and How Many Did?
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1. Cast Participant_Id, Workshop_Phase, Workshop_Name and Career_Plan_Social_Action_Engagement to string.
+2. Filter with parseFloat(Workshop_Level) == 0.1 and Workshop_Batch_Number 11-17.
+3. Cleaning:
+   - Set 0 to NaN in every scored column, except Financial_Years_To_Independence.
+   - Set values above 8 to NaN in Career_Preference_Own_Business, Career_Preference_Social_Entrepreneurship_Or_Ngo, Career_Preference_Academia and Life_Criteria_Work_Satisfaction.
+   - Set values above 5 to NaN in Mindset_Knows_Personal_Values, Mindset_Emotionally_Mature_Adult, Mindset_Self_Actualization_Linked_To_Society, Mindset_Understands_Flourishing_Youth_Meaning, Mindset_Clear_Professional_Life_Sector and Metric_Life_Satisfaction_Global.
+4. Split rows by Workshop_Phase ('Pre' / 'Post'), add _pre / _post suffixes, and inner-merge on Participant_Id. Check for and report any duplicate Pre or Post rows per participant.
+5. Drop pairs where Career_Plan_Social_Action_Engagement is null in either phase. 'Not yet decided / confused' counts as not full-time (0).
+6. Build is_fulltime_pre and is_fulltime_post (== 'Fulltime as a career' gives 1, otherwise 0).
+7. Keep only rows with is_fulltime_pre == 0.
+8. Set target switched_to_fulltime = is_fulltime_post.
+9. Report a funnel of counts at each stage, plus the switcher count and rate by batch, so later steps can account for censoring (recent batches have had less time).</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Take prod_nirman_questionnaire rows with Workshop_Level == 0.1 and Workshop_Batch_Number 11-17. After cleaning, and after pairing Pre and Post rows per Participant_Id, how many participants were NOT full-time at Pre (is_fulltime_pre == 0)? What share of them reported 'Fulltime as a career' at Post (switched_to_fulltime base rate)?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Build scores, audit dropouts, control for starting plan</strong>: <span style="color:#64748b;">Proceed with Step 2 as planned, with two safeguards. First, run a missingness audit before dropNa. Report how many of the 1,085 at-risk people are lost and whether the switch rate among dropped rows differs from 39.72%, which would signal biased attrition. Second, add each person's Pre plan category (Part time, Volunteering frequently, Not yet decided, etc.) and batch to the univariate comparisons alongside the Pre mindset themes and demographics. Starting plan and batch both visibly shift switch rates, so any theme that looks predictive may just be standing in for them. Report standardized effect sizes (Cohen's d or Cramér's V) with FDR-adjusted p-values so that many theme comparisons do not produce false leads.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check Who's Missing, Then Compare Fairly &mdash; <em>Like judging a school bake sale. First you check that nobody's cake got dropped on the way in, so you aren't only judging the cakes that survived. Then you compare chocolate cakes with chocolate cakes and cookies with cookies, because they started from different recipes.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Focus on Part-time and Volunteer starters only</strong>: <span style="color:#64748b;">Narrow the at-risk group to the two largest source segments, 'Part time' and 'Volunteering frequently', which account for 326 of the 431 switches. These people are already engaged, so switching for them is a meaningful step up in commitment, while 'Not yet decided' respondents may be answering noisily. Calculate segment-specific base rates, then compare Pre mindset themes and demographics within each segment. This makes the population more uniform and the signal clearer, at the cost of a smaller N and less generality.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Zoom In on the Almost-There Crowd &mdash; <em>Like a sports coach who only studies players already on the bench and asks why some of them made it onto the starting team. The coach skips kids who have never picked up a ball.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Impute missing values instead of dropping rows</strong>: <span style="color:#64748b;">Instead of listwise dropNa, which can quickly shrink N when demographic or theme items are partly blank, keep all 1,085 at-risk participants. Use median or mode imputation (or MICE) and add a binary 'was_missing' flag for each affected feature. This keeps statistical power, especially in small batches such as Batch 11 (64 people), and the flags show whether non-response itself relates to switching. The trade-off is added modeling assumptions and some risk of understating variance.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Keep Everyone at the Table &mdash; <em>Like packing for a trip when you can't find one sock. Instead of leaving the whole outfit at home, you grab a sensible spare and put a sticky note on it saying 'this one's a stand-in.'</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Investigate batch differences before modeling</strong>: <span style="color:#64748b;">Treat the batch gap (Batch 15 at 31.34% vs. Batches 16-17 at about 48-51%) as a finding in its own right before building individual-level models. Compare Pre theme profiles and demographics across batches to test whether later batches simply enrolled more full-time-ready people (a composition effect) or whether something in delivery changed. If composition explains the gap, batch can serve as a simple control. If it does not, batch should be modeled as a fixed or random effect, or flagged for qualitative follow-up with facilitators.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Was It the Class or the Students? &mdash; <em>Like two cooking classes where one class's dishes taste much better. Was the teacher better that week, or did that class just happen to have more people who already cook at home?</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Build scores, audit dropouts, control for starting plan</span>
+                  
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                Of the 4,304 rows in the table, 2,912 belong to the Point 1 workshop (Level 0.1) in batches 11-17, covering 1,462 participants. Cleaning removed nothing: no rows had a missing plan, all had a &quot;Pre&quot; or &quot;Post&quot; phase, and there were no duplicates. The data split into 1,460 Pre rows and 1,452 Post rows. Ten people had only a Pre response and two had only a Post response, so they were left out of the comparison. That leaves **1,450 paired participants** with both a before and an after answer. Of these, 365 already planned a full-time social-action career before the workshop, so they could not &quot;switch.&quot; The remaining **1,085 people (the at-risk group, N)** are the ones who could move to full-time. Of them, **431 chose &quot;Fulltime as a career&quot; afterward**, a base rate of 431 ÷ 1,085 = **0.3972, or 39.72%**. In plain terms, about 4 in 10 people who were not planning full-time social action before the workshop said they were afterward. The biggest movement came from people who were &quot;Part time&quot; (189 switched), &quot;Volunteering frequently&quot; (137) or &quot;Not yet decided / confused&quot; (75). Across all 1,450 pairs, the full-time share rose from about 25% (365) to 53% (768).
+
+Switching rates differed by batch. Batches 16 and 17 were highest, at 50.91% and 47.2%. Batch 15, the largest with 335 at-risk participants, was lowest at 31.34%. Batches 11-14 fell between 33% and 40%. Smaller batches, such as 11 with 64 people, can swing a lot from just a few individuals, so treat these differences cautiously. This is a single group measured before and after, with no comparison group. The results show an association and a change in stated plans, not proof that the workshop caused them. The answers are also self-reported intentions given right after the workshop, so they may not match what people actually do later.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #2</span> Turning Pre-Workshop Answers into Mindset Scores and Joining Demographics
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1. Theme scores (Pre only):
+   - For social_commitment_and_changemaker_identity, purpose_and_direction, courage_agency_autonomy, support_community_mentorship and money_attitudes, take the mean of the YAML `items` lists only. Exclude alt_wording_items.
+   - Reverse-code the listed items first using 6 - x. Examples: Parental_Approval/Agreement_Mandatory, Prefers_Safety_And_Security_Path, Preoccupied_With_Safety_And_Security, Lacks_Reflection_Opportunities, Loneliness_While_Contemplating_Social_Change, Unclear_Needs_Vs_Wants and Financial_Attitude_Money_Equals_Happiness.
+   - For career_criteria_importance, use inverted Life_Criteria_Cause_Of_Work (9 - x on the 1-8 rank scale, so higher means more important). Averaging all nine rank items would be misleading because each person's ranks always sum to the same total.
+   - Average each person's non-missing items, and require at least 50% of a theme's items to be answered.
+2. Demographics join:
+   - Join prod_nirman_demographics on Participant_Id, cast to string in both frames.
+   - Keep Gender, Age_At_Workshop (filter &gt; 0), Educational_Stream_Category, and Workshop_Batch_Number taken from demographics. Resolve the duplicate column-name clash with the questionnaire.
+3. Apply dropNa across the target and all features, then report the effective N and the new base rate.
+4. Univariate check: compare switchers and non-switchers using:
+   - Mean, standardised mean difference, and a Mann-Whitney test for each theme and for age.
+   - Switch rate by Gender, Educational_Stream_Category and batch.
+5. Check correlations between themes, to warn about overlapping (collinear) features before reading coefficients.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                After building the Pre-phase theme scores and joining demographics, what is the effective N after dropNa? Do switchers and non-switchers already differ on any single Pre mindset theme or demographic before any model is fitted?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Audit missingness, fix scoring, then run Model A</strong>: <span style="color:#64748b;">First, report the count and percentage of missing values in every column for the 1,085 rows. Also confirm that the Pre theme scores actually attached during the merge (check join keys and Pre/Post suffixes). Replace the all-items-required scoring rule with a 'score if at least 80% of a theme's items are answered' rule. Replace the global dropna with column-specific dropping. Rerun the 10-theme baseline comparison with Bonferroni alpha of about 0.003. Then run Model A, dropping rows only where its 4 demographic fields are missing. This fixes the root cause, recovers the baseline the earlier choice asked for, and keeps Model A's sample as large as possible.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Find the Leak, Then Fill the Tank &mdash; <em>Like a bathtub that keeps draining. Instead of just turning the tap on harder, you find the leaky pipe, patch it, and then fill the tub properly. We'd also stop throwing out a whole quiz just because someone skipped one question. If they answered most of it, we'd still count it.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Run Model A now on demographics only</strong>: <span style="color:#64748b;">Model A needs only 4 demographic fields, and all 1,085 rows matched the demographics table. So Model A can run right away by dropping rows only where those 4 fields are missing, bypassing the broken theme scores. The pipeline repair and baseline comparison would wait until the mindset-score models. This is fast, but it postpones the root-cause fix and the baseline evidence.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Use the Parts That Work &mdash; <em>Like a car with one flat tyre in the boot. The four tyres on the car are fine, so you drive to the shop now and get the spare patched later.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Reconcile cohort counts before modelling</strong>: <span style="color:#64748b;">Step 1 reported 1,462 Point 1 participants in batches 11-17, but Step 2 started from 2,157 Point 1 Pre participants. This mismatch suggests the batch filter or deduplication was lost between steps, which could also explain the broken merge. Rebuild the cohort with one row per participant per Pre/Post, confirm the batch restriction, recheck the full-time-at-Pre exclusion, and only then run the missingness audit and Model A.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Recount the Guests at the Door &mdash; <em>Like planning a party for 1,462 guests and then noticing 2,157 people have walked in. Before serving dinner, you check the guest list and spot gatecrashers or people counted twice.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Impute missing items inside CV folds</strong>: <span style="color:#64748b;">Rather than dropping rows, keep all 1,085 by imputing missing values. Use median or iterative imputation for item responses, a mode or 'Unknown' category for categorical fields, and binary missingness-indicator flags. Fit the imputation inside each cross-validation fold to avoid leakage. This maximises sample size and lets you test whether missingness itself predicts switching. It adds modelling assumptions and is less transparent than fixing the scoring rule.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Fill the Gaps, Keep Everyone &mdash; <em>Like a jigsaw puzzle with a few missing pieces. Instead of throwing the whole puzzle away, you make a sensible guess about what those pieces showed from the picture around them, and you mark where you guessed.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Audit missingness, fix scoring, then run Model A</span>
+                  
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **The baseline comparison could not be completed.** The data pipeline worked until the last step, where every row was dropped. We started with 2,157 Point 1 Pre-workshop participants, and 1,450 of them also had a Post record. After removing those already planning a full-time social-action career at Pre, 1,085 remained. All 1,085 matched the demographics table. Of those, 431 (about 40%) said at Post that they intended to go full-time, and 654 (about 60%) did not. That 40% is a reasonable base rate and the only substantive finding here. It describes self-reported intentions right after the workshop, not actual career moves.
+
+The final &quot;drop anything with a missing value&quot; step then left 0 rows. Every group comparison (the 10 theme scores, age, batch number, workshops attended, and the gender, stream, education and state breakdowns) is therefore empty. Native_State missing values are not the cause, since they account for none of the lost rows. The scoring rule is a likely contributor: a theme score becomes missing if any single item is missing. A column that is entirely empty, or a merge that did not attach the Pre scores, could also wipe out every row. The output cannot tell us which. This is a pipeline problem, not evidence that switchers and non-switchers are alike or different. I would check which column is missing for all 1,085 rows, then rerun. It may also help to relax the &quot;any item missing&quot; rule, for example by requiring most items rather than all. Once real results exist, treat them as associations only, because this is observational data with no control group. With 17 tests, only p-values below about 0.003 (the Bonferroni cutoff) would be strong evidence. Anything between 0.003 and 0.05 should be treated as exploratory. The request named 12 themes but listed only 10, and the 10 were used.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #3</span> Repair the Pipeline, Recover the Baseline, and Benchmark Model A (Demographics Only)
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">PART 1: Diagnostic audit and pipeline repair
+1. Rebuild the cohort exactly as in Step 1:
+   - Cast Participant_Id to string in both tables, and Workshop_Name and Workshop_Phase to string.
+   - Filter on parseFloat(Workshop_Level) === 0.1 and batch 11-17.
+   - Split by phase and inner-merge Pre and Post on Participant_Id.
+   - Keep is_fulltime_pre == 0 and assert N = 1,085 and positives = 431.
+2. Apply cleaning ONLY to the scored item columns of the six themes, never to IDs, Workshop_Level or batch:
+   - Set 0 to NaN.
+   - Set agreement items &gt; 5 to NaN, including Mindset_Emotionally_Mature_Adult and Mindset_Self_Actualization_Linked_To_Society.
+   - Set rank items &gt; 8 to NaN, including Life_Criteria_Work_Satisfaction.
+3. Select an explicit feature whitelist before any dropNa:
+   - Pre-suffixed items for the six themes (the `items:` lists only, with no alt_wording, insecurity or not_usable columns).
+   - The four demographic fields.
+   - The target.
+4. Print the count and percentage missing for each whitelisted column across the 1,085 rows.
+5. Separately, quantify how many rows a naive global dropNa over (i) all columns and (ii) the whitelist would retain. This identifies the culprit.
+6. Verify the demographics join:
+   - Report the match count.
+   - Rename demographics Workshop_Batch_Number (or use the questionnaire copy) and assert the two agree where both exist.
+   - Confirm the _pre theme columns are non-null after the merge.
+   - Count Age_At_Workshop == 0 and treat it as NaN.
+
+PART 2: Theme scores (Pre phase only)
+1. Reverse-code the listed items with 6 - x: Mindset_Parental_Approval_Mandatory_For_Career, Mindset_Parental_Agreement_Mandatory_For_Decisions, Mindset_Prefers_Safety_And_Security_Path, Mindset_Preoccupied_With_Safety_And_Security, Mindset_Loneliness_While_Contemplating_Social_Change, Mindset_Lacks_Reflection_Opportunities, Mindset_Unclear_Needs_Vs_Wants and Financial_Attitude_Money_Equals_Happiness.
+2. For career_criteria_importance, invert Life_Criteria_Cause_Of_Work as 9 - x so higher means more important. Document that the other rank items stay on their raw scale, as the goal specifies.
+3. Compute each theme score as the row mean of the non-null items if at least 80% of the theme's items are answered, otherwise NaN.
+4. Report the item count per theme, the N scored per theme and Cronbach's alpha per theme.
+
+PART 3: Baseline comparison
+1. For each of the six themes, plus Age_At_Workshop and Workshop_Batch_Number, run a Welch t-test (and Mann-Whitney U) of switchers vs non-switchers.
+   - Use column-specific dropNa and report n per group.
+   - Report means and Cohen's d.
+2. For Gender and Educational_Stream_Category, run chi-square tests with switch rate per level.
+3. Bonferroni alpha = 0.05 / 10, about 0.005. Flag results with 0.005 &lt;= p &lt; 0.05 as exploratory.
+
+PART 4: Model A
+1. Define two samples:
+   - Sample A-max: rows complete on the four demographics only.
+   - Sample common: rows complete on the four demographics and all six theme scores. This is the sample Step 4 will use.
+2. Create stratified 5-fold splits with a seeded shuffle (for example, a mulberry32 seed of 42), stratified on switched_to_fulltime. Save the fold_id per Participant_Id for both samples.
+3. Encode features within each fold:
+   - One-hot Gender and Educational_Stream_Category, dropping the reference levels MALE and Arts/Commerce/Science/Pharmacy.
+   - Z-score Age_At_Workshop and Workshop_Batch_Number using training-fold mean and SD only.
+4. Model: a TF.js tf.sequential with a single dense(1, sigmoid) unit, kernelRegularizer l2(0.01), binaryCrossentropy loss and Adam (lr 0.05), trained for about 200 epochs at full batch.
+   - Class weights: positive weight = n_neg / n_pos, computed in the training fold (about 1.52); negative weight = 1.
+   - A plain JS gradient-descent logistic regression with the same loss is an acceptable fallback.
+5. Collect out-of-fold probabilities. Compute AUC with the Mann-Whitney rank formula, per fold and pooled, plus mean ± SD.
+6. At threshold 0.5, report recall, precision, specificity and balanced accuracy, plus the pooled confusion matrix (TP, FP, FN, TN).
+7. Also report recall at the threshold that flags the top 39.72% of participants, matching the base rate.
+8. Fit on all of Sample A-max and report the standardised coefficients.
+9. As a sanity check, run a batch-only model to see how much of Model A's AUC comes from cohort (the censoring and recency effect).</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                For the 1,085 at-risk participants (Point 1, batches 11-17, paired Pre/Post, is_fulltime_pre == 0, 431 switchers): (a) Which column or step caused the 0-row dropNa, and what are the count and percentage missing for every feature that will actually be used? (b) After rebuilding the six goal-specified Pre themes (social_commitment_and_changemaker_identity, purpose_and_direction, courage_agency_autonomy, support_community_mentorship, money_attitudes, career_criteria_importance) with a score-if-at-least-80%-of-items-answered rule, and dropping missing values column by column, do switchers and non-switchers differ on any single Pre theme or demographic at Bonferroni alpha = 0.05 / (number of tests)? (c) Using only Gender, Age_At_Workshop (&gt; 0), Educational_Stream_Category and Workshop_Batch_Number, what AUC, recall, precision and confusion matrix does a class-weighted, L2-regularised logistic regression achieve under stratified 5-fold CV? Report this both on Model A's maximal sample and on the common complete-case sample that Model B will use.
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Rerun Step 3 with checkpoints before Model B</strong>: <span style="color:#64748b;">Do not start Model B until a verified Model A baseline exists. Re-execute the repair with explicit checkpoints. (1) Print row counts after every transform: filter to Level 0.1 in batches 11-17, Pre-only scoring, demographic join, outcome flag. (2) Assert that each result object is non-empty and defined before moving on. (3) Print the per-column null-percentage table. (4) Drop missing values only within the exact Model A feature list plus the outcome. (5) Check N and the switcher count against the expected 1,085 / 431. (6) Fix and save the 5-fold stratified split with a seed, then run the univariate tests (Cohen's d / Cramér's V, Bonferroni α = 0.005) and Model A (AUC, recall, precision per fold). Model B depends on Model A's folds and score, so it cannot be judged without them.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Keep moving forward on the main track (Rerun Step 3 with checkpoints before Model B) &mdash; <em>Like sticking with the main recipe that everyone enjoyed so far, without changing too many spices.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Run Models A and B together, shared folds</strong>: <span style="color:#64748b;">Build a single script that repairs the pipeline, defines one common complete-case sample (rows complete on the demographics AND all six Pre theme scores) and fixes one seeded 5-fold split. It then fits Model A and Model B on identical folds in the same run, with the same assertions and row-count checks as choice 1. This removes any chance that the two models are compared on different rows or folds, and it answers the Step 4 question in one pass. The cost: if the pipeline breaks again, both results are lost together, and the shared sample may be smaller than a demographics-only sample.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Explore alternative angle: Run Models A and B together, shared folds &mdash; <em>Like trying an alternate scenic trail to see if there is an even faster shortcut.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Impute missing values instead of dropping rows</strong>: <span style="color:#64748b;">Dropping rows with missing values is what wiped out the data before, and even a narrower drop may shrink or bias the cohort. Instead, keep every eligible participant. Exclude columns that are structurally empty (Post-only fields, items not asked in batches 11-17, very sparse demographics such as Native_District if more than half is missing). Impute the remaining gaps inside each training fold (median or mode, plus a missing-value indicator) so no information leaks from test folds. Then run Model A, and optionally Model B, on the full cohort. Report results next to a complete-case version to show whether the choice of handling changes the conclusions.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Zoom in on the strongest clues (Impute missing values instead of dropping rows) &mdash; <em>Like a detective focusing specifically on the clearest fingerprint found at the scene.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Descriptive audit first, models later</strong>: <span style="color:#64748b;">Pause modeling and produce only a verified descriptive audit. This covers the cohort flow from 4,304 rows to the final N, the switch rate, null percentages for every column, coverage of the Pre items by batch, and the distributions of the six theme scores (including reliability via Cronbach's alpha per theme). It confirms the inputs are sound, for example that the theme scores aren't built from items missing in some batches, before any AUC comparison. It is slower, but it guards against a Model B result built on broken scores.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Zoom in on the strongest clues (Descriptive audit first, models later) &mdash; <em>Like a detective focusing specifically on the clearest fingerprint found at the scene.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Rerun Step 3 with checkpoints before Model B</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 2 dropped all 1,085 at-risk participants at the final dropNa. The likely causes are a global dropNa across all 181 columns (including all-null 'not_collected_constant' and 'poor_coverage' columns, the insecurities block and alt-wording items), an all-items-required theme rule, unfiltered Age_At_Workshop == 0, or a broken merge or suffix collision on the shared Workshop_Batch_Number column. Step 3 therefore starts with a diagnostic audit and pipeline repair, as the steering choice requires. It then rebuilds only the six Pre themes the goal names, using an 80%-answered rule, and recovers the univariate baseline at a Bonferroni-corrected alpha. Model A is fitted on its own maximal sample and also on the common sample Model B will use, so the Step 4 A-vs-B comparison is like-for-like on identical rows and identical saved folds.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                I can't report any findings yet, because the analysis results I received were empty (&quot;undefined&quot;). I have no cohort size, null counts, test statistics or model scores to explain. Any numbers I gave you would be invented, so I haven't included any. That includes the expected N = 1,085 and 431 switchers (about 39.7%), which still need to be checked against the real data.
+
+I can explain what each step will show once the results arrive.
+
+- **Why the dropNa returned 0 rows (part a):** This is a hypothesis to confirm, not a finding. Dropping missing values across every column means a row survives only if it has no gaps anywhere. If even one column is almost entirely empty, such as an item not asked in batches 11-17, a Post-only field, or a sparse demographic like Native_District, every row gets removed. The fix is to drop missing values only within the columns actually used. The null-percentage table will show which columns are at fault.
+- **Univariate tests (part b):** Each variable is compared between switchers and non-switchers on its own. Cohen's d and Cramér's V measure how big the difference is, separately from whether it is statistically significant. With 10 tests, the Bonferroni cutoff of 0.005 guards against false positives. Even a significant result would show association, not cause.
+- **Models (part c):** The AUC is the chance that the model ranks a random switcher above a random non-switcher. 0.5 is a coin flip and 1.0 is perfect. Recall is the share of real switchers the model catches. Precision is the share of its &quot;switcher&quot; predictions that are correct. Comparing the two samples shows whether the AUC changes just because the rows changed (maximal vs. common complete-case).
+
+If you rerun the analysis or send the output, I'll write up the actual results in the same plain-language way.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #4</span> Checkpointed Rebuild and Verified Model A Baseline (Gate Before Model B)
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">**0. Error handling**
+- Wrap the whole script in try/catch.
+- Always return a defined object: {checkpoints: [...], failedStage, error, results}. Never return an undefined value.
+- Define a helper assertStage(name, condition, info) that pushes {stage, n, pass} and throws on failure.
+
+**1. Load and cast**
+- Locate both tables via Object.keys(data).
+- Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to String.
+- Apply parseFloat to Workshop_Level and parseInt to the batch column.
+- Checkpoint: questionnaire has 4,304 rows; demographics has 2,890.
+
+**2. Filter**
+- Keep rows where |Workshop_Level − 0.1| &lt; 1e-9 and batch is in 11-17.
+- Checkpoint: expect 2,912 rows and 1,462 participants.
+
+**3. Clean (scored columns only)**
+- Set 0 to NaN, except Financial_Years_To_Independence.
+- Set values &gt; 8 to NaN on: Career_Preference_Own_Business, Career_Preference_Social_Entrepreneurship_Or_Ngo, Career_Preference_Academia, Life_Criteria_Work_Satisfaction.
+- Set values &gt; 5 to NaN on: Mindset_Knows_Personal_Values, Mindset_Emotionally_Mature_Adult, Mindset_Self_Actualization_Linked_To_Society, Mindset_Understands_Flourishing_Youth_Meaning, Mindset_Clear_Professional_Life_Sector, Metric_Life_Satisfaction_Global.
+- Print the number of cells changed per rule.
+
+**4. Pair Pre and Post**
+- Split by Workshop_Phase ('Pre' / 'Post').
+- Build is_fulltime = (Career_Plan_Social_Action_Engagement === 'Fulltime as a career').
+- Use plain JS Maps keyed by Participant_Id for the inner join, keeping full Pre columns and only is_fulltime_post from Post. Post features must never enter the model.
+- Checkpoints: 1,460 Pre / 1,452 Post / 1,450 pairs.
+- Keep is_fulltime_pre == 0. Checkpoint: 1,085.
+- Set y = is_fulltime_post. Checkpoint: 431 positives. If the counts deviate, flag the deviation but continue, so the diff is visible.
+
+**5. Pre theme scores (row-wise mean of non-NaN items)**
+- A score is valid only if at least 80% of the theme's items are present.
+- Reverse-code with 6 − x:
+  - Social commitment: Mindset_Loneliness_While_Contemplating_Social_Change.
+  - Courage: Mindset_Parental_Approval_Mandatory_For_Career, Mindset_Parental_Agreement_Mandatory_For_Decisions, Mindset_Prefers_Safety_And_Security_Path, Mindset_Preoccupied_With_Safety_And_Security.
+  - Support: Mindset_Lacks_Reflection_Opportunities.
+  - Money: Mindset_Unclear_Needs_Vs_Wants, Financial_Attitude_Money_Equals_Happiness.
+- career_criteria_importance: invert every rank item to 9 − x, so higher means more important (this includes Life_Criteria_Cause_Of_Work as the goal requires). Then take the mean.
+- Also export the single item cause_of_work_importance = 9 − Life_Criteria_Cause_Of_Work for transparency.
+- Print the item count found per theme. Assert every listed item exists as a column; any missing column is named.
+
+**6. Join demographics**
+- Build a Map keyed by String(Participant_Id).
+- Rename the demographics batch column to avoid the shared-name clash, and use the demographics Workshop_Batch_Number as specified.
+- Set Age_At_Workshop ≤ 0 to NaN.
+- Checkpoint: matched N.
+
+**7. Null audit**
+- Build a table of count and percentage NaN for the 10 features plus y.
+- Identify the culprit of the earlier 0-row dropNa by recomputing a global dropNa across all joined columns.
+- List the columns with 100% NaN.
+
+**8. Samples (column-wise dropNa)**
+- Sample A_max: complete on the 4 demographics and y.
+- Sample common_cc: complete on the 4 demographics, the 6 themes and y.
+- Assert each sample has n ≥ 200 and both classes present.
+- Report n and base rate for each.
+
+**9. Univariate tests on common_cc**
+- Numeric variables: Welch t, p from the normal approximation, Cohen's d (pooled SD).
+- Categorical variables: chi-square on the contingency table and Cramér's V, with sparse categories collapsed into 'Other' if any expected count is below 5.
+- 10 tests in total; Bonferroni alpha = 0.005.
+
+**10. Folds**
+- Use a mulberry32 PRNG with seed 42.
+- Shuffle within each class and deal round-robin into 5 folds.
+- Save the fold assignment per Participant_Id for both samples. common_cc folds are derived by subsetting the A_max assignment, so folds are nested.
+- Print positives per fold. Assert each fold has a base rate within ±3 percentage points of the overall rate.
+
+**11. Model A**
+- Features: one-hot Gender and Educational_Stream_Category (drop the reference level), plus Age and Batch z-scored using training-fold mean and SD only.
+- Fit logistic regression as a tf.js dense(1, sigmoid) layer, or as manual batch gradient descent:
+  - Weighted binary cross-entropy with class weights w_c = n / (2·n_c), computed per training fold.
+  - L2 lambda = 0.01, no penalty on the intercept.
+  - Adam with lr 0.05, 300 epochs, fixed seed.
+- Collect out-of-fold probabilities.
+- AUC via Mann-Whitney ranks with tie handling.
+- Recall, precision and the confusion matrix at threshold 0.5.
+- Run on both A_max and common_cc.
+
+**12. Sanity checks**
+- Label-shuffled Model A on common_cc should give AUC ≈ 0.5, within ±0.05.
+- A majority-class baseline gives AUC 0.5 and recall 0.
+- Assert that every AUC is finite and lies in [0, 1].
+
+**13. Gate**
+- Set readyForModelB = true only if all assertions pass and common_cc n ≥ 200.
+- Export a frozenConfig for Step 5.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Rebuild the at-risk cohort from scratch with an assertion after every transform: Point 1 (Workshop_Level == 0.1), batches 11-17, cleaned, Pre/Post paired, is_fulltime_pre == 0, joined to demographics on string Participant_Id. Five questions follow.
+(1) Does the cohort reproduce N = 1,085 and 431 switchers (39.72%)?
+(2) What is the count and percentage missing for each of the 6 Pre theme scores (built with the at-least-80%-of-items rule), Gender, Age_At_Workshop (&gt; 0), Educational_Stream_Category and Workshop_Batch_Number? Which column, if any, explains the earlier 0-row dropNa?
+(3) In the 10 univariate tests (6 themes, age and batch by Welch t / Cohen's d; Gender and stream by chi-square / Cramér's V), does any variable differ between switchers and non-switchers at Bonferroni alpha = 0.005?
+(4) Under a seeded, saved, stratified 5-fold split, what per-fold and pooled out-of-fold AUC, recall, precision and confusion matrix does the class-weighted, L2 logistic regression on demographics only (Model A) achieve? Report this on its maximal sample and on the common complete-case sample that Model B will use.
+(5) Do all checkpoints pass, so that Model B may proceed?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Smoke-test the pipeline and return explicit checkpoints</strong>: <span style="color:#64748b;">Before any modelling, run a stripped-down version of the pipeline that returns one small, serializable JSON object of checkpoints at each stage. These are the raw rows, the Point 1 / Level 0.1 / batch 11–17 filter (Step 1 found 2,912 rows and 1,462 participants), the Pre-scored rows, the Pre–Post merge, the demographics join, and the rows remaining after dropna. Each stage should also report per-column null counts. Wrap each stage in try/except so that an error message is returned instead of 'undefined', and make sure the final object is an explicit return value. Only after all checkpoints are non-empty should the run fit Model A (demographics only) with stratified 5-fold CV and report AUC, recall and precision per fold. Model B stays gated until then. This fixes the real blocker, which is that no output comes back at all.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check Every Step Before Cooking the Full Meal &mdash; <em>Like a cake that keeps coming out of the oven missing. Instead of baking another one and hoping, you taste and check the bowl after every single step: after adding flour, after adding eggs, after mixing. That way you find out exactly when things go wrong. You also put a sticky note on each step that says what went wrong, so nothing just silently disappears.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Replace dropna with fold-safe imputation and retry</strong>: <span style="color:#64748b;">The most likely analytical cause of the earlier empty dataset (Step 2) is listwise deletion across a column that is almost entirely null. Candidates include an alt-wording item, a not_usable field, Age recorded as 0, or a duplicate Workshop_Batch_Number left over from the join. This option drops any feature with more than 50% missing values and scores mindset scales as the mean of available items, requiring at least 60% of items answered. Remaining gaps are filled by median/mode imputation fitted inside each CV fold, with missingness-indicator flags added. Model A and Model B then run on the same sample. The aim is to recover the analysis faster, but if the failure is in execution rather than the data, this still returns nothing.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Fill in the Blanks Instead of Throwing People Out &mdash; <em>Like a teacher grading a class quiz. Right now, any student who skipped even one question gets their whole quiz thrown away, and somehow every quiz ended up in the bin! Instead, we remove the question almost nobody answered, grade students on the questions they did answer, and make sensible guesses for a few small gaps.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Univariate-only verdict, defer predictive modelling</strong>: <span style="color:#64748b;">Stop the modelling track and answer the core question with simpler, more robust evidence. On the participants with Pre-workshop data, compare switchers and non-switchers on each mindset score using Mann–Whitney or t-tests with Cohen's d, and Cramér's V for categorical items. Apply Bonferroni correction (p &lt; 0.005 for 10 tests). This yields a cautious, descriptive verdict on whether any measurable baseline mindset difference exists, without depending on the fragile multi-stage pipeline. It is associational only, because the data is single-arm and observational.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Ask the Simple Question First &mdash; <em>Like a coach who wants to know if players who stretch before games score more goals. Before building a fancy computer system to predict every player's score, the coach just compares the average goals of stretchers and non-stretchers to see if there's any difference at all.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Formally close with 'not demonstrable' verdict</strong>: <span style="color:#64748b;">Two consecutive steps produced no verifiable output, so the defensible conclusion right now is that the predictive power of Pre-workshop mindset cannot be demonstrated from the evidence produced so far. This option writes up that verdict along with what is known: the Step 1 cohort of 1,462 participants in batches 11–17 and the Step 2 pipeline collapse at dropna. It also documents the specific gate checks (Q1–Q5) a future analysis must pass. This avoids sunk-cost iteration but leaves the substantive question open.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Close the Case Honestly and Leave a Map &mdash; <em>Like a detective who has run out of time. Instead of making up an ending, they close the file as 'unsolved for now' and leave tidy notes for whoever picks up the case later: what was found, where the trail went cold, and what to check next.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Smoke-test the pipeline and return explicit checkpoints</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 3 returned 'undefined', so there is no verified cohort, no null audit, no univariate result and no Model A score. Model B therefore has nothing to be compared against. The human steering choice requires that no Model B work start until a checkpointed, verified Model A baseline exists. Step 4 is re-planned from the Model B head-to-head into an assertion-gated rerun of Step 3. It ends by saving reproducible folds, a frozen preprocessing configuration and a go/no-go flag that the next step will reuse for Model B.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **No results came through, so I can't report any findings yet.** The analysis output was &quot;undefined&quot;: no data, row counts, test statistics or model metrics were passed to me. I won't estimate N = 1,085, the 431 switchers (39.72%), or any p-value, because I'd be making them up. Nothing in Q1–Q5 can be marked as passed, and **Model B should not proceed** until the checkpoints below are confirmed from real output.
+
+**What to look for once the run completes.**
+- **Q1 (cohort reproduction):** Compare the actual N and switcher count to 1,085 and 431. The first step where the row or participant count differs from expectations is where the deviation began. The usual suspects are the batch 11–17 filter, the inner merge of Pre and Post, and the demographics join.
+- **Q2 (missingness):** A column that is almost entirely null explains the earlier empty dropNa. Likely culprits are an alt-wording item, a not_usable column, Age recorded as 0, or an unsuffixed duplicate Workshop_Batch_Number left over from the join.
+- **Q3 (univariate tests):** Only differences with p &lt; 0.005 (the Bonferroni threshold for 10 tests) count as significant. Check the effect sizes too. Cohen's d and Cramér's V show how large a difference is, not just whether it is detectable. Values around 0.2 are small.
+- **Q4 (Model A):**
+  - **AUC:** 0.5 means no better than chance and 1.0 is perfect.
+  - **Recall:** the share of true switchers the model catches.
+  - **Precision:** the share of flagged people who actually switched.
+  - Compare the maximal sample with the common sample, and check that results are similar across folds.
+- **Q5 (go/no-go):** Model B can proceed only if every assertion passes, N and switchers reproduce (or any deviation is explained), dropNa is non-empty, folds are balanced, no Post/delta/Point_2/3/Person_Years fields are used as features, and the common sample is defined.
+
+All findings from this single-arm observational data describe associations only, not causal effects. Please re-run or resend the output and I'll summarize the actual numbers.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #5</span> Fail-Safe Checkpointed Smoke Test → Verified Model A → Gated Model B Verdict
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">A. ROBUST SHELL
+1. Build `out = {checkpoints: [], errors: [], gate: {}, modelA: null, modelB: null, verdict: null}`.
+2. Run every stage inside its own try/catch. On error, push `{stage, message, stack (first 300 chars)}` and stop further stages without throwing.
+3. Wrap the whole body in an outer try/catch. The last statement is always an explicit `return safe(out)`.
+4. `safe()` recursively converts NaN, Infinity and undefined to null, rounds numbers to 4 decimals, and never includes row-level data. The payload stays under about 30 KB.
+5. Use plain JS arrays and Maps for filtering, pairing and joining, not Danfo merge, to remove merge and NaN-propagation failure modes. Danfo is optional for display only.
+
+B. CHECKPOINTS (each records `{stage, rows, unique_participants, expected, pass, null_counts for the columns relevant at that stage, missing_columns}`)
+- S0 Load: locate files by name containing 'prod_nirman_questionnaire' and 'prod_nirman_demographics'.
+  - Coerce Participant_Id with `String(x).trim().replace(/\.0$/, '')` in both tables.
+  - Coerce Workshop_Phase to a trimmed string and Workshop_Level with parseFloat, compared with a tolerance of `Math.abs(l - 0.1) &lt; 1e-6`.
+  - Coerce Workshop_Batch_Number with parseInt and Workshop_Name to a string.
+  - Expect 4,304 rows / 2,177 participants and 2,890 demographics rows.
+- S1 Filter: Level 0.1 and batch 11–17. Expect 2,912 rows / 1,462 participants.
+- S2 Clean: for every scored item used, set 0 to NaN, except Financial_Years_To_Independence (not used here). Apply the out-of-range rules: above 8 on the listed rank items (including Life_Criteria_Work_Satisfaction) and above 5 on the listed agreement items. Report per-item counts of zeros nulled and out-of-range values nulled.
+- S3 Pre theme scores: restrict to Pre rows (expect 1,460).
+  - For each of the 6 themes, list `items_expected`, `items_found_in_csv` and `items_missing_from_csv`. A missing column is an explicit failure reason, not a silent NaN.
+  - Reverse-code the listed items with 6 − x, which affects courage_agency_autonomy, support_community_mentorship and money_attitudes.
+  - For career_criteria_importance, invert all rank items with 9 − x so higher means more important, including Life_Criteria_Cause_Of_Work as the goal requires.
+  - Theme score = mean of the non-null items if at least 80% of the theme's found items are answered, otherwise null.
+  - Report per-theme null count and %, and per-item all-null flags.
+- S4 Pairing: build a Map of Pre and Post rows by Participant_Id. Report duplicate keys per phase, Pre-only and Post-only counts, and the paired count. Expect 1,450, with 10 Pre-only and 2 Post-only.
+- S5 Target: is_fulltime is set when the trimmed Career_Plan_Social_Action_Engagement equals 'Fulltime as a career'. Keep is_fulltime_pre == 0 and set switched = is_fulltime_post. Expect 1,085 at-risk participants and 431 switchers.
+- S6 Demographics join: look up each participant by string ID. Report matched and unmatched counts.
+  - Use the demographics Workshop_Batch_Number as the feature, and report how often it agrees with the questionnaire batch.
+  - Report nulls and the count of Age_At_Workshop values equal to 0, which are set to null.
+- S7 Model samples: the column-specific complete-case filter for Model A gives the maximal sample. Filter on A's features plus the 6 themes for the common sample.
+  - Report N, switchers and the base rate for each.
+  - Also report a 'naive dropNa across all columns' N, with the top-5 columns by null count, to explain the historic 0-row result.
+- GATE 1 (all must hold): every checkpoint is non-empty, no stage errored, and the S5 counts match the expected figures or the deviation is explained. If it fails, return the checkpoints and failure reasons, and skip modelling.
+
+C. MODEL A (runs only after GATE 1)
+1. Encoding:
+   - Gender: one-hot with MALE as reference.
+   - Educational_Stream_Category: one-hot with 'Arts/Commerce/Science/Pharmacy' as reference.
+   - Workshop_Batch_Number: one-hot with 15, the largest batch, as reference, to capture the non-linear batch pattern seen in Step 1.
+   - Age_At_Workshop: z-scored using training-fold statistics only.
+2. Logistic regression in plain JS, or as a TF.js single dense sigmoid unit:
+   - Full-batch gradient descent with lr 0.1 and 2,000 iterations, or until the loss change is below 1e-7.
+   - L2 penalty λ = 1.0 on weights only, not the intercept.
+   - Class weights w_c = N / (2 · N_c).
+3. Cross-validation: stratified 5-fold with a mulberry32 shuffle at seed 42. Store fold assignments by Participant_Id so B reuses identical folds.
+4. Metrics:
+   - AUC by the Mann–Whitney rank formula, with ties averaged.
+   - Recall, precision and the confusion matrix at threshold 0.5.
+   - Report per-fold values, the pooled out-of-fold result and the mean ± SD.
+   - Run on both the maximal sample and the common sample.
+
+D. GATE 2: GATE 1 passed, Model A's common-sample out-of-fold AUC is finite, and every fold contains both classes.
+
+E. MODEL B (runs only after GATE 2)
+1. Features: A's features plus the 6 Pre theme scores, z-scored within each training fold. Use the same folds, λ and class weights as A, on the common sample.
+2. Comparison: report B's per-fold and pooled out-of-fold AUC, recall, precision and confusion matrix.
+3. ΔAUC = AUC_B − AUC_A on the common sample, with a paired bootstrap 95% CI: 1,000 resamples of participants at seed 7, recomputing both out-of-fold AUCs each time.
+4. Coefficients:
+   - Refit B on the full common sample with globally standardised features.
+   - Rank by |coef| and report the top 5 with coef, odds ratio (exp(coef)) per 1 SD or per category vs reference, and direction.
+   - Report fold-sign consistency (k/5) from the 5 fold models.
+   - Report the count of the top 5 that are mindset themes vs demographics.
+5. Lightweight diagnostics:
+   - Pairwise Pearson r among the 6 themes, flagging |r| &gt; 0.6 as collinearity that may split credit.
+   - Univariate switcher vs non-switcher Cohen's d for each theme, with Welch t p-values at Bonferroni α = 0.05 / 6.
+
+F. PRE-REGISTERED VERDICT RULE
+- 'B beats A meaningfully' requires all three: ΔAUC ≥ 0.03, the CI lower bound above 0, and B's recall no lower than A's minus 0.02.
+- If ΔAUC is above 0 but the CI includes 0, or ΔAUC is below 0.03: 'Pre-workshop mindset has no demonstrable predictive power beyond demographics in this sample.'
+- If B's AUC is at most 0.55: state that the signal is near chance overall.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                The pipeline runs on the at-risk cohort (prod_nirman_questionnaire, Workshop_Level == 0.1, Workshop_Batch_Number 11–17, cleaned, Pre/Post paired on string Participant_Id, is_fulltime_pre == 0, joined to prod_nirman_demographics). It must return an explicit, serializable checkpoint object and answer four questions.
+(1) At which stage, if any, do row or participant counts deviate from the verified Step 1 figures? Expected: raw 4,304 rows / 2,177 participants; filtered 2,912 / 1,462; Pre 1,460, Post 1,452; paired 1,450; at-risk 1,085; switchers 431 (39.72%). Which column causes the earlier 0-row dropNa, based on per-column null counts at each stage?
+(2) With the six Pre theme scores built under the at-least-80%-of-items rule, what is the effective N for Model A on its maximal sample (Gender, Age_At_Workshop &gt; 0, Educational_Stream_Category, Workshop_Batch_Number)? What is the effective N for the common complete-case sample shared with Model B? What is the switcher base rate in each?
+(3) Under a seeded stratified 5-fold split, what per-fold and pooled out-of-fold AUC, recall, precision and confusion matrix (threshold 0.5) does Model A achieve, a class-weighted, L2-regularised logistic regression? Report this on both samples.
+(4) Only if every checkpoint passes and Model A's out-of-fold AUC is finite: what does Model B (demographics plus the 6 Pre themes) achieve on the same folds? What is ΔAUC (B − A) with a paired bootstrap 95% CI? What are B's top-5 standardised coefficients, with odds ratios and fold-sign consistency? Does B beat A by the pre-registered margin, or does Pre-workshop mindset show no demonstrable predictive power?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Minimal stage-by-stage run with guaranteed output</strong>: <span style="color:#64748b;">Strip the run down to plain data stages with no modelling. The stages are load, filter to Level 0.1 batches 11-17, split Pre/Post, pair, flag at-risk, and flag switchers. Wrap each stage in its own try/except and write its result immediately to a simple text or JSON summary: row count, unique participants, pass/fail against the target, and the error message if it failed. Replace the global dropNa with column-specific completeness checks, so a fully empty column (for example a Post-only Action_Plan item on Pre rows, or Person_Years_Of_Social_Action) is reported rather than wiping every row. This tests the likeliest failure point (execution or output handoff) first, and it guarantees that even a crash produces a readable result.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Find Where the Water Stops &mdash; <em>Picture a garden hose that gives no water at the end. Instead of guessing, you check each section one at a time with a bucket under every joint. The first dry bucket shows you exactly where the problem is. We'll also stop using one overly strict rule that was tossing out every row of data whenever a single box was blank. That's like throwing away every exam paper with even one unanswered question, so you end up with none.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Model A only, on a column-specific complete-case sample</strong>: <span style="color:#64748b;">Assume the data stages are basically sound and skip straight to a bounded Model A. Fit logistic regression for switching on Gender, Age (0 treated as missing) and Educational_Stream among the 1,085 at-risk participants. Drop rows only when one of these three predictors is missing. Return effective N, AUC with a bootstrap CI, recall and precision against the roughly 40% base rate. Defer Model B. This is faster than choice 1, but if the upstream stages are the problem, it may fail silently again.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Get a Quick Starting Score &mdash; <em>It's like timing a runner on a flat track before adding hurdles. We guess who switches using only basic facts about each person (gender, age and what they studied) so we have a starting score to beat later. The catch: if the track itself is broken, the stopwatch may stay blank again.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Replace six themes with one composite mindset score</strong>: <span style="color:#64748b;">Reduce the number of variables Model B depends on. Instead of six theme scores, each needing at least 80% of its items answered, build one Pre-workshop mindset composite from whichever items are at least 70% complete. Run a simple descriptive comparison first: switchers vs non-switchers on the composite, with an effect size and CI. Then compare Model A with Model A plus the composite. Fewer columns and a looser completeness rule make an empty sample much less likely, at the cost of losing theme-level detail.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> One Overall Mindset Score Instead of Six &mdash; <em>It's like using one overall grade instead of six separate subject grades because lots of report cards have blank spots. You lose some detail, but far fewer students get left out just because one subject is missing.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Close out as inconclusive and document blockers</strong>: <span style="color:#64748b;">Stop retrying the analysis and write up the current state. Record the verified targets, the unresolved 0-row dropNa from Step 2, three consecutive empty outputs, and the candidate causes: fully empty columns, a broken output handoff, and the strict 80% scoring rule. Include a concrete rerun checklist. This is the honest choice if the pipeline cannot be debugged right now, but it gives no answer about whether mindset adds predictive power.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Write It All Down and Pause &mdash; <em>It's like leaving a clear note for the mechanic when your car won't start, instead of turning the key over and over. You write down what you've tried, what you suspect is wrong, and the steps to fix it.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Minimal stage-by-stage run with guaranteed output</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Steps 2–4 never produced usable output. Step 2's dropNa returned 0 rows, and Steps 3 and 4 returned 'undefined', so there are no verified Model A metrics, missingness tables or theme scores for the planned 'top-5 coefficients and verdict' step to interpret. Following the chosen 'smoke-test with explicit checkpoints' trajectory, Step 5 becomes a stripped-down, fault-tolerant pipeline. Each stage is wrapped in try/catch and emits a small, JSON-safe checkpoint with row counts, participant counts and per-column nulls, checked against the figures Step 1 verified (2,912 rows, 1,462 participants, 1,450 pairs, 1,085 at-risk, 431 switchers). Model A runs only once every checkpoint is non-empty. Model B, the A-vs-B comparison and the top-5 coefficients run only behind an automatic in-code gate, so the original verdict can still be delivered in this run if the pipeline is healthy, and a precise failure report comes back if it is not.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **No results came back from the analysis, so I can't report any findings.** The results field was empty (&quot;undefined&quot;), which usually means the pipeline didn't run or its output wasn't passed along. I won't guess at counts, AUCs or coefficients. The only numbers I can point to are your verified targets: 4,304 raw rows covering 2,177 participants, 2,912 filtered rows, 1,460 Pre and 1,452 Post, 1,450 paired, 1,085 at-risk, and 431 switchers (39.72%). Until real checkpoints exist, none of these can be confirmed or contradicted, and neither can the Q1 question of which column caused the earlier 0-row dropNa.
+
+**What a successful run would show, and how to read it:**
+- **Checkpoints (Q1).** Each stage reports its row count, unique participants, per-column null counts and a pass/fail against the verified figures. The first stage that misses its number is where to look. A column that is 100% null at that stage (for example a constant item, a Post-only Action_Plan item on Pre rows, or a sparse field like Person_Years_Of_Social_Action) is the likely cause of a 0-row result, because a global dropNa removes every row that has any missing value.
+- **Samples and Model A (Q2–Q3).** The effective N will be smaller than 1,085 because rows missing Gender, Age (0 = unknown) or Educational_Stream are dropped. The common sample for Model B will be smaller still, since it also needs the six theme scores. Each theme score needs at least 80% of its items answered.
+- **Reading the metrics.** AUC measures how well the model ranks switchers above non-switchers. 0.5 is a coin flip and 1.0 is perfect, and in practice values around 0.55–0.65 would be weak. Recall is the share of real switchers the model catches. Precision is the share of predicted switchers who really switched. With a base rate near 40%, precision below about 0.40 would mean the model is no better than guessing.
+- **Model B and the decision (Q4).** Model B runs only if every checkpoint passes and Model A's AUC is finite. I assumed that B &quot;wins&quot; only if ΔAUC ≥ 0.02 and the bootstrap 95% CI lower bound is above 0. Otherwise the conclusion is that Pre-workshop mindset shows no demonstrable added predictive power. I also assumed the six mindset themes you listed.
+
+All findings would describe associations and prediction, not causes. Please rerun the pipeline, or share its output, and I'll turn it into a full narrative.
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 6. PROJECT DATASET COLUMN REFERENCE BANK (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #475569;">6</span>
+          <span>6. Project Dataset Column Reference Bank (210 Columns)</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 12.5px; color: #64748b; margin: 0 0 12px 0;">
+          Columns detected in your uploaded dataset. You can cut and paste any of these column names into subsequent questions:
+        </p>
+        <div>
+          <span class="pill">Participant_Name</span><span class="pill">Participant_Id</span><span class="pill">Gender</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Current_Age</span><span class="pill">Age_At_Workshop</span><span class="pill">Workshop_Name</span><span class="pill">Workshop_Type</span><span class="pill">Workshop_Month_Year</span><span class="pill">Workshop_Month_Name</span><span class="pill">Workshop_Month_Number</span><span class="pill">Workshop_Financial_Year</span><span class="pill">Workshops_Attended_Count</span><span class="pill">Educational_Stream</span><span class="pill">Educational_Stream_Category</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Person_Years_Of_Social_Action</span><span class="pill">Education_Status</span><span class="pill">Native_State</span><span class="pill">Native_District</span><span class="pill">Native_Tehsil_Town</span><span class="pill">Raw_Native_State</span><span class="pill">Raw_Native_District</span><span class="pill">Raw_Native_Tehsil</span><span class="pill">State_Match_Status</span><span class="pill">District_Match_Status</span><span class="pill">Tehsil_Match_Method</span><span class="pill">Point_2_Workshop_Name</span><span class="pill">Point_2_Workshop_Invited</span><span class="pill">Point_2_Workshop_Attended</span><span class="pill">Point_3_Workshop_Name</span><span class="pill">Point_3_Workshop_Invited</span><span class="pill">Point_3_Workshop_Attended</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Career_Preference_Government_Service</span><span class="pill">Career_Preference_Private_Industry_Job</span><span class="pill">Career_Preference_Own_Business</span><span class="pill">Career_Preference_Social_Entrepreneurship_Or_Ngo</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Career_Preference_Academia</span><span class="pill">Career_Preference_Undecided</span><span class="pill">Career_Preference_Other</span><span class="pill">Life_Criteria_Geographical_Location</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Life_Criteria_Work_Satisfaction</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Life_Criteria_Career_Growth</span><span class="pill">Life_Criteria_Work_Life_Balance</span><span class="pill">Life_Criteria_Financial_Prosperity</span><span class="pill">Life_Criteria_Fame_And_Recognition</span><span class="pill">Life_Criteria_Job_Security</span><span class="pill">Insecurity_Social_Acceptability</span><span class="pill">Insecurity_Monetary_Compensation</span><span class="pill">Insecurity_Parental_Response</span><span class="pill">Insecurity_Suitable_Life_Partner</span><span class="pill">Insecurity_Underutilized_Talent_And_Skills</span><span class="pill">Insecurity_Less_Comfortable_Lifestyle</span><span class="pill">Insecurity_No_Visible_Impact</span><span class="pill">Insecurity_Professionally_Left_Out</span><span class="pill">Insecurity_Lack_Of_Life_Satisfaction</span><span class="pill">Insecurity_Future_Comfort_Reduction</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Mindset_Happiness_And_Self_Esteem</span><span class="pill">Mindset_Understands_Social_Issues_And_Severity</span><span class="pill">Mindset_Has_Life_Purpose</span><span class="pill">Mindset_Clear_Long_Term_Sector</span><span class="pill">Mindset_Knows_Personal_Values</span><span class="pill">Mindset_Has_Mentorship_Support_For_Future</span><span class="pill">Mindset_Takes_Stand_On_Social_Issues</span><span class="pill">Mindset_Courage_Against_Conventional_Careers</span><span class="pill">Mindset_Knowledge_Of_Social_Problem_Solving_Approaches</span><span class="pill">Mindset_Reads_Moral_And_Political_Philosophy</span><span class="pill">Mindset_Translates_Social_Intentions_To_Action</span><span class="pill">Mindset_Knows_Swa_Dharma</span><span class="pill">Financial_Attitude_Secure_About_Future</span><span class="pill">Mindset_Social_Change_Responsibility</span><span class="pill">Mindset_Has_Like_Minded_Peer_Network</span><span class="pill">Mindset_Found_Life_Purpose</span><span class="pill">Mindset_Aware_Of_Personal_Motivations_For_Social_Action</span><span class="pill">Mindset_Career_Social_Work_Integration</span><span class="pill">Mindset_Active_Meaning_Making</span><span class="pill">Mindset_Has_Larger_Social_Dream</span><span class="pill">Mindset_Belongs_To_Caring_Community</span><span class="pill">Mindset_Understands_Social_Problem_Solving_Vs_Work</span><span class="pill">Mindset_Has_Failure_Support_System</span><span class="pill">Mindset_Finds_Social_Problem_Solving_Exciting</span><span class="pill">Mindset_Visualizes_Self_As_Changemaker</span><span class="pill">Mindset_Social_Engagement_Crucial_For_Meaning</span><span class="pill">Mindset_Has_Inspiring_Social_Role_Models</span><span class="pill">Mindset_Social_Self_Efficacy_Confidence</span><span class="pill">Mindset_Understands_Happiness_Vs_Meaning</span><span class="pill">Mindset_Emotionally_Mature_Adult</span><span class="pill">Mindset_Acknowledges_Personal_Privilege</span><span class="pill">Mindset_Distinguishes_Needs_Vs_Wants</span><span class="pill">Mindset_Visualizes_Future_Youth_Inspiration</span><span class="pill">Mindset_Has_Guiding_Life_Philosophy</span><span class="pill">Mindset_Confident_In_Life_Experimentation</span><span class="pill">Mindset_Has_Reflection_Opportunities</span><span class="pill">Metric_Life_Satisfaction_Global</span><span class="pill">Mindset_Believes_Morals_Are_Absolute</span><span class="pill">Mindset_Comfortable_Expressing_Feelings</span><span class="pill">Mindset_Prosocial_Purpose_Boosts_Wellbeing</span><span class="pill">Mindset_Understands_Flourishing_Youth_Meaning</span><span class="pill">Mindset_Understands_Scientific_Purpose_Definition</span><span class="pill">Mindset_Excited_By_Life_Possibilities_In_20s</span><span class="pill">Mindset_Purpose_Finding_Is_Urgent_Priority</span><span class="pill">Mindset_Understands_Happy_Vs_Meaningful_Life</span><span class="pill">Mindset_Understands_Goal_Vs_Purpose</span><span class="pill">Financial_Attitude_Money_Equals_Happiness</span><span class="pill">Mindset_Applies_Categorical_Moral_Framework</span><span class="pill">Mindset_Excited_By_Purpose_Pursuit_Process</span><span class="pill">Financial_Attitude_Unbothered_By_Future_Earnings</span><span class="pill">Mindset_Privilege_Implies_Obligation</span><span class="pill">Mindset_Values_Work_Freedom_Over_Financial_Gain</span><span class="pill">Mindset_Understands_Purpose_Importance_And_Benefits</span><span class="pill">Mindset_Social_Contribution_Is_Deepest_Quest</span><span class="pill">Mindset_Knows_Impactful_Organisation_Functioning</span><span class="pill">Mindset_Inspired_By_Known_Changemakers</span><span class="pill">Mindset_Visualizes_Social_Sector_Contribution</span><span class="pill">Financial_Knows_Threshold_Vs_Aspirational_Income</span><span class="pill">Mindset_Alcohol_Safe_Within_Limits</span><span class="pill">Action_Identified_Books_To_Read</span><span class="pill">Action_Plan_Reduce_Carbon_Footprint</span><span class="pill">Action_Plan_Personal_Flourishing_6_Months</span><span class="pill">Action_Plan_Social_Contribution_6_Months</span><span class="pill">Action_Plan_Purpose_Journey</span><span class="pill">Mindset_Knows_How_To_Become_Flourishing_Youth</span><span class="pill">Mindset_Visualizes_Five_Career_Paths</span><span class="pill">Mindset_Spends_Day_In_Meaningful_Pursuits</span><span class="pill">Mindset_Committed_To_Social_Change</span><span class="pill">Mindset_Has_Mentor_For_Life_Matters</span><span class="pill">Mindset_Has_Guiding_Philosophy</span><span class="pill">Mindset_Can_Analyse_Social_Change_Intervention</span><span class="pill">Financial_Attitude_Anxiety_About_Aspirations</span><span class="pill">Mindset_Knows_Social_Problem_Solving_Building_Blocks</span><span class="pill">Mindset_Clarity_On_Purpose_Finding_Process</span><span class="pill">Mindset_Firm_On_Values_Against_Norms</span><span class="pill">Mindset_Understands_Social_Change_Approaches</span><span class="pill">Mindset_Understands_Purpose_Identification_Urgency</span><span class="pill">Mindset_Has_Values_For_Life_Decisions</span><span class="pill">Mindset_Has_Idea_About_Life_Direction</span><span class="pill">Mindset_Identified_Daily_Moral_Resolutions</span><span class="pill">Action_Plan_Purpose_Journey_1_Year</span><span class="pill">Mindset_Clear_Professional_Life_Sector</span><span class="pill">Action_Plan_Social_Change_Journey_1_Year</span><span class="pill">Mindset_Empowered_As_Active_Citizen_With_State</span><span class="pill">Mindset_Clear_Sense_Of_Purpose</span><span class="pill">Mindset_Visualizes_Five_Life_Possibilities</span><span class="pill">Mindset_Life_Beyond_Materialistic_Pleasures</span><span class="pill">Mindset_Anxiety_About_Finding_Purpose</span><span class="pill">Mindset_Sole_Credit_For_Own_Success</span><span class="pill">Mindset_Youth_In_Social_Sector_Is_Societal_Need</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Opposition</span><span class="pill">Mindset_Follows_Moral_Resolutions</span><span class="pill">Mindset_Distinguishes_Meaning_Vs_Pleasure_Seeking</span><span class="pill">Mindset_Understands_Social_Sector_Need_And_Role</span><span class="pill">Mindset_Courage_To_Live_Authentically</span><span class="pill">Mindset_Thought_Through_Life_Direction</span><span class="pill">Mindset_Life_Choice_Independent_Of_Peers</span><span class="pill">Financial_Knows_Needs_Vs_Aspirational_Income</span><span class="pill">Mindset_Visualizes_Social_Sector_Career_Despite_Norms</span><span class="pill">Mindset_Elevation_Motivates_Social_Action</span><span class="pill">Mindset_Self_Actualization_Linked_To_Society</span><span class="pill">Mindset_Unclear_Needs_Vs_Wants</span><span class="pill">Mindset_Poor_Understanding_Of_Socioeconomic_Issues</span><span class="pill">Mindset_Lacks_Reflection_Opportunities</span><span class="pill">Mindset_Believes_Morals_Are_Relative</span><span class="pill">Mindset_Doubts_Social_Purpose_Wellbeing_Impact</span><span class="pill">Mindset_Parental_Approval_Mandatory_For_Career</span><span class="pill">Mindset_Prefers_Safety_And_Security_Path</span><span class="pill">Mindset_Eco_Friendly_Lifestyle_Changes</span><span class="pill">Mindset_Responsibility_To_Give_Back_To_Society</span><span class="pill">Mindset_Own_Efforts_Over_Birth_Circumstances</span><span class="pill">Mindset_Maximize_Materialistic_Pleasures</span><span class="pill">Mindset_Privilege_Drives_Contribution</span><span class="pill">Mindset_Knows_Ways_To_Help_Those_In_Need</span><span class="pill">Mindset_Compassion_Motivates_Social_Action</span><span class="pill">Mindset_Applies_Value_Based_Decision_Criteria</span><span class="pill">Mindset_Righteous_Anger_Motivates_Social_Action</span><span class="pill">Mindset_Understands_Social_Sector_Unique_Roles</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Others</span><span class="pill">Mindset_Chance_Over_Effort_In_Life_Outcome</span><span class="pill">Mindset_Gratitude_Drives_Social_Contribution</span><span class="pill">Mindset_Moral_Test_For_Life_Decisions</span><span class="pill">Financial_Attitude_Confident_Future_Earnings</span><span class="pill">Mindset_Visualizes_Social_Sector_Career</span><span class="pill">Mindset_Parental_Agreement_Mandatory_For_Decisions</span><span class="pill">Mindset_Values_Harmony_With_Nature</span><span class="pill">Mindset_Inspired_To_Create_Social_Impact</span><span class="pill">Mindset_Excited_About_Life_Purpose_Discovery</span><span class="pill">Mindset_Committed_To_Social_Change_Movement</span><span class="pill">Mindset_Purpose_Is_Meaningful_Social_Difference</span><span class="pill">Mindset_Committed_To_Youth_Social_Change_Community</span><span class="pill">Mindset_Can_Enact_Active_Citizen_Duty</span><span class="pill">Mindset_Preoccupied_With_Safety_And_Security</span><span class="pill">Mindset_Bucket_List_Happiness_Approach</span><span class="pill">Mindset_Daily_Intentional_Purpose_Linked_Living</span><span class="pill">Mindset_Urgency_To_Act_On_Climate_Change</span><span class="pill">Mindset_Loneliness_While_Contemplating_Social_Change</span><span class="pill">Mindset_Income_Inequality_Is_Justified</span><span class="pill">Mindset_Steps_Toward_Independent_Responsible_Adulthood</span><span class="pill">Mindset_Considers_Needs_Before_Purchases</span><span class="pill">Mindset_Values_Growth_Mentors</span><span class="pill">Mindset_Actively_Cultivating_Mentor_Relationship</span><span class="pill">Financial_Expected_Income_Age_25</span><span class="pill">Financial_Expected_Income_Age_30</span><span class="pill">Financial_Planning_Sheet_Income</span><span class="pill">Financial_Planning_Sheet_Income_Halved</span><span class="pill">Financial_Years_To_Independence</span>
+        </div>
+      </div>
+    </details>
+
+    <!-- 7. RISKS, MODEL CONSTRAINTS & GOVERNANCE (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #64748b;">7</span>
+          <span>7. Risks, Model Constraints &amp; Governance</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="margin: 0; font-size: 13px; color: #334155; line-height: 1.65;">
+          1) Missing results: Steps 3-5 returned no metrics, so there are no AUC, recall, confusion-matrix or coefficient findings. The univariate comparisons in Step 2 are also empty because of the 0-row fault. Nothing here supports or rejects a mindset effect. 2) Pipeline drift: Steps 4 and 5 changed the career-criteria definition (all nine ranks inverted), the batch encoding, regularisation strength and epochs without any evidence. These must be reset to the goal's specification, or any deviation documented as a sensitivity check. 3) Outcome meaning: the target is a self-reported plan right after the workshop, not a later job change. 4) Batch effects: switch rates vary from 31% to 51% by batch, and recent batches have had less time. Demographic models that include Workshop_Batch_Number may pick this up. 5) Starting plan is related to switching: it is excluded from the headline models by the goal's feature list but is shown as a sensitivity check. 6) Sample size and noise: with 1,085 people (431 positives) and about 10 features, AUC estimates will be somewhat noisy, so use the bootstrap CI and avoid over-reading single folds. Theme scores may be correlated, which can split credit between themes and make coefficients unstable. 7) Single-arm observational data: there is no control group, so results show association, not proof that the workshop caused anything. 8) Unknown fault: the exact column behind the 0-row dropNa has not been identified in the evidence provided.
+        </p>
+      </div>
+    </details>
+
+    <!-- Sign-off Footer -->
+    <div class="footer">
+      Generated by <strong>Answer Strategically</strong> &bull; Answer Consistency Engine &bull; Tailored for Easy to understand for College graduate volunteer
+       &bull; Includes 5 Post-Execution Clarifications
+    </div>
+  </div>
+</body>
+</html>

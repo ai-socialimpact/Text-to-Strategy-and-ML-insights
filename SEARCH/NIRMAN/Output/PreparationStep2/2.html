@@ -1,0 +1,2109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Strategic Action Report — Are there different 'types' of transformation, and who belongs to each?
+
+Unsupervised segmentation: PCA followed by K-Means on standardised Pre-to-Post deltas, validated with silhouette score. Cluster profiling with group-wise medians and proportions, plus a descriptive outcome cross-tab.
+
+Using the shortlisted fields, build Pre-to-Post delta vectors for Workshop_Level == 0.1, batches 11–17. Cast Participant_Id to string, clean 0 -&gt; NaN, invert rank items so that higher means a stronger preference, clip Financial_Expected_Income_Age_30 to 5,000–1,000,000 and use its log, then drop rows with NaN and report the effective N. Standardise the deltas of Career_Preference_Social_Entrepreneurship_Or_Ngo, Career_Preference_Working_In_Ngo, Career_Preference_Government_Service, Career_Preference_Private_Industry_Job, Life_Criteria_Cause_Of_Work, Life_Criteria_Financial_Security, Life_Criteria_Financial_Prosperity, Mindset_Found_Life_Purpose, Mindset_Visualizes_Self_As_Changemaker, Mindset_Social_Self_Efficacy_Confidence, Metric_Life_Satisfaction_Global and Financial_Expected_Income_Age_30. Run PCA (keep components covering about 80% of variance), then K-Means for k = 3 to 6, and choose k by silhouette score and interpretability. Name each cluster from its average delta profile, for example 'purpose-driven shift', 'income-expectation drop' or 'little change'. Then profile each cluster by joining Gender, Age_At_Workshop (&gt; 0 only), Educational_Stream_Category, Native_State, Workshop_Batch_Number, and the Pre-phase Career_Plan_Social_Action_Engagement. As a descriptive check only, show the share of each cluster with Current_Status_Of_Work == 'Social Impact Work', excluding 'Student' and 'Not Sure', and note that recent batches are censored. Report cluster sizes, and do not claim causation.</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      margin: 0;
+      padding: 32px 16px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      padding: 36px 40px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05);
+    }
+    .header {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 22px;
+      margin-bottom: 24px;
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: #e0e7ff;
+      color: #3730a3;
+      border: 1px solid #c7d2fe;
+    }
+    .badge-audience { background: #f3e8ff; color: #6b21a8; border-color: #d8b4fe; }
+    .badge-success { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .badge-consult { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .question-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 14px 0 10px 0;
+    }
+    .question-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    h1.report-question {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+      color: #0f172a;
+      line-height: 1.45;
+    }
+    .subtitle { color: #475569; font-size: 13px; margin-top: 4px; }
+    .audience-note {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: #334155;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 20px 0 28px 0;
+    }
+    .kpi-card {
+      background: #f8fafc;
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .kpi-val { font-size: 24px; font-weight: 800; color: #0f172a; }
+    .kpi-lbl { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-top: 4px; letter-spacing: 0.04em; }
+    .verdict-box {
+      border-left: 5px solid #059669;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left-width: 5px;
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 24px;
+    }
+    .verdict-title { font-size: 18px; font-weight: 800; color: #166534; margin: 0 0 10px 0; }
+    .verdict-text { font-size: 13.5px; color: #1e293b; line-height: 1.65; }
+    details.collapsible-section {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #ffffff;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    details.collapsible-section summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: #f8fafc;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      transition: background 0.15s ease;
+    }
+    details.collapsible-section summary:hover {
+      background: #f1f5f9;
+    }
+    details.collapsible-section[open] summary {
+      background: #f1f5f9;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    details.collapsible-section summary::-webkit-details-marker {
+      display: none;
+    }
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .summary-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    .summary-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .summary-chevron {
+      font-size: 10px;
+      color: #64748b;
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    details.collapsible-section[open] .summary-chevron {
+      transform: rotate(180deg);
+    }
+    .collapsible-body {
+      padding: 20px;
+      background: #ffffff;
+    }
+    .step-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .step-title { font-size: 14.5px; font-weight: 700; color: #0f172a; }
+    .step-num { background: #4f46e5; color: #ffffff; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+    .sub-box { background: #ffffff; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; font-size: 12.5px; color: #334155; }
+    .sub-lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 4px; letter-spacing: 0.04em; }
+    .choice-badge { display: inline-block; padding: 3px 8px; background: #e0e7ff; color: #3730a3; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #c7d2fe; }
+    .replan-badge { display: inline-block; padding: 2px 8px; background: #fae8ff; color: #86198f; border-radius: 6px; font-size: 10px; font-weight: 800; margin-left: 6px; }
+    .rec-card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px 20px; margin-bottom: 18px; }
+    .rec-title { font-size: 15px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .rec-easy { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #14532d; font-size: 13px; line-height: 1.6; }
+    .rec-tech { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #1e3a8a; font-size: 12.5px; line-height: 1.5; }
+    .prompt-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #38bdf8; word-break: break-word; user-select: all; margin-top: 6px; }
+    .pill { display: inline-block; background: #e2e8f0; color: #1e293b; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-family: monospace; font-weight: 700; margin-right: 6px; margin-bottom: 4px; border: 1px solid #cbd5e1; }
+    .inquiry-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .inquiry-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; }
+    .inquiry-query { font-size: 14px; font-weight: 700; color: #0f172a; margin: 4px 0 10px 0; }
+    .inquiry-response { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 13px; color: #1e293b; line-height: 1.6; margin-bottom: 10px; }
+    .chart-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="badge-bar">
+        <span class="badge">Strategic Master Dossier</span>
+        <span class="badge badge-audience">Tailored For: Easy to understand for College graduate volunteer</span>
+        <span class="badge badge-success">Confidence: 55%</span>
+        <span class="badge badge-consult">4 Post-Execution Inquiries Documented</span>
+      </div>
+      <div class="question-block">
+        <div class="question-label">
+          <span>🎯</span>
+          <span>Core Strategic Question</span>
+        </div>
+        <h1 class="report-question">Are there different 'types' of transformation, and who belongs to each?
+
+Unsupervised segmentation: PCA followed by K-Means on standardised Pre-to-Post deltas, validated with silhouette score. Cluster profiling with group-wise medians and proportions, plus a descriptive outcome cross-tab.
+
+Using the shortlisted fields, build Pre-to-Post delta vectors for Workshop_Level == 0.1, batches 11–17. Cast Participant_Id to string, clean 0 -&gt; NaN, invert rank items so that higher means a stronger preference, clip Financial_Expected_Income_Age_30 to 5,000–1,000,000 and use its log, then drop rows with NaN and report the effective N. Standardise the deltas of Career_Preference_Social_Entrepreneurship_Or_Ngo, Career_Preference_Working_In_Ngo, Career_Preference_Government_Service, Career_Preference_Private_Industry_Job, Life_Criteria_Cause_Of_Work, Life_Criteria_Financial_Security, Life_Criteria_Financial_Prosperity, Mindset_Found_Life_Purpose, Mindset_Visualizes_Self_As_Changemaker, Mindset_Social_Self_Efficacy_Confidence, Metric_Life_Satisfaction_Global and Financial_Expected_Income_Age_30. Run PCA (keep components covering about 80% of variance), then K-Means for k = 3 to 6, and choose k by silhouette score and interpretability. Name each cluster from its average delta profile, for example 'purpose-driven shift', 'income-expectation drop' or 'little change'. Then profile each cluster by joining Gender, Age_At_Workshop (&gt; 0 only), Educational_Stream_Category, Native_State, Workshop_Batch_Number, and the Pre-phase Career_Plan_Social_Action_Engagement. As a descriptive check only, show the share of each cluster with Current_Status_Of_Work == 'Social Impact Work', excluding 'Student' and 'Not Sure', and note that recent batches are censored. Report cluster sizes, and do not claim causation.</h1>
+      </div>
+      <div class="subtitle">
+        Project: <strong>NIRMAN</strong> &middot; Generated on 10/28/2026 &middot; Multi-Step Progressive Analytics
+      </div>
+    </div>
+
+    <!-- Audience Note -->
+    <div class="audience-note">
+      <strong>Audience Comprehension Level:</strong> Easy to understand for College graduate volunteer<br/>
+      Clear, structured, professional explanations covering business metrics, proportions, and logic with practical context.
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-val">55%</div>
+        <div class="kpi-lbl">Strategic Confidence</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">5 / 5</div>
+        <div class="kpi-lbl">Empirical Steps Completed</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">Multi-Step Discovery</div>
+        <div class="kpi-lbl">Framework Mode</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">210</div>
+        <div class="kpi-lbl">Dataset Columns Audited</div>
+      </div>
+      
+      <div class="kpi-card">
+        <div class="kpi-val">4</div>
+        <div class="kpi-lbl">Follow-up Clarifications</div>
+      </div>
+      
+      
+      <div class="kpi-card">
+        <div class="kpi-val">4</div>
+        <div class="kpi-lbl">Visual Charts Added</div>
+      </div>
+      
+    </div>
+
+    <!-- 1. STRATEGIC VERDICT & EASY-TO-UNDERSTAND TAKEAWAYS (PROMINENT AT TOP) -->
+    <div class="verdict-box">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #047857; margin-bottom: 4px;">
+        1. Strategic Verdict &amp; Easy-to-Understand Takeaways
+      </div>
+      <div class="verdict-title">Distinct transformation types are not demonstrated: the Step 2 evidence (weak correlations between changes, many small components) points to a continuum of change, and the cluster-gate, profiling and outcome results were never returned. Treat any grouping as a descriptive tendency until the checkpointed pipeline reports verified numbers.</div>
+      <div class="verdict-text">
+        The question was whether participants fall into distinct 'types' of Pre-to-Post transformation. Based on the evidence we actually have, there is no reliable proof of distinct types yet, and the early signs point to change being a continuous mix rather than a few neat groups. Steps 1 and 2 are the only steps with reported numbers. Steps 3 to 5 designed and checkpointed the cluster tests, but no cluster results, gate outcomes, cluster sizes or profiles were returned. So we cannot name clusters, report who belongs to each, or report their 'Social Impact Work' shares without making things up.
+
+What we do know: the cleaned Point 1 sample (Workshop_Level 0.1, batches 11–16) has 1,001 participants with complete changes on 10 measures. Batch 17 contributes nobody, and batch 15 contributes 38.8% of the sample (388 people). Only 445 people were complete on the stricter 12-measure set, so dropping two sparse items recovered more than twice the sample. The changes on different measures are only weakly related. The largest correlations are about 0.3, for example career-plan change with NGO preference change. The biggest single pattern (a 'social-career commitment' direction) explains only about 19% of the variation. Reaching the requested ~80% of variance takes 8 of 10 components, while parallel analysis keeps only 4. Four loose directions emerged: social-career commitment, a financial-security versus cause-of-work trade-off, purpose and wellbeing, and financial insecurity. Many weak, independent directions rarely produce sharp clusters, so clusters from this data would likely be arbitrary slices of a continuum unless they pass strict checks.
+
+For a volunteer audience: treat any 'transformation type' label as a loose tendency, such as 'leaned more towards NGO careers', not as a fixed kind of person. Any Social Impact Work shares are descriptive only. Recent batches have had less time to reach that outcome, and none of this shows the workshop caused anything.
+      </div>
+    </div>
+
+    <!-- 5. STRATEGIC CLARITY & FOLLOW-UP CONSULTATION LOG (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #0284c7;">5</span>
+          <span>5. Strategic Clarity &amp; Follow-Up Consultation Log</span>
+          <span class="badge badge-consult" style="margin-left: 6px;">4 Inquiries</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Post-execution follow-up consultations answering specific questions, framing subsequent analytical queries, auditing column metadata, and clarifying empirical results.
+        </p>
+
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #4
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Strategic Visuals &amp; Charts
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 04:32 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "what is the takeaway and business value in simple words.  what is the question. what is the answer to user question. give intuition"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Generated 2 visual chart(s) illustrating the strategic findings.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #3
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 04:09 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "what is the Takeaway."
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">The Takeaway</h2>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>The data do not show that participants fall into distinct "types" of transformation. The evidence so far points to change being a smooth, mixed continuum, and the cluster results that would settle the question were never returned.</strong>
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Confidence in this verdict is about 55%. That is moderate because it rests on early evidence, not a finished cluster test.
+      </p>
+    
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">1. An analogy</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Imagine sorting people by how tanned they are after a summer. If everyone were either very pale or very dark, you could make two clear groups. If tans run smoothly from pale to dark, any "groups" you draw are just arbitrary cut-offs on a gradient.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The evidence suggests participants' Pre-to-Post changes look more like the gradient.
+      </p>
+    
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">2. Why the evidence points to a continuum</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Only Steps 1 and 2 returned real numbers.
+      </p>
+    
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Clue</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">What we found</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Why it matters</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Changes on different questions are only weakly linked</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">The strongest links are about 0.3 (on a scale where 1.0 means moving in perfect lockstep). One example is career-plan change moving with NGO-preference change.</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">If people clustered into types, many changes would move together. They mostly don't.</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>The biggest pattern is small</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">The top "direction of change" (social-career commitment) explains only about 19% of the variation.</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">One dominant pattern would suggest a clear type. Here it is weak.</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Many directions are needed</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">You need 8 of 10 components to cover about 80% of the variation, the target you specified. A noise-comparison test (parallel analysis) keeps only 4, and the 4th is borderline.</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Change is spread across many small, independent directions. That rarely produces sharp clusters.</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The four loose directions were:
+      </p>
+    
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Social-career commitment</li><li style="margin-bottom: 5px;">A trade-off between financial security and "cause of work"</li><li style="margin-bottom: 5px;">Purpose and wellbeing</li><li style="margin-bottom: 5px;">Financial insecurity</li>
+        </ol>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">3. What we can say about the average participant</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        This comes from Step 1, which covered the 445 people who answered all 12 measures. These people come only from batches 11–14.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Life purpose</strong> rose the most (+1.14 points on a 1–5 scale). 72% went up.</li><li style="margin-bottom: 5px;"><strong>"Work with a cause" and NGO career preference</strong> both moved up by about 1 rank position.</li><li style="margin-bottom: 5px;"><strong>Importance of financial security</strong> fell by about 0.65 rank positions.</li><li style="margin-bottom: 5px;"><strong>Expected income at age 30</strong> fell. The typical expected income was roughly 37% lower after than before, and 74% of people lowered their figure.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        These are averages. They describe the typical direction of movement, not distinct kinds of people.
+      </p>
+    
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">4. What we cannot tell you</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Steps 3, 4 and 5 were designed to run the cluster tests, name the clusters and profile them. All three returned <strong>no results</strong>.
+      </p>
+    
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">You asked for</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Cluster names (e.g., "purpose-driven shift")</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Not available</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Cluster sizes</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Not available</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Who belongs to each cluster (gender, age, education, state, batch)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Not available</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">"Social Impact Work" share per cluster</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Not available</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Best k (3–6) by silhouette</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Not available</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Any of these numbers would be invented, so none are given.
+      </p>
+    
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">5. How to use this in practice</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Don't say</strong> "There are three kinds of participants."</li><li style="margin-bottom: 5px;"><strong>Do say</strong> "Most people shifted somewhat toward social-sector careers, but the pattern varies from person to person without clear boundaries."</li><li style="margin-bottom: 5px;"><strong>If you use a label</strong>, treat it as a loose tendency, such as "leaned more towards NGO careers", not as a fixed kind of person.</li><li style="margin-bottom: 5px;"><strong>If a Social Impact Work share is reported later</strong>, remember that recent batches have had less time to reach that outcome. Lower shares there may just reflect timing, and the status is an undated snapshot.</li>
+        </ul>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">6. Cautions</h3>
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>No causation.</strong> There is one group, measured before and after, with no comparison group. We can describe change but not say the workshop caused it. Part of the income drop could be people simply becoming more realistic.</li><li style="margin-bottom: 5px;"><strong>Sample selection.</strong> 1,001 of 1,450 paired participants were usable, mainly because of missing insecurity answers (about 371 each). Those who answered may differ from those who didn't.</li><li style="margin-bottom: 5px;"><strong>Uneven batches.</strong> Batch 15 is 38.8% of the sample and batch 17 is absent. A group could reflect a batch more than a "type."</li><li style="margin-bottom: 5px;"><strong>Ranking questions.</strong> Ranks trade off against each other (raising one pushes another down), which creates some artificial patterns.</li><li style="margin-bottom: 5px;"><strong>Regression to the mean.</strong> People who started very high can mostly only go down, which can look like change.</li><li style="margin-bottom: 5px;"><strong>Different samples across steps.</strong> Step 1 used 445 people on 12 measures. Step 2 used 1,001 on 10 measures. Their numbers aren't directly interchangeable.</li><li style="margin-bottom: 5px;"><strong>Unresolved checks.</strong> The item lists differ between plan and results, and the sign handling of <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Life<em>Criteria</em>Cause<em>Of</em>Work</code> needs re-checking.</li>
+        </ol>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">7. Next step</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Re-run the checkpointed pipeline and get the numbers back. The key test is whether any k from 2 to 6 beats random, structureless data, is stable under resampling and gives every group at least 5% of people. If none does, the continuum conclusion stands. If one does, we can name the groups and profile who is in them.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Bottom line:</strong> the best current reading is that transformation is a spectrum, not a set of boxes, and nobody should be sorted into a "type" until the cluster results are verified.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #2
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 04:00 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "In simple easy to understand words, what was the question, what is the answer."
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">What was the question, and what is the answer?</h2>
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">The question</h3>
+
+        <blockquote style="border-left: 4px solid #3b82f6; background: #eff6ff; padding: 12px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; font-size: 12px; color: #1e40af; line-height: 1.6;">
+          <strong>"Are there different 'types' of transformation among workshop participants, and who belongs to each type?"</strong>
+        </blockquote>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Imagine every participant filled in a survey <strong>before</strong> the workshop (Pre) and <strong>after</strong> it (Post). For each person we can work out how much their answers <strong>changed</strong>. Examples are how much more they leaned toward NGO careers, how much their sense of life purpose moved, and how much their expected income at age 30 changed.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The question was whether people fall into a few clear <strong>groups</strong>, such as:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">the "purpose-driven shift" people,</li><li style="margin-bottom: 5px;">the "income-expectation drop" people,</li><li style="margin-bottom: 5px;">the "little change" people,</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        and, if so, who is in each group (gender, age, education, state, batch) and how many later ended up in Social Impact Work.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The planned method was:
+      </p>
+    
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Calculate each person's change on 12 survey items.</li><li style="margin-bottom: 5px;">Squeeze those changes into a few main "directions" (PCA).</li><li style="margin-bottom: 5px;">Use K-Means, a tool that sorts people into k groups of similar people, with k from 3 to 6.</li><li style="margin-bottom: 5px;">Check the groups with a silhouette score, which measures how cleanly separated they are.</li>
+        </ol>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">The short answer</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>We could not show that distinct types exist. The evidence we have points to change being a continuous mix, not a few neat groups.</strong>
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        We also <strong>cannot</strong> tell you who belongs to each type, how big each type is, or what share of each type is in Social Impact Work. The steps that were supposed to produce those results (Steps 3, 4 and 5) <strong>never returned any numbers</strong>. Making them up would be dishonest, so the report doesn't.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Confidence: 55%.</strong> That is moderate. The conclusion rests on early evidence, not on a finished cluster test.
+      </p>
+    
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">What we do know (Steps 1 and 2)</h3>
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">1. How many people?</h4>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Stage</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">People</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Had both a Pre and a Post survey (Point 1, batches 11–17)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">1,450</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Complete on all <strong>12</strong> measures</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">445 (only batches 11–14)</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Complete on <strong>10</strong> measures (two sparse items dropped)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>1,001</strong></td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Dropping the two sparse items ("sees self as changemaker" and "social self-efficacy") more than doubled the usable sample.</li><li style="margin-bottom: 5px;">Batch 15 makes up about <strong>39%</strong> of the 1,001 (388 people).</li><li style="margin-bottom: 5px;">Batch 17 contributes <strong>nobody</strong>, so the results really describe batches 11–16.</li>
+        </ul>
+      
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">2. On average, people moved toward the social sector (the 445 people)</h4>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Sense of life purpose rose the most, by about +1.14 points on a 1–5 scale.</li><li style="margin-bottom: 5px;">Working in an NGO and "work with a cause" both moved up in people's rankings.</li><li style="margin-bottom: 5px;">Importance of financial security went down.</li><li style="margin-bottom: 5px;">Expected income at age 30 dropped. The typical person's figure was about <strong>37% lower</strong> after the workshop, and 74% of people lowered it.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        These are averages. They describe what happened, not why.
+      </p>
+    
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">3. The changes don't bunch together neatly</h4>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        This is the key finding. Think of each person's change as a recipe with 10 ingredients.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>If types existed</strong>, the ingredients would move together in strong patterns. For example, everyone who gained purpose would also drop income expectations and lean toward NGOs.</li><li style="margin-bottom: 5px;"><strong>What we saw</strong> is that the ingredients are only weakly linked. The strongest link is about 0.3 (a correlation of 1.0 would mean perfect lock-step). One example is the change in social-action career plans moving with the change in NGO preference.</li>
+        </ul>
+      
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Clue</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">What it means</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">The biggest single pattern explains only <strong>~19%</strong> of the variation</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">No dominant "story" of change</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>8 of 10</strong> components are needed to reach 80% of the variation</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">The changes are spread across many weak, independent directions</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">A noise-comparison test keeps only <strong>4</strong> directions</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Even those 4 are loose</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The four loose directions were:
+      </p>
+    
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Social-career commitment</strong>: more interest in social careers and NGOs, often with lower income expectations.</li><li style="margin-bottom: 5px;"><strong>Financial security vs. cause of work</strong>: a trade-off. This is partly a quirk of ranking questions, since moving one item up pushes another down.</li><li style="margin-bottom: 5px;"><strong>Purpose and wellbeing</strong>: life satisfaction and life purpose rising together.</li><li style="margin-bottom: 5px;"><strong>Financial insecurity</strong>: worries about money and about parents' reactions.</li>
+        </ol>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Analogy:</strong> If people were sorted into types, it would be like sorting fruit into apples and oranges. Our data looks more like a <strong>gradient of paint colours</strong>. You can say "this one is more reddish," but there is no natural line where red stops and orange starts. Any K-Means groups drawn on a gradient are just <strong>arbitrary slices</strong>. K-Means will always split data into k groups, whether or not real groups exist.
+      </p>
+    
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">What we don't know (and why)</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Steps 3–5 were designed to settle the question. They would have tested whether any grouping:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">is clearer than what random data would produce,</li><li style="margin-bottom: 5px;">beats "no groups at all,"</li><li style="margin-bottom: 5px;">stays stable when the data is resampled,</li><li style="margin-bottom: 5px;">has no tiny groups (at least 5% of people each),</li><li style="margin-bottom: 5px;">and isn't just a batch-15 effect.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        All three steps returned empty output, so we have:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">❌ no verified clusters,</li><li style="margin-bottom: 5px;">❌ no cluster sizes,</li><li style="margin-bottom: 5px;">❌ no profiles of who belongs where (gender, age, education, state),</li><li style="margin-bottom: 5px;">❌ no "Social Impact Work" shares.</li>
+        </ul>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">How to talk about this</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Safe to say:</strong>
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">"On average, participants moved toward social-sector careers and lowered their expected income."</li><li style="margin-bottom: 5px;">"Change looks like a spectrum. Some people shifted a lot on one thing and little on others."</li><li style="margin-bottom: 5px;">"You could describe a person as <em>leaning more toward NGO careers</em>, but that is a loose tendency, not a fixed type."</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Avoid:</strong>
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">"There are 4 types of participants."</li><li style="margin-bottom: 5px;">"Type X is more likely to end up in social impact work."</li><li style="margin-bottom: 5px;">"The workshop caused these changes."</li>
+        </ul>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">Important cautions</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Not causation.</strong> Everyone attended the workshop and there is no comparison group, so we can't say the workshop caused any change. Some people may simply have adopted more realistic income expectations over time.</li><li style="margin-bottom: 5px;"><strong>Selection.</strong> Only 1,001 of 1,450 paired participants had complete answers, so the results may not represent everyone.</li><li style="margin-bottom: 5px;"><strong>Batch effects.</strong> Batch 15 is nearly 40% of the sample and batch 17 is missing.</li><li style="margin-bottom: 5px;"><strong>Recent batches haven't had time.</strong> If Social Impact Work shares are reported later, recent batches will look lower partly because they haven't had time to get there.</li><li style="margin-bottom: 5px;"><strong>Ranking questions</strong> force trade-offs, which creates some artificial links between items.</li><li style="margin-bottom: 5px;"><strong>Starting level matters.</strong> People who started very high can only go down, so change can partly reflect where they began.</li><li style="margin-bottom: 5px;"><strong>Small inconsistencies to check:</strong> the item lists differ slightly between planning and results, and the direction used for "Life<em>Criteria</em>Cause<em>Of</em>Work" should be rechecked.</li>
+        </ul>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">What to do next</h3>
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Re-run the cluster tests</strong> so they save results at each stage, then check whether any grouping passes all the tests.</li><li style="margin-bottom: 5px;">If <strong>none passes</strong>, report the change as a continuum. Describe it with simple gradients, such as low, middle and high on "social-career commitment," and label these as tendencies.</li><li style="margin-bottom: 5px;">If <strong>one passes</strong>, then profile who is in each group and their Social Impact Work share. Show the shares by batch band and note that recent batches are censored.</li>
+        </ol>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Bottom line:</strong> the question was "Are there distinct types, and who is in them?" The answer so far is <strong>"probably not clear-cut types. Change looks like a spectrum, and the group-level results were never delivered."</strong>
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #1
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Strategic Visuals &amp; Charts
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 03:59 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "add many visual to represent the answer"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Generated 2 visual chart(s) illustrating the strategic findings.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 4. STRATEGIC VISUALIZATIONS & EMPIRICAL CHARTS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #d97706;">4</span>
+          <span>4. Strategic Visualizations &amp; Empirical Charts (4 Visualized)</span>
+          <span class="badge" style="background: #fef3c7; color: #92400e; border-color: #fde68a; margin-left: 6px;">4 Visuals</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Visual intelligence charts generated post-execution to illustrate empirical step metrics, distribution variances, and strategic performance.
+        </p>
+
+        
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Question: Are There Distinct Types of Transformation? Answer: Not Proven</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              kpi Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">The question is whether participants fall into separate 'transformation types' or change along a smooth spectrum. These are the verified Step 2 numbers on 1,001 participants. The cluster tests in Steps 3–5 returned no output, so no cluster results are shown.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Biggest Single Pattern</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #f59e0b; margin: 4px 0;">19%</div>
+                  <div style="font-size: 11px; color: #475569;">Share of all change explained by the top pattern, so no dominant type</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #8b5cf6; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Patterns Needed for 80%</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin: 4px 0;">8 of 10</div>
+                  <div style="font-size: 11px; color: #475569;">Change is spread across many small patterns, which suggests a continuum</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Patterns Beyond Random Noise</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin: 4px 0;">4 (~54%)</div>
+                  <div style="font-size: 11px; color: #475569;">Parallel analysis; the 4th is borderline</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #ec4899; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Confidence in 'Distinct Types'</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #ec4899; margin: 4px 0;">55%</div>
+                  <div style="font-size: 11px; color: #475569;">Cluster, profiling and outcome results not yet returned</div>
+                </div>
+              
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> In simple words: the evidence so far says people change in many overlapping ways rather than sorting into neat boxes. The biggest shared pattern explains only 19% of the differences, and it takes 8 of 10 patterns to cover 80%. Any grouping should be treated as a loose tendency, not a fixed 'type', until the cluster checks return verified numbers. Business value: avoid designing separate programmes or targeting rules for 'types' that may not exist. This is observational data, so it shows association, not that the workshop caused the change.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Intuition: Most People Moved the Same Way, Just by Different Amounts</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              bar Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">Share of participants whose score moved in the same direction from Pre to Post. Figures are from the 445 people with complete data on all 12 measures (Step 1). 'Income expectation' counts people who lowered their expected age-30 income.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Lowered expected income at 30</span>
+                  <span style="font-weight: 800; color: #f59e0b;">74%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 74%; background: #f59e0b; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Average expected income about 37% lower after</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Raised life purpose</span>
+                  <span style="font-weight: 800; color: #10b981;">72%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 72%; background: #10b981; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Average +1.14 points on the 1–5 scale; only 8% fell</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Raised NGO career preference</span>
+                  <span style="font-weight: 800; color: #2563eb;">64%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 64%; background: #2563eb; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">About +1.08 rank positions on average</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Raised importance of work with a cause</span>
+                  <span style="font-weight: 800; color: #8b5cf6;">63%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 63%; background: #8b5cf6; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">About +1.35 rank positions on average</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Raised life satisfaction</span>
+                  <span style="font-weight: 800; color: #06b6d4;">60%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 60%; background: #06b6d4; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Average +0.86 points; 11% fell</span>
+              </div>
+            
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> Roughly 60–75% of people shifted the same way on each key measure: more life purpose, more NGO and cause orientation, higher satisfaction, and lower income expectations. When most people drift in the same direction, the main difference between them is how far they moved, not which way. That fits a continuum rather than separate types. This is a single group measured over time with no comparison group, and it covers batches 11–14 only. The income drop may partly reflect more realistic expectations.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Sample Funnel: How Many Participants Each Analysis Actually Describes</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              bar Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">Verified participant counts from Steps 1–2: Point 1 participants in batches 11–17, then those with both Pre and Post surveys, then complete cases on the 10-item set, then complete cases on the 12-item set. Steps 3–5 returned no output, so no cluster sizes are shown.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Level 0.1, batches 11–17</span>
+                  <span style="font-weight: 800; color: #2563eb;">1,462</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 100%; background: #2563eb; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">After the workshop-level and batch filter</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Pre and Post paired</span>
+                  <span style="font-weight: 800; color: #06b6d4;">1,450</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 100%; background: #06b6d4; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Inner-merged on Participant_Id</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Complete on 10 deltas</span>
+                  <span style="font-weight: 800; color: #10b981;">1,001</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 100%; background: #10b981; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Recovered sample; batch 17 = 0; batch 15 = 388</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Complete on 12 deltas</span>
+                  <span style="font-weight: 800; color: #f59e0b;">445</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 100%; background: #f59e0b; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Batches 11–14 only; changemaker and self-efficacy items</span>
+              </div>
+            
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> Any grouping rests on 1,001 people, or only 445 if the two extra mindset items are included. Batch 17 is absent from both, and the 1,001 is dominated by batch 15 (388 people, 39%). Treat results as descriptive of batches 11–16, not of the full cohort.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Evidence Scorecard: Continuum of Change vs Distinct Types</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              kpi Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">The structure of the 10-item delta PCA from Step 2 (N = 1,001), alongside the verdict confidence. Cluster gates, profiles and outcome shares were never returned and are not shown.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Variance in PC1</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #ef4444; margin: 4px 0;">19%</div>
+                  <div style="font-size: 11px; color: #475569;">No single dominant direction of change</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Components for ~80% variance</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #f59e0b; margin: 4px 0;">8</div>
+                  <div style="font-size: 11px; color: #475569;">Of 10 deltas; many small components</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #8b5cf6; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Components kept by parallel analysis</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin: 4px 0;">4 (~54%)</div>
+                  <div style="font-size: 11px; color: #475569;">The 4th is borderline (1.07 vs 1.07)</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Verdict confidence</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin: 4px 0;">55%</div>
+                  <div style="font-size: 11px; color: #475569;">Types not demonstrated; checks unreturned</div>
+                </div>
+              
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> Change is spread across many weak dimensions: the first component explains only 19% of variance, and 8 components are needed to reach about 80%. This points to a continuum rather than discrete types. Treat any grouping as a descriptive tendency until verified cluster results are returned.
+            </div>
+          
+        </div>
+      
+      </div>
+    </details>
+
+    <!-- 3. GUIDANCE & RECOMMENDATIONS ON NEXT STEPS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #2563eb;">3</span>
+          <span>3. Guidance &amp; Recommendations on Next Steps (How to Proceed)</span>
+          <span class="badge" style="background: #dbeafe; color: #1e40af; border-color: #bfdbfe; margin-left: 6px;">5 Actions</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Tailored recommendations explaining what to do next. Includes both an easy-to-understand explanation and technical column names ready for cut-and-pasting into future questions.
+        </p>
+
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#1</span> Lock the item list and rebuild the verified change dataset in small stages
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Before looking for groups, we need to be sure exactly which questions we are measuring change on and that everyone is counted correctly. Rebuild the before-and-after dataset first and print the number of people at every stage so nothing is lost silently.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Cast Participant_Id to string. Filter parseFloat(Workshop_Level) === 0.1 and Workshop_Batch_Number 11–17. Set 0 to NaN, rank values &gt; 8 to NaN and Metric_Life_Satisfaction_Global &gt; 5 to NaN. Invert rank items as 9 − x. Clip Financial_Expected_Income_Age_30 to 5,000–1,000,000, then ln. Map Career_Plan_Social_Action_Engagement to 5/4/3/2/1 with 'Not yet decided / confused' as NaN. Split by Workshop_Phase, inner-merge on Participant_Id, and delta = post − pre. Drop NaN rows and checkpoint N (expect 1,001 if the Step 2 item set is reused). Reconcile this set against the planned one (the Step 2 plan lists Career_Preference_Private_Industry_Job; the reported results list Career_Plan and the insecurity items). Confirm the sign direction of Life_Criteria_Cause_Of_Work, since the Step 2 table negated it even though rank items were already inverted.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Career_Preference_Social_Entrepreneurship_Or_Ngo</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Career_Preference_Private_Industry_Job</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Financial_Expected_Income_Age_30</span><span class="pill">Metric_Life_Satisfaction_Global</span><span class="pill">Mindset_Found_Life_Purpose</span><span class="pill">Insecurity_Monetary_Compensation</span><span class="pill">Insecurity_Parental_Response</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Using prod_nirman_questionnaire only, filter Workshop_Level == 0.1 (parseFloat) and Workshop_Batch_Number 11–17, cast Participant_Id to string, set 0 to NaN, set rank items &gt; 8 and Metric_Life_Satisfaction_Global &gt; 5 to NaN, invert rank items as 9 − x, clip Financial_Expected_Income_Age_30 to 5,000–1,000,000 and take ln, and map Career_Plan_Social_Action_Engagement to 5/4/3/2/1 with 'Not yet decided / confused' as NaN. Split by Workshop_Phase, inner-merge on Participant_Id, compute post − pre deltas for Career_Plan_Social_Action_Engagement, Career_Preference_Social_Entrepreneurship_Or_Ngo, Career_Preference_Working_In_Ngo, Career_Preference_Private_Industry_Job, Life_Criteria_Cause_Of_Work, Life_Criteria_Financial_Security, Financial_Expected_Income_Age_30 (log), Metric_Life_Satisfaction_Global, Mindset_Found_Life_Purpose and the less-missing of Insecurity_Monetary_Compensation and Insecurity_Parental_Response. Print N after the filter, after the merge and after dropping NaN, with the count per Workshop_Batch_Number, and per-item delta mean, median, SD and share with zero change. State the sign convention for every item. Return only these checkpoints.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#2</span> Run the four-gate cluster test with printed results at every stage
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Ask the data whether real groups exist, by comparing against fake data that has no groups. Only call something a 'type' if the groups are clearly better than chance, repeat when we resample the people, and are not tiny.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Run PCA on z-scored deltas (eigendecomposition of the correlation matrix), keep the parallel-analysis count (4 expected), apply varimax and compute regression scores. Use K-means with a seeded PRNG (mulberry32, seed 42), k-means++ and 10–20 restarts for k = 2–6. Report exact silhouette, inertia and cluster sizes. Gates: (a) silhouette above the 95th percentile of ≥ 100 Gaussian nulls with the same covariance; (b) gap statistic with B = 50 and the 1-SE rule, allowing k = 1; (c) mean bootstrap Jaccard ≥ 0.75 per cluster over 200 resamples; (d) smallest cluster ≥ 5%. Also report the user's literal spec (PCA to ~80% variance, k = 3–6, silhouette only), labelled 'not gate-validated'. Run each k as a separate small call so partial results survive.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Workshop_Phase</span><span class="pill">Workshop_Level</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Metric_Life_Satisfaction_Global</span><span class="pill">Mindset_Found_Life_Purpose</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Take the verified 10-item delta table for Workshop_Level == 0.1, batches 11–17. Z-score the deltas, run PCA, keep the components that parallel analysis retains, apply varimax, and compute standardised component scores. For k = 2 to 6, run K-means (seed 42, k-means++, 10 restarts) and report mean silhouette, cluster sizes and smallest-cluster share. Then test each k against four gates: (a) silhouette above the 95th percentile of 100 same-covariance Gaussian nulls, (b) gap statistic with B = 50 and the 1-SE rule versus k = 1, (c) mean bootstrap Jaccard ≥ 0.75 per cluster over 200 resamples, (d) every cluster ≥ 5% of N. Also report the literal spec (PCA to ~80% variance, k = 3–6, silhouette only) labelled 'not gate-validated'. Return one table of k by gate with the values, run one k at a time, and finish with a decision of 'types_exist' or 'continuum'. No causal language.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#3</span> Profile 'who belongs' to each group, with batch and censoring controls
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Once we know whether groups are real, describe who is in each one: gender, age, study stream, home state, batch and what career plan they had before the workshop. Watch for one group being mostly batch 15, because that would mean the group reflects the batch rather than a way of changing.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Cast Participant_Id to string in both tables and inner-join the delta table to prod_nirman_demographics. Report N after the join. Keep Workshop_Batch_Number from the questionnaire. For each group report Gender %, median and IQR of Age_At_Workshop (&gt; 0 only, with n), Educational_Stream_Category %, Native_State (top 5 plus 'Other', and nulls dropped), batch distribution with the batch-15 share against the 38.8% baseline, and Pre Career_Plan_Social_Action_Engagement % (with 'Not yet decided / confused' as its own category). Use chi-square with Cramér's V for categorical variables and Kruskal–Wallis with ε² for age. Treat the results as descriptive signals. If no valid clusters exist, use quartiles of each rotated component score instead.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Gender</span><span class="pill">Age_At_Workshop</span><span class="pill">Educational_Stream_Category</span><span class="pill">Native_State</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Career_Plan_Social_Action_Engagement</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Join the validated group labels (clusters, or quartiles of each change component if no clusters pass the gates) to prod_nirman_demographics on string Participant_Id and report the effective N after the join. For each group, report Gender %, median and IQR of Age_At_Workshop using only values &gt; 0 (with n), Educational_Stream_Category %, Native_State (top 5 plus Other, with the number of nulls dropped), Workshop_Batch_Number distribution including each group's batch-15 share against the 38.8% baseline, and Pre-phase Career_Plan_Social_Action_Engagement % using the exact strings with 'Not yet decided / confused' as its own category. Add chi-square with Cramér's V for categorical variables and Kruskal–Wallis with ε² for age, and flag any group with more than 50% batch 15. Present this as descriptive association only.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#4</span> Censoring-aware 'Social Impact Work' cross-tab by group
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Check what share of each group is doing Social Impact Work today. Remember that newer batches have had less time to get there, so a group with many recent participants will look worse for reasons unrelated to how they changed. This shows a pattern only, not a cause.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Join groups to Current_Status_Of_Work. Exclude 'Student' and 'Not Sure'. Compute the share == 'Social Impact Work' with n and a Wilson 95% CI per group, overall and by batch band (11–13 vs 14–16; batch 17 is absent). Add a batch-standardised share that weights each group's within-band share by the band's overall N. Report how many people were excluded as Student or Not Sure in each group. Never describe differences as effects of the workshop or of the group.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Workshops_Attended_Count</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                For each validated group (or component quartile), join to prod_nirman_demographics on string Participant_Id and exclude Current_Status_Of_Work values 'Student' and 'Not Sure', reporting how many were excluded per group. Report the share with Current_Status_Of_Work == 'Social Impact Work' with n and a Wilson 95% CI for each group overall and by Workshop_Batch_Number band (11–13 vs 14–16), plus a batch-standardised share weighted by band N. Note that batch 17 is absent and recent batches are censored. Also show the group mix of Workshops_Attended_Count. Describe as association only, with no causal claims.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#5</span> Sensitivity checks: sign convention, item set and batch 15
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Try the analysis a few different ways to see whether the story survives: flip the direction of some questions, drop the trickiest component, and look at batch 15 alone. A finding that disappears under small changes should not be trusted.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              (1) Sign-flip check: flipping the signs of Financial_Security and Private_Industry deltas must give ARI = 1.00 for K-means; anything else is a bug. (2) Drop the security-vs-cause trade-off component, re-run the gates, and require ARI ≥ 0.65 against the main solution. (3) Repeat on 12 items (445 people) and compare the loadings with Tucker's phi, where ≥ 0.95 counts as equivalent. (4) Repeat excluding batch 15, and report batch-15 share per group. (5) Compare the complete-case sample with all paired participants, since the insecurity items each have ~371 nulls.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Workshop_Batch_Number</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Career_Preference_Private_Industry_Job</span><span class="pill">Insecurity_Monetary_Compensation</span><span class="pill">Insecurity_Parental_Response</span><span class="pill">Mindset_Visualizes_Self_As_Changemaker</span><span class="pill">Mindset_Social_Self_Efficacy_Confidence</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                On the Workshop_Level == 0.1 delta dataset (batches 11–17), run these sensitivity checks and report each result: (1) flip the sign of the deltas for Life_Criteria_Financial_Security and Career_Preference_Private_Industry_Job and confirm K-means labels have an ARI of 1.00 against the original; (2) drop the security-vs-cause-of-work component and report the ARI and whether all four gates still hold; (3) rebuild on the 445 participants who also have Mindset_Visualizes_Self_As_Changemaker and Mindset_Social_Self_Efficacy_Confidence deltas and report Tucker's phi per component; (4) repeat excluding Workshop_Batch_Number == 15 and report cluster sizes; (5) compare the 1,001 complete cases with all paired participants on the Pre levels of the 10 items to show selection bias from the insecurity nulls. Report N at each stage.
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 2. COMPLETE 5-STEP PROGRESSIVE EXPERIMENT TIMELINE & DECISIONS (COLLAPSIBLE BY DEFAULT, LAST IN SEQUENCE) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #4f46e5;">2</span>
+          <span>2. Complete 5-Step Progressive Experiment Timeline &amp; Decisions</span>
+          <span class="badge" style="background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; margin-left: 6px;">5 Steps</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Shows the exact question asked in each step, the choices proposed by the AI, the steering path chosen, and the empirical results.
+        </p>
+
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #1</span> Build a Clean Pre-to-Post Change Dataset
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">Data preparation and pairing:
+(1) Load the questionnaire table.
+(2) Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to string.
+(3) Filter with parseFloat(Workshop_Level) === 0.1 and Workshop_Batch_Number between 11 and 17.
+(4) Clean the 12 items:
+- Set 0 to NaN.
+- Set values above 8 to NaN on Career_Preference_Social_Entrepreneurship_Or_Ngo.
+- Set values above 5 to NaN on Metric_Life_Satisfaction_Global.
+(5) Invert the 7 rank items (4 Career_Preference_*, 3 Life_Criteria_*) as 9 − x, so that higher means stronger preference or importance.
+(6) Clip Financial_Expected_Income_Age_30 to 5,000–1,000,000 INR, then take its natural log. A change in log-income can then be read as a proportional (percentage-like) change.
+(7) Split the data into Pre and Post, add _pre/_post suffixes, and inner-merge on Participant_Id. This is a merge, not a groupby.
+(8) Compute delta = post − pre for all 12 measures.
+(9) Drop rows with any NaN among the 12 deltas.
+(10) Keep Career_Plan_Social_Action_Engagement_pre for later profiling.
+At each stage, report row counts: after filter, after the Pre/Post merge, and after dropping NaN. Also give per-item descriptives (mean, median, standard deviation, share of people with zero change) to flag items with near-zero variation.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Among Point 1 participants (Workshop_Level == 0.1) in batches 11–17, how many people have complete and valid Pre and Post answers on all 12 shortlisted measures? After cleaning, inversion, income log-transformation and pairing, what does each person's change (delta) look like?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Drop two sparse items, recover batches 15–17</strong>: <span style="color:#64748b;">Run the main PCA on the 10 change scores that do not include 'Visualizes self as changemaker' and 'Social self-efficacy'. Removing these two items should restore a large share of the 1,005 dropped participants and bring batches 15–17 back in. Before the PCA, sign-align the items so that a positive value always means a more social-sector orientation. This means flipping the two insecurity measures, financial-security importance and log expected income. Standardise each change score. Then report how many components reach about 80% of variance, along with the parallel-analysis count. As a sensitivity check, rerun the full 12-item PCA on the 445 and compare loadings using Tucker's congruence coefficient. This keeps the analysis representative without losing the richer item set entirely.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Bring Everyone Back to the Table &mdash; <em>Imagine a class quiz where two questions were left blank by almost everyone. If you only grade students who answered every question, you end up grading just a third of the class, and only kids from certain classrooms. If you skip those two questions instead, you can grade nearly everyone from every classroom. Later you can peek at the small group who did answer them, just to check the overall picture still looks the same.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Keep all 12 items on the 445</strong>: <span style="color:#64748b;">Run the PCA as planned on all 12 standardised change scores for the 445 complete cases. Sign-align the items first so the components are easy to interpret. Report scree, cumulative variance (about 80% target), parallel analysis and varimax-rotated loadings. Also add a batch-centred version, which subtracts each batch's mean change, to check that the components are not just reflecting differences between batches 11–14. This is the most faithful use of the full measurement set. However, any conclusions apply only to batches 11–14 and to people who answered every item.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Full Picture, Smaller Crowd &mdash; <em>It's like a complete health check-up with every single test, but only for the people who stayed for all of them. You learn a lot about those people. But you can't be sure the people who left early would look the same.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Impute missing items, PCA on all 1,450</strong>: <span style="color:#64748b;">Use multiple imputation (MICE, about 20 imputations, with batch and pre-scores as predictors) or iterative/probabilistic PCA to fill in the missing changemaker and self-efficacy changes. Then run the 12-item PCA on all 1,450 participants and pool the loadings and explained variance across imputations. This keeps every item and every batch. The risk is that close to 70% of values for two items are imputed, so their loadings will be heavily model-driven. Report how much the results vary between imputations and compare them with the complete-case results.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Fill in the Blanks Carefully &mdash; <em>It's like finishing a half-done jigsaw puzzle by studying the pieces around each gap and guessing what the missing pieces look like. You end up with a full picture. But for two parts of the puzzle, most of what you see is your guess rather than real pieces.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Fix rank-item artefacts before PCA</strong>: <span style="color:#64748b;">Three measures (cause-of-work importance, NGO preference and financial-security importance) are rank positions taken from the same ranking lists. Their changes are partly forced against each other: when one item moves up, another must move down. This can create artificial negative correlations, which inflate or distort the components. To handle this, look at the correlation matrix and run PCA both with and without the rank items, or replace them with a single net ranking-shift index. Also winsorise log expected-income changes at the 1st and 99th percentiles to limit the influence of extreme values. Then check whether the number of components needed for 80% variance changes. This prevents the measurement format from showing up as a fake 'direction of change'.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Don't Let the Ruler Fool You &mdash; <em>Say you rank your favorite pizza toppings. If you move pepperoni up to first place, something else has to slide down, even though you don't actually like it less. Some survey questions worked like that ranking. This choice makes sure we don't mistake that 'forced sliding' for a real change of heart. It also stops a few wild guesses about future income from tipping the scales.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Drop two sparse items, recover batches 15–17</span>
+                  
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **What the data show.** 1,450 Point 1 participants from batches 11–17 had both a Pre and a Post survey. Only 445 answered all 12 measures at both time points, so the summaries below describe those 445. No duplicate rows were found. Most of the 1,005 people dropped were missing the &quot;Visualizes self as changemaker&quot; and &quot;Social self-efficacy&quot; items (about 995 and 993 missing, respectively). The 445 come only from batches 11–14 (84, 94, 121 and 146 people), so batches 15–17 are not represented. On average, people moved in the direction of more social-sector orientation:
+- **Life purpose:** this rose the most, by +1.14 points on the 1–5 scale. 72% increased and 8% decreased.
+- **Importance of work with a cause:** it moved up about 1.35 rank positions (63% up).
+- **Working in an NGO as a career preference:** it moved up about 1.08 rank positions (64% up).
+- **Social entrepreneurship/NGO preference:** it moved up about 0.81 positions.
+- **Life satisfaction:** it rose by 0.86 on the 1–5 scale. 60% increased and 11% decreased.
+- **Social self-efficacy confidence:** it rose by 0.64.
+- **Seeing oneself as a changemaker:** it rose by 0.44, and 44% of people did not change on this item.
+- **Social-action career plan:** it rose by 0.60 on the 1–5 scale. 45% increased and only 2% decreased.
+- **Monetary-compensation insecurity:** this fell by 0.88 points (61% decreased). A negative change here is favourable.
+- **Parental-response insecurity:** this fell only slightly, by 0.29, with a mixed pattern (40% decreased, 26% increased).
+
+**Money-related measures.**
+- **Importance of financial security:** it fell by about 0.65 rank positions (51% moved down).
+- **Expected income at age 30:** the average log change was −0.47, which means the typical expected income was roughly 37% lower after than before. 74% of people lowered their figure.
+
+**How to read the effect sizes.** The effect size is the average change divided by how much individual changes vary. Values near 0.5 are moderate and near 0.8 are large. Life purpose (0.93), cause-of-work importance (0.79) and NGO career preference (0.78) show the most consistent shifts. Parental-response insecurity (−0.20) is the weakest.
+
+**Caveats.**
+- **Observational data, not causation.** This is a single group measured before and after, with no comparison group. The results describe change and association, not proof that the workshop caused it. Some change could come from other factors, such as people settling into more realistic income expectations.
+- **Complete-case sample.** The 445 may not represent everyone, because they come only from batches 11–14 and from people who answered every item. Results for the other batches or for partial responders could differ.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #2</span> Main Directions of Change: 10-Item Sign-Aligned PCA on the Recovered Sample, with a 12-Item Congruence Check
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1) Rebuild the dataset as in Step 1, then reapply the cleaning rules.
+- Filter the questionnaire to parseFloat(Workshop_Level) == 0.1 and Workshop_Batch_Number 11–17.
+- Cast Participant_Id to string.
+- Set 0 to NaN in all scored items.
+- Set rank values above 8 to NaN.
+- Set Metric_Life_Satisfaction_Global values above 5 to NaN.
+- Invert the rank items as 9 − x, so that higher means a stronger preference or more importance.
+- Clip Financial_Expected_Income_Age_30 to 5,000–1,000,000, then take its natural log.
+- Split the data by Workshop_Phase into _pre and _post, inner-merge on Participant_Id, and compute delta = post − pre.
+
+2) Primary feature set: the 10 deltas below.
+- Career_Preference_Social_Entrepreneurship_Or_Ngo, Career_Preference_Working_In_Ngo, Career_Preference_Government_Service, Career_Preference_Private_Industry_Job.
+- Life_Criteria_Cause_Of_Work, Life_Criteria_Financial_Security, Life_Criteria_Financial_Prosperity.
+- Mindset_Found_Life_Purpose, Metric_Life_Satisfaction_Global, log Financial_Expected_Income_Age_30.
+
+Drop rows with any NaN across these 10 deltas.
+- Report the effective N overall and by batch, and compare it with 445.
+- Report the number of rows dropped for each item.
+- Note any batches that are still thin. These batches matter because recent batches are censored for later outcomes.
+
+3) Sign-align the deltas so that positive always means a more social-sector or less money-centred orientation.
+- Multiply by −1 the deltas for Financial_Security, Financial_Prosperity, log income and Private_Industry_Job.
+- Government_Service is ambiguous, so leave it unflipped and state this choice.
+- Keep an unflipped copy of the deltas for naming clusters later.
+- Note that sign-alignment changes only the signs of the loadings. It does not change the variance explained or later K-Means and silhouette results.
+
+4) Standardise each delta to a z-score using the population SD. Flag any delta with near-zero variance.
+
+5) Compute the 10×10 Pearson correlation matrix of the z-deltas.
+- Also compute Spearman correlations, because the rank deltas are discrete.
+- Report Bartlett's sphericity test and the overall KMO value to justify running PCA.
+
+6) Run PCA by eigen-decomposition of the correlation matrix.
+- Use a Jacobi eigen solver in plain JS, or TensorFlow.js where available.
+- Sort eigenvalues in descending order.
+- Build a scree table with each eigenvalue, the % of variance explained and the cumulative %.
+- Retain k80, the smallest number of components with cumulative variance of at least 80%.
+
+7) Run Horn's parallel analysis.
+- Generate 200 random normal matrices of size N×10.
+- Retain components whose observed eigenvalue exceeds the 95th-percentile random eigenvalue (k_PA).
+- Report k80 against k_PA alongside the Kaiser count. Because the ~80% target was specified, use k80 as the input to clustering. Treat k_PA as the interpretability guide, marking components beyond it as weak or noise-like.
+
+8) Interpret the components.
+- Compute loadings as eigenvector × sqrt(eigenvalue).
+- For the first k_PA components, list the items with |loading| ≥ 0.40.
+- Give each component a provisional plain-language name.
+- Apply varimax rotation to the retained interpretable components as an aid to reading them. Clustering still uses the unrotated scores.
+
+9) Compute component scores (z × eigenvectors) for the first k80 components for every participant. Keep Participant_Id (string) and Workshop_Batch_Number with the scores.
+
+10) Sensitivity check on the 445 complete cases.
+- Run a 12-item PCA that adds the deltas for Mindset_Visualizes_Self_As_Changemaker and Mindset_Social_Self_Efficacy_Confidence, sign-aligned and standardised in the same way.
+- Compute Tucker's congruence coefficient (phi) between matched components. Use the 10 shared item loadings, match components by maximum |phi|, and correct signs.
+- Also compute phi between the 10-item PCA on the full recovered N and the 10-item PCA on the 445 subset. This separates the effect of dropping items from the effect of changing the sample.
+- Interpret phi of 0.95 or above as equivalent and 0.85–0.94 as fair similarity.
+- Report where the two dropped items load in the 12-item solution.
+
+11) Use descriptive language only, with no causal claims.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                After dropping 'Visualizes self as changemaker' and 'Social self-efficacy', how many Point 1 participants in batches 11–17 have complete Pre-to-Post deltas on the remaining 10 measures, and how many come from each batch (especially 15–17)? On these 10 sign-aligned, standardised deltas, how many principal components reach about 80% of the variance, versus how many parallel analysis retains? What do the retained components represent? Finally, does the component structure match a 12-item PCA on the 445 complete cases, as measured by Tucker's congruence?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>K-means with a no-cluster benchmark and stability checks</strong>: <span style="color:#64748b;">Run k-means (k = 2–6, many random starts) on the standardised rotated component scores of the 1,001 participants. Because the component structure is weak, silhouette alone could make noise look like groups. So add three checks. First, compare each k against a no-structure baseline: the gap statistic, plus silhouettes from data simulated with the same correlations but no clusters. Second, measure how stable the groups are when the data are resampled (mean Jaccard over 200 bootstrap resamples, keep groups with Jaccard ≥ 0.75). Third, require every group to hold at least 5% of the sample. Run a sensitivity version on only the 3 replicated components, dropping the ranking trade-off, and check whether any group is mostly batch 15. This tests whether 'transformation types' really exist before naming them.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Sort People into Types, but Test the Types Hard &mdash; <em>Like spotting a dragon in the clouds. Before you tell everyone, you check whether random clouds would look just as dragon-like. You also look again tomorrow to see if the dragon is still there, and make sure it isn't just one weird cloud.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Gaussian mixture / latent profile model instead</strong>: <span style="color:#64748b;">Fit Gaussian mixture models (latent profile analysis) with 1–6 profiles on the 4 component scores. Compare models using BIC, entropy and a bootstrap likelihood-ratio test. Unlike k-means, this allows groups of different shapes and sizes. It also gives each person a probability of belonging to each profile rather than forcing them into one group, which suits weak, overlapping structure. A 1-profile solution winning on BIC would be direct evidence that change is continuous rather than typed.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Let People Belong to More Than One Group &mdash; <em>Like sorting songs into music styles. Some songs are clearly rock or clearly jazz, but many are a bit of both. So instead of forcing each song into one box, you say '70% rock, 30% jazz'.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Cluster only the 3 replicated components, batch-balanced</strong>: <span style="color:#64748b;">Drop the financial-security vs. cause-of-work component, since it is partly an artefact of ranking questions and did not replicate. Cluster on the 3 components that matched the 12-item version (phi 0.97–0.98): social-career commitment, purpose and wellbeing, and financial insecurity. Down-weight batch 15 so that each batch counts equally (inverse-frequency weights). The resulting types rest only on robust, cross-version dimensions and are less shaped by the dominant batch.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Build Groups Only on the Most Reliable Patterns &mdash; <em>Like building a house only on foundation stones that passed inspection twice. You also make sure the loudest neighbour on the street doesn't get to decide the whole floor plan.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Skip clustering; profile continuous change dimensions</strong>: <span style="color:#64748b;">Since 19% first-component variance and 8 components to reach 80% suggest change is spread out rather than clumped, treat transformation as continuous. Report each person's position on the 4 component scores. Describe the top and bottom 20% on each dimension, and how often people are high on two dimensions at once (e.g. strong social-career commitment with high purpose). Optionally use archetypal analysis to name extreme 'pure' patterns without forcing everyone into a group. This avoids presenting weak clusters as real types.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Skip the Boxes: Describe Everyone on a Sliding Scale &mdash; <em>Like describing people by their exact height and weight on a chart, instead of forcing everyone into 'small', 'medium' or 'large' T-shirt sizes that don't really fit.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; K-means with a no-cluster benchmark and stability checks</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 1 showed that requiring all 12 measures cut the sample to 445 people from batches 11–14 only. About 995 of the 1,005 exclusions came from the two items 'Visualizes self as changemaker' and 'Social self-efficacy', so a 12-item PCA would describe an unrepresentative, uncensored-only subset. Following the steering choice, Step 2 now runs the primary PCA on the 10 remaining sign-aligned, standardised deltas, aiming to restore batches 15–17. It adds parallel analysis as a second retention rule alongside the ~80% variance rule. The richer 12-item PCA on the 445 is kept only as a sensitivity check, compared with Tucker's congruence coefficient. The two insecurity items and the career plan were reported in Step 1 but are not among the 12 shortlisted clustering features, and the insecurities have about 371 nulls each, so they stay out of the PCA. Flipping them is therefore not needed.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **Sample and data.** The filters left 1,462 participants, of whom 1,450 had both a Pre and a Post record. Of these, 1,001 had valid change scores on all 10 measures, and 445 had them on all 12. The 445 matches the number you stated. The drop from 1,001 to 445 happens mainly because the two extra mindset questions (changemaker and social self-efficacy) were scored 0, i.e. missing, for about 1,990 rows. Among the 1,001, batch 15 contributes the most (388, or 39%), followed by batch 16 (167) and batch 14 (146). Batch 17 contributes nobody, so the results effectively describe batches 11–16. In the 10-item PCA, each person's change score on each measure is standardised so the measures are comparable. The PCA then looks for groups of measures that tend to move together.
+
+**What the 10-item PCA shows.** The structure is weak. The first component explains only 19% of the variation, and you need 8 components to reach about 80%. Horn's parallel analysis, which compares your data against random noise, keeps 4 components (together about 54%). The fourth is borderline (1.07 vs 1.07). After rotation, which makes the groupings easier to read, the four components are:
+- **Social-career commitment:** Career_Plan (0.79), social-entrepreneurship/NGO preference (0.70) and working in an NGO (0.58). Expected income loads negatively (−0.39), so people who became more socially committed tended to lower their income expectations.
+- **Financial security vs. cause of work:** a trade-off in which people who ranked financial security higher ranked &quot;cause of work&quot; lower. This is partly a feature of ranking questions, since raising one item pushes another down.
+- **Purpose and wellbeing:** life satisfaction (0.79) and found life purpose (0.78).
+- **Financial insecurity:** monetary-compensation (0.72) and parental-response (0.76) insecurities.
+
+**Comparing with the 12-item version.** The 12-item PCA keeps 3 components (social-career commitment, purpose and wellbeing, financial insecurity), and again needs about 9 components to reach 80%. The congruence coefficient (phi, where 1 means identical) between matching components is 0.91, 0.92 and 0.87. That counts as fair similarity, not equivalence, and the 10-item financial-security trade-off component has no counterpart. However, when the 10-item analysis is rerun on the same 445 people, it gives 3 components that match the 12-item ones almost perfectly (phi 0.97–0.98, equivalent). So the differences come mostly from which participants are included, not from adding the two extra items.
+
+**Caveats.** Many people were dropped because of missing insecurity scores (about 371 nulls each), which may bias the sample. Income was log-transformed, and an increase counts as positive. This is single-arm observational data, so these are descriptive patterns of how changes occur together, not causal effects of the workshop.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #3</span> Do Transformation Types Really Exist? K-Means (k = 2–6) on Rotated Change Components, Benchmarked Against No-Cluster Nulls, with Bootstrap Stability and Batch-15 Checks
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1) DATA REBUILD (same as Step 2)
+- Load both tables and cast Participant_Id to string; force Workshop_Name and Workshop_Phase to string.
+- Filter parseFloat(Workshop_Level) === 0.1 and Workshop_Batch_Number between 11 and 17.
+- Clean: set 0 to NaN, set rank items &gt; 8 to NaN and agreement items &gt; 5 to NaN.
+- Invert rank items (9 − x) so that higher means a stronger preference.
+- Clip Financial_Expected_Income_Age_30 to 5,000–1,000,000 and take the natural log.
+- Map Career_Plan_Social_Action_Engagement to the ordinal scale 1–5, with 'Not yet decided / confused' set to NaN.
+- Split by phase, add _pre/_post suffixes and inner-merge on Participant_Id. Compute delta = post − pre for the exact 10 Step-2 items, apply sign alignment, then dropNa.
+- Assert N = 1,001 and print the batch counts.
+
+2) COMPONENT SCORES
+- Z-score the 10 deltas and compute the PCA correlation matrix eigendecomposition (Jacobi method in plain JavaScript).
+- Keep 4 components and apply varimax rotation.
+- Compute regression-method component scores and standardise each to mean 0, SD 1. This gives matrix X (1,001 × 4).
+- Also build X3 (1,001 × 3): the social-career, purpose/wellbeing and financial-insecurity components, re-extracted with a 3-component varimax rotation.
+
+3) K-MEANS
+- Use a seeded PRNG (mulberry32, seed 42) and k-means++ initialisation.
+- Run 25 random starts per k, with up to 300 iterations and tolerance 1e-6.
+- Keep the lowest-inertia solution for each k = 2–6. Also record W_1 for k = 1.
+- For each k, compute exact mean silhouette (Euclidean, O(n²), which is feasible at n = 1,001), per-cluster silhouette, inertia, cluster n and %, and the smallest-cluster share.
+
+4) NO-CLUSTER BENCHMARKS (B = 50 reference datasets)
+- Gap statistic (Tibshirani): use uniform reference data in a box aligned with the principal axes of X. Gap(k) = mean(log W*_k) − log W_k, with standard error s_k = sd·√(1 + 1/B). Choose the smallest k where Gap(k) ≥ Gap(k+1) − s_{k+1}, allowing k = 1.
+- Gaussian null: draw multivariate normal data with the empirical covariance of X (Cholesky factor). Run the same k-means procedure with 10 starts and record mean silhouettes. Report the null mean, the 95th percentile, and the observed-minus-null silhouette excess for each k.
+
+5) STABILITY
+- Draw 200 bootstrap resamples (sample with replacement, n = 1,001).
+- Re-cluster each resample with 10 starts.
+- For each original cluster, compute the maximum Jaccard overlap with any bootstrap cluster, using only the unique original points present in that resample.
+- Report the mean Jaccard per cluster and per k. Flag clusters below 0.75 as unstable and below 0.5 as dissolved.
+- Also report seed-to-seed agreement (adjusted Rand index, ARI) across 20 independent full runs.
+
+6) DECISION RULE
+- A k is admissible if all four hold: silhouette is above the null 95th percentile, the gap statistic does not favour k = 1, all clusters have Jaccard ≥ 0.75, and all clusters are ≥ 5% of N.
+- Among admissible k, choose the one with the highest silhouette excess over the null. Prefer the smaller k when the difference is under 0.02.
+- If none is admissible, declare 'no discrete types' and carry forward the k with the best combined stability and size only as descriptive tendency zones, labelled as such.
+
+7) SENSITIVITY
+- Repeat steps 3–6 on X3.
+- Compute the ARI between the 4-component and 3-component labels for the chosen k, and the cross-tab of cluster memberships.
+
+8) BATCH CHECK
+- Cross-tab cluster by Workshop_Batch_Number, taken from the questionnaire table.
+- Compute each cluster's batch-15 share against the 38.8% baseline.
+- Run a chi-square test of cluster versus batch and report Cramér's V.
+- Flag any cluster that is more than 60% batch 15, or where the batch-15 share is more than 1.5 times the baseline.
+
+9) CENTROIDS
+- Report each cluster's centroid on the components, back-projected to mean z-deltas on the 10 original items, as input for naming in the next step.
+
+All results are descriptive and non-causal.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                The sample is the 1,001 Point 1 participants (Workshop_Level == 0.1, batches 11–16, none from batch 17) with complete 10-item Pre-to-Post deltas. Cluster their 4 standardised varimax-rotated component scores from Step 2: social-career commitment, financial-security vs cause-of-work trade-off, purpose &amp; wellbeing, and financial insecurity. Does any k from 2 to 6 meet all four conditions below?
+(a) Its mean silhouette is above the 95th percentile of silhouettes from structureless simulated data with the same covariance.
+(b) It is favoured by the gap statistic over k = 1.
+(c) Every cluster reproduces with mean bootstrap Jaccard ≥ 0.75 over 200 resamples.
+(d) Every cluster holds at least 5% of N.
+If a k qualifies, does the same solution survive two further checks: a 3-component sensitivity run that drops the ranking trade-off, and a check that no cluster is mostly batch 15? If none qualifies, the honest answer is that change is continuous, with soft tendencies rather than discrete types.
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Re-run Step 3 with checkpointed, verifiable outputs</strong>: <span style="color:#64748b;">Re-execute the clustering pipeline on the 1,001 complete-case change scores. Save output after each stage: N at each filter, varimax loadings, component scores, the k = 2–6 table (silhouette vs. null, gap statistic, 200-resample Jaccard, smallest cluster share), then the sensitivity checks (dropping the trade-off component, batch-15 share). Include a sanity assertion that fails loudly if any stage returns empty. This keeps the original four-gate decision rule intact, so the existence of types is tested, not assumed, before anything gets named.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Fix the Oven, Then Bake Again &mdash; <em>Your cake never came out of the oven, so before you start decorating, you check that the oven is plugged in. This time you also peek through the window every few minutes so you can see it's actually baking.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Gated Step 4 handling both outcomes</strong>: <span style="color:#64748b;">Merge the re-run and the profiling into one conditional step. Branch A: if a k passes all gates and sensitivity checks, compute each cluster's mean Pre-to-Post change on the 12 original measures (with bootstrap 95% CIs and standardized effect sizes) and assign names. Branch B: if no k passes, skip naming types and describe the continuum instead. That means showing component-score distributions and the profiles of participants at the low and high ends (bottom and top quintiles) of each component, labeled as tendencies rather than types. This saves a round trip while preventing names for clusters that may not exist.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Plan for Either Answer &mdash; <em>It's like packing both an umbrella and sunglasses for a day trip. Whether it rains or shines, you're ready and don't have to run back home.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Switch to Gaussian mixture or latent profile models</strong>: <span style="color:#64748b;">Replace k-means with Gaussian mixture models (full and diagonal covariance, 1–6 components) on the four rotated component scores, and choose the number of components by BIC with entropy ≥ 0.80. Including a 1-component model makes 'no types' an explicit competing hypothesis. Unlike k-means, this approach allows elongated or unequal-size groups and gives soft membership probabilities. That suits change data, which is likely to be continuous with soft tendencies. Batch-15 share and the drop-the-trade-off-component checks still apply.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Use Softer, Smarter Groups &mdash; <em>Instead of forcing every kid in class to be either a 'sports kid' or an 'art kid,' you allow someone to be 70% sporty and 30% artsy. You also keep 'everyone is basically one big mixed group' as a fair possible answer.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Skip clustering, profile change dimensionally</strong>: <span style="color:#64748b;">Drop the types question and treat the four rotated components as the main result. Report, for each component, the distribution of change scores (mean, SD, share showing meaningful change of at least 0.5 SD), how the components correlate, and which original items drive each one. Name the dimensions of change, not groups of people. This is the most conservative path and is robust to clustering failures. Its cost is that the question of whether distinct participant types exist goes unanswered.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Describe the Directions, Not the Tribes &mdash; <em>It's like describing the weather by temperature and wind speed instead of forcing every day into 'sunny' or 'rainy.' You talk about the dials, not the labels.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Re-run Step 3 with checkpointed, verifiable outputs</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 2 showed weak component structure: PC1 explains only 19% of variance, 8 components are needed for 80%, and parallel analysis keeps 4 components, the 4th only borderline. A silhouette-only choice of k could therefore turn a continuous blur into artificial 'types'. Following the steering choice, Step 3 changes in four ways. It clusters the 4 standardised varimax-rotated component scores of the 1,001 recovered participants instead of an 80%-variance PCA. It widens the range to k = 2–6, with k = 1 included through the gap statistic. It requires every k to beat no-cluster null baselines, pass a 200-resample bootstrap Jaccard test and keep every cluster at 5% or more of N. It also adds two checks: a sensitivity run on the 3 components replicated in the 12-item analysis, and a test for clusters dominated by batch 15, since batch 15 is 39% of the sample and batch 17 is absent.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **No results came back from the analysis, so I can't report any findings yet.** The results field arrived as &quot;undefined&quot;, which usually means the pipeline didn't run or its output wasn't passed along. I don't have the batch counts, the effective N (the expected 1,001), the component loadings, the k = 2-6 validity table, or any sensitivity and batch checks. Any numbers I gave you would be invented, so I'm not giving any.
+
+When the results are available, here is how to read them:
+
+- **Sample size:** N should shrink at each step, from batches 11-16, to Pre/Post pairs, to complete cases after dropping missing insecurity answers. If the final N isn't 1,001, that difference matters and should be stated.
+- **Components:** The four components should group the 10 change scores into themes (social-career commitment, the financial-vs-cause trade-off, purpose and wellbeing, and financial insecurity). A loading is how strongly an item moves with a component. Values above about 0.4 in absolute terms are the ones worth interpreting.
+- **Clusters:** A k only counts as real groups if it passes all four tests.
+  - Its silhouette (how well separated the groups are) beats what random, structureless data of the same shape would produce.
+  - The gap statistic favors it over a single group.
+  - It is stable across 200 resamples (Jaccard ≥ 0.75).
+  - Every group holds at least 5% of participants.
+- **If no k passes:** The right conclusion is that Pre-to-Post change is a continuum with soft tendencies, not distinct participant types. The component-score distributions would then be the main result.
+- **If a k passes:** It still has to survive dropping the trade-off component and a check that no more than 50% of any cluster comes from batch 15.
+
+Either way, this is single-arm observational data. It describes how responses changed from Pre to Post, not whether the workshop caused the change. Please re-run the analysis or send the output, and I'll turn it into a full write-up with every figure rounded to 2 decimals.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #4</span> Checkpointed Re-Run of the Four-Gate Cluster-Existence Test, with Gated Profiling and Naming (or a Continuum Report if No k Qualifies)
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">**Stage 0: Load and cast.**
+- Cast Participant_Id to string in both frames. Cast Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to string.
+- Filter with parseFloat(Workshop_Level) === 0.1 and Workshop_Batch_Number from 11 to 17.
+- Checkpoint N_rows and N_unique_ids per phase. Assert both are greater than 0.
+
+**Stage 1: Clean.**
+- Set 0 to NaN in all scored columns.
+- Apply the out-of-range rules: values above 8 on rank items and above 5 on Metric_Life_Satisfaction_Global become NaN.
+- Invert rank items as 9 − x, so higher means a stronger preference.
+- Clip Financial_Expected_Income_Age_30 to 5,000–1,000,000, then take its natural log.
+- Map Career_Plan_Social_Action_Engagement to the ordinal 1–5 scale, with 'Not yet decided / confused' as NaN.
+- Sign-align the two insecurity items by negation, so a positive delta is favourable. Record this choice.
+
+**Stage 2: Pair and compute deltas.**
+- Split by phase, add _pre/_post suffixes, and inner-merge on Participant_Id.
+- Compute delta = post − pre for the 10 items: the 4 career preferences, 3 life criteria, found life purpose, life satisfaction, and log income. This is the Step 2 recovered set, after dropping changemaker and self-efficacy.
+- Drop rows with any NaN.
+- Checkpoint N after pairing (about 1,450) and N complete (about 1,001), plus counts per batch. Assert N &gt; 50. Warn loudly if N ≠ 1,001 and report the difference.
+
+**Stage 3: PCA and varimax.**
+- Z-score the 10 deltas.
+- Run PCA by eigendecomposition of the correlation matrix, using a Jacobi method or tf.linalg on the covariance.
+- Checkpoint the eigenvalues, cumulative variance, and the number of components needed to reach 80% (expected about 8).
+- Retain 4 components, as in the Step 2 parallel analysis, and apply varimax (Kaiser-normalised, iterate to tolerance 1e-6).
+- Checkpoint the loadings matrix and the first 5 rows of component scores.
+- Assert there are no NaN scores and that every score's standard deviation is greater than 0.
+
+**Stage 4: K-means and gate tests.**
+- Run K-means with k-means++ seeding, 20 restarts, a fixed seeded PRNG, and a maximum of 300 iterations, for k = 2 to 6.
+- For each k, compute:
+  - mean silhouette (exact, with N ≈ 1,000 this is feasible);
+  - the null 95th-percentile silhouette from at least 100 multivariate-normal simulations with the empirical covariance (via Cholesky);
+  - Gap(k) and its standard error, from B = 50 uniform reference sets drawn over the PCA-aligned bounding box;
+  - per-cluster bootstrap Jaccard over 200 resamples, matching clusters by best overlap;
+  - the smallest cluster's share of N;
+  - pass/fail for each gate.
+- Checkpoint this table after each k, so partial results survive a later failure.
+- For transparency, also report the user's literal specification: 80%-variance PCA, then K-means for k = 3 to 6, with silhouette only. Label it as 'not gate-validated'.
+
+**Stage 5: Sensitivity checks (only for qualifying k).**
+- Rerun on 3 components, dropping the financial-security vs cause-of-work component. Report the ARI against the 4-component solution.
+- Cross-tab cluster by batch. Fail the check if any cluster is more than 50% batch 15.
+
+**Stage 6A: Profiling and naming (only if some k passes all gates and both checks).**
+- For each cluster, compute n and %.
+- Report the mean and median raw delta for all 10 items, and for the 2 dropped items where available (report their n). Also report standardised deltas.
+- Convert the income delta to an approximate % change: (exp(Δ) − 1) × 100.
+- Identify each cluster's top 3 distinguishing items by standardised difference from the overall mean.
+- Report mean Pre levels per cluster, to flag ceiling or regression-to-the-mean effects.
+- Name each cluster from these numbers (e.g. 'purpose-driven shift', 'income-expectation drop', 'little change') and add a one-sentence description.
+
+**Stage 6B: Continuum report (if no k qualifies).**
+- Report the distribution of each component score: quantiles and the share above +1 SD and below −1 SD.
+- Report the correlations between component scores.
+- Report descriptive tercile profiles on the social-career commitment component, explicitly labelled as tendencies, not types.
+
+**Fail-loud guards and return payload.**
+- Wrap each stage in an assert helper that throws an Error with the stage name if the output is empty, undefined or all-NaN.
+- Return a single object containing checkpoints {stage0 … stage6}, a decision field ('types_exist' or 'continuum') and a caveats list:
+  - single-arm and observational, with no causal claims;
+  - complete-case selection bias, since the insecurity items have about 371 nulls each;
+  - batch 17 is absent;
+  - rank-item ipsativity.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Re-run Step 3 on the Point 1 sample (Workshop_Level == 0.1, batches 11–17) and save a verifiable checkpoint after every stage. The target sample is the expected 1,001 participants with complete 10-item sign-aligned Pre-to-Post deltas. The test clusters their 4 varimax-rotated, standardised component scores. Does any k from 2 to 6 pass all four gates?
+(a) Its mean silhouette is above the 95th percentile of silhouettes from at least 100 structureless Gaussian simulations with the same covariance.
+(b) The gap statistic favours it over k = 1 (Tibshirani 1-SE rule, B = 50).
+(c) Every cluster's mean bootstrap Jaccard over 200 resamples is at least 0.75.
+(d) Every cluster holds at least 5% of N.
+If a k qualifies, does it survive two further checks: a 3-component run that drops the ranking trade-off component, and no cluster with more than 50% batch-15 members? Only then, what is each surviving cluster's raw and standardised change profile, and what name does it earn? If no k qualifies, what continuous change tendencies describe the sample instead?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Fix assumptions, run one checkpointed type-agnostic pipeline</strong>: <span style="color:#64748b;">Two runs have failed silently, so stop chaining steps on unverified outputs. Settle the two open assumptions first. (1) Items: use the Step-2 10-item set, with the least-missing Insecurity item as the tenth. (2) Desired direction: a falling Financial_Security priority and a weakening Private_Industry_Job preference (higher rank number) count as desired, because the workshop's goal is social action. Also flip the signs on both items as a sensitivity check. Then run Stages 1–8 as one script that writes a checkpoint after every stage (N kept and dropped, PCA loadings, gap statistic, bootstrap Jaccard, smallest-cluster share, batch-15 share) and halts with an explicit error if any stage returns empty. Make Step 5 work with or without types. If a k passes all four gates, profile the types. If none passes, describe the same demographic and outcome differences by quartile of each continuous change component. Either way, Step 5 produces a usable result rather than a third empty run.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Settle the Rules, Then Run Everything Carefully Once &mdash; <em>Like a group project where everyone first agrees on what 'done' means, then checks off each step on a list so nobody hands in a blank page again.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Debug only: smoke-test the pipeline on a subset</strong>: <span style="color:#64748b;">Hold off on Step 5 entirely. Run Stages 1–8 on a 200-person random sample from one batch, with the two assumptions fixed as above. The goal is to confirm that every stage returns a non-empty object, the sign-alignment works on the rank items, and the four-gate table is filled in. Only after this smoke test passes is the full N run, and only then is Step 5 attempted. This is slower, but it isolates whether the failure lies in data loading, the Insecurity nulls (about 371), or how the output is passed on.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Practice Run on a Small Group First &mdash; <em>Like testing a new cookie recipe with one small tray before baking for the whole school bake sale.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Drop clustering; analyze continuous change components only</strong>: <span style="color:#64748b;">Skip the cluster-existence test. Clustering on change scores often fails to beat no-cluster benchmarks, and it has now blocked progress twice. Instead, compute the 4 rotated PCA change components and relate them directly to the background variables using descriptive regressions and standardized mean differences. Show the Social Impact Work share across component terciles. This answers the substance of the Step 5 question with fewer moving parts, but it gives up on testing whether a typology exists.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Skip the Sorting Into Groups, Just Measure the Changes &mdash; <em>Like describing your friends by their exact height instead of forcing everyone into 'short' or 'tall'.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Proceed with provisional best-k types, flagged exploratory</strong>: <span style="color:#64748b;">Run the pipeline and take the k with the best silhouette or gap score, even if it fails some gates. Then carry out the planned Step 5 profiling right away, with every type labeled 'exploratory, not validated'. This is the fastest path to the original deliverable. The risk is high: the profiles may describe artifacts of noise or of batch 15, and readers may treat the labels as real.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Take the Best Guess and Mark It 'Rough Draft' &mdash; <em>Like sketching a treasure map from memory: handy for planning, but you wouldn't bet your lunch money on it.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Fix assumptions, run one checkpointed type-agnostic pipeline</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 3 returned 'undefined', so the existence of transformation types was never tested. Naming clusters in Step 4 as originally planned would mean labelling groups that may not exist. Following the steering choice, Step 4 becomes a checkpointed, assertion-guarded re-run of the Step 3 four-gate clustering test on the 1,001 complete-case deltas (batches 11–16; batch 17 contributes nobody). Profiling and naming happen only inside a conditional branch that runs if some k passes every gate; otherwise the step reports continuous change tendencies instead of types.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **No results came back with this request.** The analysis output was &quot;undefined&quot;, so the pipeline either did not run or its output was not passed to me. I can't report sample sizes, component loadings, cluster gates or profiles without inventing them, so I haven't. In particular, I can't say whether the complete-case N matches the expected 1,001, or whether any k from 2 to 6 qualifies as a real typology.
+
+**What the analysis will show once it runs, and how to read it:**
+- **Stages 1–5** narrow the questionnaire to Point 1 participants (Workshop_Level 0.1, batches 11–17) who have both a Pre and a Post response. They then compute each person's change (Post minus Pre) on 10 items, flipped so that a positive number always means movement in the desired direction. This matters most for rank items, where a lower number means a stronger preference. Each stage's checkpoint should show how many people were lost, and the final count should be compared with 1,001. A large gap would most likely come from the roughly 371 nulls in the Insecurity items.
+- **Stage 6** compresses the 10 changes into 4 broader &quot;change themes&quot;. Each theme is a pattern of items that tend to move together, such as a trade-off between &quot;work with a cause&quot; and &quot;financial security&quot;. The variance explained says how much of the overall change each theme captures.
+- **Stages 7–8** test whether people fall into distinct groups or whether the clusters could just be noise. A k counts only if it beats random data, is stable across resamples, and has no cluster under 5% of N. Then it must also hold up without the trade-off component and not be dominated by batch 15. If none qualifies, the right conclusion is that there is no discrete typology, only continuous change tendencies (the Alternative section).
+
+**Two assumptions need your confirmation.** The 10 Step-3 items are not named in your query. If the earlier Step-3 list isn't available, I'd use the candidate set you gave, with one Insecurity item as the tenth, and state that choice clearly. You also need to say which direction counts as &quot;desired&quot; for Life_Criteria_Financial_Security and Career_Preference_Private_Industry_Job. Please re-run the pipeline or share its output, and I'll turn it into a plain-language summary. Any findings will describe associations in a single group over time, not proof that the workshop caused the changes.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #5</span> One Checkpointed, Type-Agnostic Pipeline: Fixed Item Set and Directions, Four-Gate Cluster Test, and 'Who Belongs' Profiling of Types or Change-Component Quartiles with a Censoring-Aware Outcome Check
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">Use plain JS arrays, with Danfo.js only for loading. Use a seeded mulberry32 RNG (seed 42) for every random step. Wrap the whole script in try/catch, and always return { checkpoints, error?, result? }. After each stage, call a helper `checkpoint(stage, obj)`. The helper pushes the stage's N kept and dropped plus key metrics, and throws `Error('STAGE_X_EMPTY')` if any array is empty or any matrix contains NaN.
+
+S1 – Load and cast:
+- Find the two tables by filename.
+- Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to String.
+- Filter with parseFloat(Workshop_Level) === 0.1 and Workshop_Batch_Number in 11–17.
+- Checkpoint: rows and unique IDs per phase.
+
+S2 – Clean:
+- Set 0 to NaN on all scored items.
+- Set rank items above 8 to NaN, and Metric_Life_Satisfaction_Global above 5 to NaN.
+- Invert rank items with 9 − x, so higher means stronger.
+- Clip income to 5,000–1,000,000, then take ln.
+- Map Career_Plan strings to 5/4/3/2/1. Set 'Not yet decided / confused' and nulls to NaN.
+- Compute null counts for both insecurity items and pick the item with fewer nulls. On a tie, prefer Monetary_Compensation and state that choice.
+- Checkpoint: the per-item missingness table and the chosen insecurity item.
+
+S3 – Pair and build deltas:
+- Split rows into Pre and Post and inner-join on Participant_Id, keeping one row per ID. If a participant has duplicate rows in a phase, count them and keep the first.
+- Compute delta = post − pre.
+- Sign-align: multiply the deltas of inverted Financial_Security, inverted Private_Industry_Job and the insecurity item by −1. Leave log-income as raw (an increase is positive).
+- Drop rows with any NaN.
+- Checkpoint: N paired, N complete, batch counts 11–17 (expect about 1,001, batch 17 = 0, batch 15 ≈ 39%), and a per-item delta mean, SD and Cohen's dz.
+
+S4 – Standardise and run PCA:
+- Z-score each delta.
+- Build the correlation matrix and run a Jacobi eigendecomposition.
+- Report eigenvalues and cumulative variance, and the number of components needed for about 80% (the user's specification).
+- Run Horn's parallel analysis with 100 column-permuted datasets at the 95th percentile.
+- Apply varimax to the retained components and compute regression-method component scores.
+- Checkpoint: rotated loadings with |l| ≥ 0.40 flagged, and an auto-label for each component chosen by its top loadings (social-career commitment, security-vs-cause trade-off, purpose and wellbeing, insecurity, or private-sector pull).
+
+S4b – Sign-flip check:
+- Flip the signs of the Financial_Security and Private_Industry deltas and rerun S4–S5 at the chosen k.
+- Flipping signs leaves Euclidean distances unchanged, so expect adjusted Rand index (ARI) = 1.00 and loadings unchanged apart from sign. Anything else halts the script with a bug error.
+
+S5 – K-means:
+- Run K-means with k-means++ initialisation, 10 restarts and up to 300 iterations, for k = 2–6, on the rotated scores.
+- Record the exact silhouette (O(n²), which is feasible at about 1,000 rows), the within-cluster sum of squares (WSS) and the cluster sizes.
+- Also report silhouettes for k = 3–6 on the ~80%-variance PCA space, as the user specified. This is descriptive only.
+
+S6 – Gates:
+- (a) Simulate 100 multivariate Gaussian nulls with the same covariance (via Cholesky decomposition). Compute their silhouettes and take the 95th percentile for each k.
+- (b) Compute the gap statistic with B = 50 uniform reference sets drawn in the PCA-rotated bounding box, applying the 1-SE rule against k = 1.
+- (c) Compute bootstrap Jaccard over 200 resamples, matching each original cluster to its best-matching bootstrap cluster on the shared IDs.
+- (d) Check that the smallest cluster holds at least 5% of N.
+- Checkpoint: a k × gate pass/fail table with the values behind each decision.
+
+S7 – Robustness, applied only to a passing k:
+- Rerun without the trade-off component and report the ARI against the main solution. The solution passes if ARI ≥ 0.65 and all four gates still hold.
+- Report each cluster's batch-15 share. The solution fails if any cluster is more than 50% batch 15.
+
+S8 – Branch:
+- Set `typesExist = (a passing k survives S7)`.
+- If true, the grouping is the cluster labels. Name each cluster from its mean raw and z-scored delta profile, for example 'purpose-and-wellbeing surge', 'social-career pivot with income-expectation drop' or 'little change'.
+- If false, the grouping is quartiles (Q1–Q4) of each rotated component score. Name the extreme quartiles by direction, and report the dip in the silhouette distribution as evidence of a continuum.
+
+S9 – Join and profile, run for each grouping:
+- Inner-join on string Participant_Id with demographics, keeping the questionnaire Workshop_Batch_Number. Report N after the join.
+- For each group, report:
+  - Gender %;
+  - median and IQR of Age_At_Workshop, using values &gt; 0 only, with n;
+  - Educational_Stream_Category %;
+  - Native_State: top 5, with the rest as 'Other' and the number of nulls dropped;
+  - batch distribution;
+  - Pre Career_Plan_Social_Action_Engagement %, using the exact strings, with 'Not yet decided / confused' as its own category and nulls counted.
+- Report a chi-square with Cramér's V (categorical variables) or Kruskal–Wallis with ε² (age), with p-values computed via a gamma or chi-square CDF. These are descriptive signals only.
+
+S10 – Outcome cross-tab:
+- Exclude 'Student' and 'Not Sure' from Current_Status_Of_Work.
+- Report the 'Social Impact Work' share with n and a Wilson 95% CI for each group: overall, and by batch band (11–13 vs 14–16). Note that batch 17 is absent.
+- Report a batch-standardised share, weighting each group's within-band share by the band's overall N, to partially address censoring.
+- Never label any of these as an effect.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                The sample is Point 1 participants (Workshop_Level == 0.1, batches 11–17) with complete Pre-to-Post deltas on a fixed 10-item set. The items are:
+- Career_Plan_Social_Action_Engagement (ordinal 1–5)
+- Career_Preference_Social_Entrepreneurship_Or_Ngo
+- Career_Preference_Working_In_Ngo
+- Career_Preference_Private_Industry_Job
+- Life_Criteria_Cause_Of_Work
+- Life_Criteria_Financial_Security
+- log Financial_Expected_Income_Age_30
+- Metric_Life_Satisfaction_Global
+- Mindset_Found_Life_Purpose
+- the less-missing of Insecurity_Monetary_Compensation and Insecurity_Parental_Response
+
+Deltas are sign-aligned so that a falling Financial_Security priority, a weakening Private_Industry_Job preference and falling insecurity all count as desired change.
+
+Questions:
+1. What is the verified N at each stage, and how many participants come from each batch?
+2. On the varimax-rotated components (count set by parallel analysis), does any k from 2 to 6 pass all four gates? The gates are: silhouette above the 95th percentile of 100 same-covariance Gaussian nulls; gap statistic favouring the k over k = 1 under the 1-SE rule with B = 50; every cluster with bootstrap Jaccard ≥ 0.75 over 200 resamples; and every cluster holding ≥ 5% of N.
+3. Does a passing k also survive dropping the ranking trade-off component, with no cluster more than 50% batch 15?
+4. If types exist, who belongs to each type, and what is each type's descriptive 'Social Impact Work' share? If they do not, how do these demographic and outcome patterns vary across quartiles of each continuous change component?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Split pipeline into small verified stages</strong>: <span style="color:#64748b;">Three single-shot runs have failed silently, so the problem is most likely the pipeline's execution, size or output handoff, not the analysis design. Break the work into four small runs, each returning a small explicit table before the next begins. Stage A: the sample flow table only (Point 1 in batches 11–17, then Pre and Post, then complete on 10 items, then matched to demographics). Stage B: the sign-aligned PCA loadings and variance explained, compared against Step 2. Stage C: the four-gate cluster test for k = 2–6, starting with 200 bootstraps and scaling up only if the run succeeds. Stage D: profiling of the types, or of component quartiles if no k passes, with batch-stratified Social Impact Work shares. Each stage must print row counts and a checksum. This isolates where the failure happens and still produces the full answer.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> One Brick at a Time &mdash; <em>Like a string of fairy lights that won't turn on. Instead of plugging in the whole tangle again and hoping, you test one section at a time until you find the broken bulb.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Skip clustering; profile continuous change components</strong>: <span style="color:#64748b;">Step 2's PCA ran successfully, so drop the heavy cluster-existence machinery (k-means, null benchmarks, bootstrap stability), since it is the most likely cause of the failures. Treat change as a continuum instead. Compute rotated component scores and regress each one on gender, age, education and batch. Then report Social Impact Work shares by component quartile, stratified by batch to account for recent batches having had less time to move into that work. You give up testing whether types exist, but you gain a fast, defensible descriptive answer.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Measure the Sliding Scale, Skip the Boxes &mdash; <em>Like describing people by their exact height in centimetres instead of arguing about where 'tall' starts and 'short' ends. You stop sorting people into boxes and just note where each one sits on the scale.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Lightweight cluster test with reduced compute</strong>: <span style="color:#64748b;">Keep the question of whether types exist, but shrink the computation so it is less likely to time out or exceed output limits. Test only k = 2–4, use 100 bootstrap resamples and 50 uniform-null datasets, and report only the gap statistic, silhouette versus the null, Jaccard stability and the smallest cluster's share. If k = 2 fails any gate, stop there and declare a continuum.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Quick Toothpick Test for Groups &mdash; <em>Like poking a cake with a toothpick to see if it's done, instead of cutting the whole thing open. It's a smaller, faster check that still answers the main question.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Close out with verified findings and handoff</strong>: <span style="color:#64748b;">Stop running new analyses and write up only what has been verified: the sample attrition from Step 1 and the 10-item PCA structure from Step 2. Pair this with a pre-registered, executable analysis plan (scripts, thresholds and expected output tables) so the cluster test and profiling can be run offline or by another analyst.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Bank What We Know &mdash; <em>Like saving your video game before a tricky level, or packing up the dishes you've already cooked so dinner is safe even if the last recipe flops.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Split pipeline into small verified stages</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Steps 3 and 4 both returned 'undefined', so there are still no verified clusters to profile, and the original Step 5 cannot run as written. Following the steering choice, Step 5 becomes one self-contained, checkpointed script. It first fixes the two open assumptions (the 10-item set and the desired direction of each item), then reruns Stages 1–8 with hard halts on empty or NaN output. It ends in a profiling stage that works either way: it profiles discrete types if a k passes all four gates plus both robustness checks, and otherwise profiles quartiles of each continuous change component. The plan also uses a Step-2 lesson: the structure is weak (4 parallel-analysis components versus 8 needed for 80% of variance; N = 1,001; batch 17 absent; batch 15 = 39%). So the batch-15 dominance check, the user-specified 80%-variance PCA and the sign-flip check are built in as verifiable checkpoints rather than assumptions.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                I can't report any findings yet, because the analysis results I received were empty (&quot;undefined&quot;). The pipeline either didn't run or didn't return output. I won't guess at the sample sizes, loadings, cluster counts or gate results. Any numbers I gave would be invented, and your question depends on exact counts at each stage.
+
+Once the results come through, this is what each part will tell you. Q1 shows how many participants are left after each filter: Point 1 in batches 11–17, those with both Pre and Post surveys, those with complete data on all 10 items, and those matched to demographics. A large drop between stages means the findings describe a narrower group than the full cohort. Q2 asks whether participants fall into distinct &quot;types&quot; of change or just vary along a continuum. A type only counts if it passes all four checks: clearer separation than random data, a better fit than a single group, stable membership when the data is resampled, and at least 5% of participants in every group. Q3 asks whether the types survive after removing the &quot;ranking trade-off&quot; component, which may simply reflect how the rank questions force trade-offs. Q4 profiles each type, or each quartile if no robust types exist, by gender, age, education, batch and the share in Social Impact Work. Recent batches have had less time to move into that work, so lower shares there may reflect timing rather than a real difference. All of this is descriptive association, not evidence that the workshop caused any change.
+
+Please re-run the analysis or share the output tables. I can then write the full interpretation with the real numbers.
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 6. PROJECT DATASET COLUMN REFERENCE BANK (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #475569;">6</span>
+          <span>6. Project Dataset Column Reference Bank (210 Columns)</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 12.5px; color: #64748b; margin: 0 0 12px 0;">
+          Columns detected in your uploaded dataset. You can cut and paste any of these column names into subsequent questions:
+        </p>
+        <div>
+          <span class="pill">Participant_Name</span><span class="pill">Participant_Id</span><span class="pill">Gender</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Current_Age</span><span class="pill">Age_At_Workshop</span><span class="pill">Workshop_Name</span><span class="pill">Workshop_Type</span><span class="pill">Workshop_Month_Year</span><span class="pill">Workshop_Month_Name</span><span class="pill">Workshop_Month_Number</span><span class="pill">Workshop_Financial_Year</span><span class="pill">Workshops_Attended_Count</span><span class="pill">Educational_Stream</span><span class="pill">Educational_Stream_Category</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Person_Years_Of_Social_Action</span><span class="pill">Education_Status</span><span class="pill">Native_State</span><span class="pill">Native_District</span><span class="pill">Native_Tehsil_Town</span><span class="pill">Raw_Native_State</span><span class="pill">Raw_Native_District</span><span class="pill">Raw_Native_Tehsil</span><span class="pill">State_Match_Status</span><span class="pill">District_Match_Status</span><span class="pill">Tehsil_Match_Method</span><span class="pill">Point_2_Workshop_Name</span><span class="pill">Point_2_Workshop_Invited</span><span class="pill">Point_2_Workshop_Attended</span><span class="pill">Point_3_Workshop_Name</span><span class="pill">Point_3_Workshop_Invited</span><span class="pill">Point_3_Workshop_Attended</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Career_Preference_Government_Service</span><span class="pill">Career_Preference_Private_Industry_Job</span><span class="pill">Career_Preference_Own_Business</span><span class="pill">Career_Preference_Social_Entrepreneurship_Or_Ngo</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Career_Preference_Academia</span><span class="pill">Career_Preference_Undecided</span><span class="pill">Career_Preference_Other</span><span class="pill">Life_Criteria_Geographical_Location</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Life_Criteria_Work_Satisfaction</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Life_Criteria_Career_Growth</span><span class="pill">Life_Criteria_Work_Life_Balance</span><span class="pill">Life_Criteria_Financial_Prosperity</span><span class="pill">Life_Criteria_Fame_And_Recognition</span><span class="pill">Life_Criteria_Job_Security</span><span class="pill">Insecurity_Social_Acceptability</span><span class="pill">Insecurity_Monetary_Compensation</span><span class="pill">Insecurity_Parental_Response</span><span class="pill">Insecurity_Suitable_Life_Partner</span><span class="pill">Insecurity_Underutilized_Talent_And_Skills</span><span class="pill">Insecurity_Less_Comfortable_Lifestyle</span><span class="pill">Insecurity_No_Visible_Impact</span><span class="pill">Insecurity_Professionally_Left_Out</span><span class="pill">Insecurity_Lack_Of_Life_Satisfaction</span><span class="pill">Insecurity_Future_Comfort_Reduction</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Mindset_Happiness_And_Self_Esteem</span><span class="pill">Mindset_Understands_Social_Issues_And_Severity</span><span class="pill">Mindset_Has_Life_Purpose</span><span class="pill">Mindset_Clear_Long_Term_Sector</span><span class="pill">Mindset_Knows_Personal_Values</span><span class="pill">Mindset_Has_Mentorship_Support_For_Future</span><span class="pill">Mindset_Takes_Stand_On_Social_Issues</span><span class="pill">Mindset_Courage_Against_Conventional_Careers</span><span class="pill">Mindset_Knowledge_Of_Social_Problem_Solving_Approaches</span><span class="pill">Mindset_Reads_Moral_And_Political_Philosophy</span><span class="pill">Mindset_Translates_Social_Intentions_To_Action</span><span class="pill">Mindset_Knows_Swa_Dharma</span><span class="pill">Financial_Attitude_Secure_About_Future</span><span class="pill">Mindset_Social_Change_Responsibility</span><span class="pill">Mindset_Has_Like_Minded_Peer_Network</span><span class="pill">Mindset_Found_Life_Purpose</span><span class="pill">Mindset_Aware_Of_Personal_Motivations_For_Social_Action</span><span class="pill">Mindset_Career_Social_Work_Integration</span><span class="pill">Mindset_Active_Meaning_Making</span><span class="pill">Mindset_Has_Larger_Social_Dream</span><span class="pill">Mindset_Belongs_To_Caring_Community</span><span class="pill">Mindset_Understands_Social_Problem_Solving_Vs_Work</span><span class="pill">Mindset_Has_Failure_Support_System</span><span class="pill">Mindset_Finds_Social_Problem_Solving_Exciting</span><span class="pill">Mindset_Visualizes_Self_As_Changemaker</span><span class="pill">Mindset_Social_Engagement_Crucial_For_Meaning</span><span class="pill">Mindset_Has_Inspiring_Social_Role_Models</span><span class="pill">Mindset_Social_Self_Efficacy_Confidence</span><span class="pill">Mindset_Understands_Happiness_Vs_Meaning</span><span class="pill">Mindset_Emotionally_Mature_Adult</span><span class="pill">Mindset_Acknowledges_Personal_Privilege</span><span class="pill">Mindset_Distinguishes_Needs_Vs_Wants</span><span class="pill">Mindset_Visualizes_Future_Youth_Inspiration</span><span class="pill">Mindset_Has_Guiding_Life_Philosophy</span><span class="pill">Mindset_Confident_In_Life_Experimentation</span><span class="pill">Mindset_Has_Reflection_Opportunities</span><span class="pill">Metric_Life_Satisfaction_Global</span><span class="pill">Mindset_Believes_Morals_Are_Absolute</span><span class="pill">Mindset_Comfortable_Expressing_Feelings</span><span class="pill">Mindset_Prosocial_Purpose_Boosts_Wellbeing</span><span class="pill">Mindset_Understands_Flourishing_Youth_Meaning</span><span class="pill">Mindset_Understands_Scientific_Purpose_Definition</span><span class="pill">Mindset_Excited_By_Life_Possibilities_In_20s</span><span class="pill">Mindset_Purpose_Finding_Is_Urgent_Priority</span><span class="pill">Mindset_Understands_Happy_Vs_Meaningful_Life</span><span class="pill">Mindset_Understands_Goal_Vs_Purpose</span><span class="pill">Financial_Attitude_Money_Equals_Happiness</span><span class="pill">Mindset_Applies_Categorical_Moral_Framework</span><span class="pill">Mindset_Excited_By_Purpose_Pursuit_Process</span><span class="pill">Financial_Attitude_Unbothered_By_Future_Earnings</span><span class="pill">Mindset_Privilege_Implies_Obligation</span><span class="pill">Mindset_Values_Work_Freedom_Over_Financial_Gain</span><span class="pill">Mindset_Understands_Purpose_Importance_And_Benefits</span><span class="pill">Mindset_Social_Contribution_Is_Deepest_Quest</span><span class="pill">Mindset_Knows_Impactful_Organisation_Functioning</span><span class="pill">Mindset_Inspired_By_Known_Changemakers</span><span class="pill">Mindset_Visualizes_Social_Sector_Contribution</span><span class="pill">Financial_Knows_Threshold_Vs_Aspirational_Income</span><span class="pill">Mindset_Alcohol_Safe_Within_Limits</span><span class="pill">Action_Identified_Books_To_Read</span><span class="pill">Action_Plan_Reduce_Carbon_Footprint</span><span class="pill">Action_Plan_Personal_Flourishing_6_Months</span><span class="pill">Action_Plan_Social_Contribution_6_Months</span><span class="pill">Action_Plan_Purpose_Journey</span><span class="pill">Mindset_Knows_How_To_Become_Flourishing_Youth</span><span class="pill">Mindset_Visualizes_Five_Career_Paths</span><span class="pill">Mindset_Spends_Day_In_Meaningful_Pursuits</span><span class="pill">Mindset_Committed_To_Social_Change</span><span class="pill">Mindset_Has_Mentor_For_Life_Matters</span><span class="pill">Mindset_Has_Guiding_Philosophy</span><span class="pill">Mindset_Can_Analyse_Social_Change_Intervention</span><span class="pill">Financial_Attitude_Anxiety_About_Aspirations</span><span class="pill">Mindset_Knows_Social_Problem_Solving_Building_Blocks</span><span class="pill">Mindset_Clarity_On_Purpose_Finding_Process</span><span class="pill">Mindset_Firm_On_Values_Against_Norms</span><span class="pill">Mindset_Understands_Social_Change_Approaches</span><span class="pill">Mindset_Understands_Purpose_Identification_Urgency</span><span class="pill">Mindset_Has_Values_For_Life_Decisions</span><span class="pill">Mindset_Has_Idea_About_Life_Direction</span><span class="pill">Mindset_Identified_Daily_Moral_Resolutions</span><span class="pill">Action_Plan_Purpose_Journey_1_Year</span><span class="pill">Mindset_Clear_Professional_Life_Sector</span><span class="pill">Action_Plan_Social_Change_Journey_1_Year</span><span class="pill">Mindset_Empowered_As_Active_Citizen_With_State</span><span class="pill">Mindset_Clear_Sense_Of_Purpose</span><span class="pill">Mindset_Visualizes_Five_Life_Possibilities</span><span class="pill">Mindset_Life_Beyond_Materialistic_Pleasures</span><span class="pill">Mindset_Anxiety_About_Finding_Purpose</span><span class="pill">Mindset_Sole_Credit_For_Own_Success</span><span class="pill">Mindset_Youth_In_Social_Sector_Is_Societal_Need</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Opposition</span><span class="pill">Mindset_Follows_Moral_Resolutions</span><span class="pill">Mindset_Distinguishes_Meaning_Vs_Pleasure_Seeking</span><span class="pill">Mindset_Understands_Social_Sector_Need_And_Role</span><span class="pill">Mindset_Courage_To_Live_Authentically</span><span class="pill">Mindset_Thought_Through_Life_Direction</span><span class="pill">Mindset_Life_Choice_Independent_Of_Peers</span><span class="pill">Financial_Knows_Needs_Vs_Aspirational_Income</span><span class="pill">Mindset_Visualizes_Social_Sector_Career_Despite_Norms</span><span class="pill">Mindset_Elevation_Motivates_Social_Action</span><span class="pill">Mindset_Self_Actualization_Linked_To_Society</span><span class="pill">Mindset_Unclear_Needs_Vs_Wants</span><span class="pill">Mindset_Poor_Understanding_Of_Socioeconomic_Issues</span><span class="pill">Mindset_Lacks_Reflection_Opportunities</span><span class="pill">Mindset_Believes_Morals_Are_Relative</span><span class="pill">Mindset_Doubts_Social_Purpose_Wellbeing_Impact</span><span class="pill">Mindset_Parental_Approval_Mandatory_For_Career</span><span class="pill">Mindset_Prefers_Safety_And_Security_Path</span><span class="pill">Mindset_Eco_Friendly_Lifestyle_Changes</span><span class="pill">Mindset_Responsibility_To_Give_Back_To_Society</span><span class="pill">Mindset_Own_Efforts_Over_Birth_Circumstances</span><span class="pill">Mindset_Maximize_Materialistic_Pleasures</span><span class="pill">Mindset_Privilege_Drives_Contribution</span><span class="pill">Mindset_Knows_Ways_To_Help_Those_In_Need</span><span class="pill">Mindset_Compassion_Motivates_Social_Action</span><span class="pill">Mindset_Applies_Value_Based_Decision_Criteria</span><span class="pill">Mindset_Righteous_Anger_Motivates_Social_Action</span><span class="pill">Mindset_Understands_Social_Sector_Unique_Roles</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Others</span><span class="pill">Mindset_Chance_Over_Effort_In_Life_Outcome</span><span class="pill">Mindset_Gratitude_Drives_Social_Contribution</span><span class="pill">Mindset_Moral_Test_For_Life_Decisions</span><span class="pill">Financial_Attitude_Confident_Future_Earnings</span><span class="pill">Mindset_Visualizes_Social_Sector_Career</span><span class="pill">Mindset_Parental_Agreement_Mandatory_For_Decisions</span><span class="pill">Mindset_Values_Harmony_With_Nature</span><span class="pill">Mindset_Inspired_To_Create_Social_Impact</span><span class="pill">Mindset_Excited_About_Life_Purpose_Discovery</span><span class="pill">Mindset_Committed_To_Social_Change_Movement</span><span class="pill">Mindset_Purpose_Is_Meaningful_Social_Difference</span><span class="pill">Mindset_Committed_To_Youth_Social_Change_Community</span><span class="pill">Mindset_Can_Enact_Active_Citizen_Duty</span><span class="pill">Mindset_Preoccupied_With_Safety_And_Security</span><span class="pill">Mindset_Bucket_List_Happiness_Approach</span><span class="pill">Mindset_Daily_Intentional_Purpose_Linked_Living</span><span class="pill">Mindset_Urgency_To_Act_On_Climate_Change</span><span class="pill">Mindset_Loneliness_While_Contemplating_Social_Change</span><span class="pill">Mindset_Income_Inequality_Is_Justified</span><span class="pill">Mindset_Steps_Toward_Independent_Responsible_Adulthood</span><span class="pill">Mindset_Considers_Needs_Before_Purchases</span><span class="pill">Mindset_Values_Growth_Mentors</span><span class="pill">Mindset_Actively_Cultivating_Mentor_Relationship</span><span class="pill">Financial_Expected_Income_Age_25</span><span class="pill">Financial_Expected_Income_Age_30</span><span class="pill">Financial_Planning_Sheet_Income</span><span class="pill">Financial_Planning_Sheet_Income_Halved</span><span class="pill">Financial_Years_To_Independence</span>
+        </div>
+      </div>
+    </details>
+
+    <!-- 7. RISKS, MODEL CONSTRAINTS & GOVERNANCE (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #64748b;">7</span>
+          <span>7. Risks, Model Constraints &amp; Governance</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="margin: 0; font-size: 13px; color: #334155; line-height: 1.65;">
+          1) Evidence gap: Steps 3, 4 and 5 returned no key metrics, so gate results, cluster sizes, profiles and Social Impact Work shares are unverified. The verdict rests mainly on Step 2's weak-structure evidence, not on a completed cluster test. 2) Weak structure: correlations between changes are mostly ≤ 0.3 and 8 of 10 components are needed for ~80% variance, so K-means on ~80%-variance PCA space may produce arbitrary slices, and silhouette alone cannot rule that out. 3) Item-set inconsistency: the Step 2 plan list and the reported 10-item results differ, and the sign handling of Life_Criteria_Cause_Of_Work in the sign-alignment table should be re-checked. 4) Selection bias: only 1,001 of 1,450 paired participants are complete, and insecurity items are missing for ~371 rows each. The 10-item and 12-item solutions match well on 445 people but only fairly on the full 1,001, and one component had no match. 5) Batch composition: batch 15 is 38.8% of the sample and batch 17 is absent, so any group can reflect batch effects. 6) Censoring: recent batches have had less time to reach Social Impact Work, and Current_Status_Of_Work is an undated snapshot. 7) Rank-item ipsativity: ranking items trade off against each other, which creates artificial correlations. 8) Regression to the mean and ceiling effects: people with high Pre scores can only go down, so look at mean Pre levels per group. 9) Single-arm observational data with no comparison group: report association and change only, never that the workshop caused any outcome or type. 10) Post-phase deltas and Social Impact Work must not be used as predictors of long-term outcomes (leakage); here they are used only for description.
+        </p>
+      </div>
+    </details>
+
+    <!-- Sign-off Footer -->
+    <div class="footer">
+      Generated by <strong>Answer Strategically</strong> &bull; Answer Consistency Engine &bull; Tailored for Easy to understand for College graduate volunteer
+       &bull; Includes 4 Post-Execution Clarifications
+    </div>
+  </div>
+</body>
+</html>
