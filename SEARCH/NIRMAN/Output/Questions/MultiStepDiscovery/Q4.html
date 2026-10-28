@@ -1,0 +1,1804 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Strategic Action Report — What predicts the choosing of ‘Full-time’ engagement in social action by a participant in his / her last attended workshop?</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      margin: 0;
+      padding: 32px 16px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      padding: 36px 40px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05);
+    }
+    .header {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 22px;
+      margin-bottom: 24px;
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: #e0e7ff;
+      color: #3730a3;
+      border: 1px solid #c7d2fe;
+    }
+    .badge-audience { background: #f3e8ff; color: #6b21a8; border-color: #d8b4fe; }
+    .badge-success { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .badge-consult { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .question-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 14px 0 10px 0;
+    }
+    .question-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    h1.report-question {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+      color: #0f172a;
+      line-height: 1.45;
+    }
+    .subtitle { color: #475569; font-size: 13px; margin-top: 4px; }
+    .audience-note {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: #334155;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 20px 0 28px 0;
+    }
+    .kpi-card {
+      background: #f8fafc;
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .kpi-val { font-size: 24px; font-weight: 800; color: #0f172a; }
+    .kpi-lbl { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-top: 4px; letter-spacing: 0.04em; }
+    .verdict-box {
+      border-left: 5px solid #059669;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left-width: 5px;
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 24px;
+    }
+    .verdict-title { font-size: 18px; font-weight: 800; color: #166534; margin: 0 0 10px 0; }
+    .verdict-text { font-size: 13.5px; color: #1e293b; line-height: 1.65; }
+    details.collapsible-section {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #ffffff;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    details.collapsible-section summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: #f8fafc;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      transition: background 0.15s ease;
+    }
+    details.collapsible-section summary:hover {
+      background: #f1f5f9;
+    }
+    details.collapsible-section[open] summary {
+      background: #f1f5f9;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    details.collapsible-section summary::-webkit-details-marker {
+      display: none;
+    }
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .summary-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    .summary-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .summary-chevron {
+      font-size: 10px;
+      color: #64748b;
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    details.collapsible-section[open] .summary-chevron {
+      transform: rotate(180deg);
+    }
+    .collapsible-body {
+      padding: 20px;
+      background: #ffffff;
+    }
+    .step-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .step-title { font-size: 14.5px; font-weight: 700; color: #0f172a; }
+    .step-num { background: #4f46e5; color: #ffffff; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+    .sub-box { background: #ffffff; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; font-size: 12.5px; color: #334155; }
+    .sub-lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 4px; letter-spacing: 0.04em; }
+    .choice-badge { display: inline-block; padding: 3px 8px; background: #e0e7ff; color: #3730a3; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #c7d2fe; }
+    .replan-badge { display: inline-block; padding: 2px 8px; background: #fae8ff; color: #86198f; border-radius: 6px; font-size: 10px; font-weight: 800; margin-left: 6px; }
+    .rec-card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px 20px; margin-bottom: 18px; }
+    .rec-title { font-size: 15px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .rec-easy { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #14532d; font-size: 13px; line-height: 1.6; }
+    .rec-tech { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #1e3a8a; font-size: 12.5px; line-height: 1.5; }
+    .prompt-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #38bdf8; word-break: break-word; user-select: all; margin-top: 6px; }
+    .pill { display: inline-block; background: #e2e8f0; color: #1e293b; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-family: monospace; font-weight: 700; margin-right: 6px; margin-bottom: 4px; border: 1px solid #cbd5e1; }
+    .inquiry-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .inquiry-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; }
+    .inquiry-query { font-size: 14px; font-weight: 700; color: #0f172a; margin: 4px 0 10px 0; }
+    .inquiry-response { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 13px; color: #1e293b; line-height: 1.6; margin-bottom: 10px; }
+    .chart-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="badge-bar">
+        <span class="badge">Strategic Master Dossier</span>
+        <span class="badge badge-audience">Tailored For: Easy to understand for College graduate volunteer</span>
+        <span class="badge badge-success">Confidence: 55%</span>
+        <span class="badge badge-consult">3 Post-Execution Inquiries Documented</span>
+      </div>
+      <div class="question-block">
+        <div class="question-label">
+          <span>🎯</span>
+          <span>Core Strategic Question</span>
+        </div>
+        <h1 class="report-question">What predicts the choosing of ‘Full-time’ engagement in social action by a participant in his / her last attended workshop?</h1>
+      </div>
+      <div class="subtitle">
+        Project: <strong>NIRMAN</strong> &middot; Generated on 10/28/2026 &middot; Multi-Step Progressive Analytics
+      </div>
+    </div>
+
+    <!-- Audience Note -->
+    <div class="audience-note">
+      <strong>Audience Comprehension Level:</strong> Easy to understand for College graduate volunteer<br/>
+      Clear, structured, professional explanations covering business metrics, proportions, and logic with practical context.
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-val">55%</div>
+        <div class="kpi-lbl">Strategic Confidence</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">5 / 5</div>
+        <div class="kpi-lbl">Empirical Steps Completed</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">Text-to-ML</div>
+        <div class="kpi-lbl">Framework Mode</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">210</div>
+        <div class="kpi-lbl">Dataset Columns Audited</div>
+      </div>
+      
+      <div class="kpi-card">
+        <div class="kpi-val">3</div>
+        <div class="kpi-lbl">Follow-up Clarifications</div>
+      </div>
+      
+      
+      <div class="kpi-card">
+        <div class="kpi-val">2</div>
+        <div class="kpi-lbl">Visual Charts Added</div>
+      </div>
+      
+    </div>
+
+    <!-- 1. STRATEGIC VERDICT & EASY-TO-UNDERSTAND TAKEAWAYS (PROMINENT AT TOP) -->
+    <div class="verdict-box">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #047857; margin-bottom: 4px;">
+        1. Strategic Verdict &amp; Easy-to-Understand Takeaways
+      </div>
+      <div class="verdict-title">A participant's own Pre-workshop 'Fulltime as a career' answer is the dominant predictor of choosing full-time at their last workshop, and workshop level strongly confounds comparisons. Whether mindset and demographics add real predictive power is still unproven because the later modelling steps produced no reported results.</div>
+      <div class="verdict-text">
+        The clearest finding is that the best predictor of choosing 'Fulltime as a career' in the last workshop is what the participant already said before it began. Across 1,799 participants whose last workshop has a usable Post answer, about 59% (1,060 people) chose full-time. The rates were 52.1% at Level 0.1 (655 of 1,257), 68.0% at Level 0.2 (255 of 375) and 89.8% at Level 0.3 (150 of 167). In the Level 0.1 group, about 92% of people who already said 'Fulltime as a career' at Pre said it again at Post. That Pre answer is therefore a very strong signal, although it predicts stability and not change.
+
+The second pattern is that workshop level strongly shapes the answer. Full-time rates climb from 52% to 90% as participants move to later levels. People reach later workshops by being invited and by staying engaged, so those groups are self-selected. This is why every comparison was planned within a level. Simply comparing 'later-level people' with 'earlier-level people' would mostly measure who stayed in the programme. The Pre-answer rule is also incomplete. It catches only about half of the full-time choosers (roughly 337 of 655 at Level 0.1), because the other half were not full-time at Pre. For the volunteer team, the practical question is who converts.
+
+One important caveat: the numeric results for Steps 2 to 5 (screening, model accuracy, feature rankings, thresholds) were not reported. Only Step 1's numbers are confirmed outputs. The other figures above come from the experiment plans, which cite them as reference values to reproduce. We therefore cannot yet say whether mindset scores (purpose, changemaker identity, life priorities), career-preference ranks, income expectations or demographics add predictive power beyond the Pre answer. This dossier gives the confirmed answer and a clear plan to settle the open question. All findings describe association in observational data and do not show that the workshop caused any choice.
+      </div>
+    </div>
+
+    <!-- 5. STRATEGIC CLARITY & FOLLOW-UP CONSULTATION LOG (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #0284c7;">5</span>
+          <span>5. Strategic Clarity &amp; Follow-Up Consultation Log</span>
+          <span class="badge badge-consult" style="margin-left: 6px;">3 Inquiries</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Post-execution follow-up consultations answering specific questions, framing subsequent analytical queries, auditing column metadata, and clarifying empirical results.
+        </p>
+
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #3
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:50 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "In simple easy to understand words with intuition and analogy, what is the Takeaway, what is the question , what is the answer"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Plain-language guide: what predicts choosing "Full-time" at the last workshop</h2>
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">1. The question</h3>
+
+        <blockquote style="border-left: 4px solid #3b82f6; background: #eff6ff; padding: 12px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; font-size: 12px; color: #1e40af; line-height: 1.6;">
+          <strong>If we look at a participant's last workshop, what tells us in advance whether they will choose "Fulltime as a career" as their level of engagement in social action?</strong>
+        </blockquote>
+      
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>"Last workshop"</strong> means the highest level a person reached (Level 0.1, 0.2 or 0.3).</li><li style="margin-bottom: 5px;"><strong>The outcome</strong> is their answer to the career-plan question at that workshop. They either chose "Fulltime as a career" or something else. "Part time", "Volunteering frequently", "Occasionally", "Monetary contribution" and "Not yet decided / confused" all count as "not full-time".</li><li style="margin-bottom: 5px;"><strong>"Predicts"</strong> means a signal available <em>before</em> the workshop, such as an earlier answer, mindset scores, priorities or demographics, that lines up with the outcome. It does not mean a <em>cause</em>.</li>
+        </ul>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">2. The takeaway (one paragraph)</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>The best predictor is what the person already said before the workshop.</strong> People who said "Fulltime as a career" at the start almost always say it again at the end. Two cautions apply:
+      </p>
+    
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Workshop level is tangled up with the result, because later levels contain more committed people.</li><li style="margin-bottom: 5px;">We have <strong>not yet proven</strong> that mindset scores, priorities or demographics add anything beyond the person's own earlier answer. The modelling steps that would test this produced no results.</li>
+        </ol>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">3. The answer, step by step</h3>
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">Part A: How common is "Full-time" overall?</h4>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Among <strong>1,799 participants</strong> whose last workshop has a usable "after" (Post) answer, about <strong>59% (1,060 people)</strong> chose full-time.
+      </p>
+    
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">Part B: The strongest predictor is the earlier answer</h4>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Analogy:</strong> Imagine asking diners what they plan to order <em>before</em> they open the menu, then checking what they actually order. Most people who said "the biryani" order the biryani. The earlier answer is a very good guess at the later one.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        At Level 0.1 (the only level where we could check this):
+      </p>
+    
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Group (what they said at Pre)</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Chose Full-time at Post</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Already said "Fulltime as a career"</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>about 92%</strong></td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Everyone else</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>about 40%</strong></td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">The odds are roughly <strong>18 times higher</strong> for those who already said full-time. "Odds" is a way of comparing chances: 92% is very likely, 40% is a toss-up-ish chance.</li><li style="margin-bottom: 5px;">Among people who started as "Not yet decided / confused", about <strong>49%</strong> still chose full-time. Early answers are useful but not fixed.</li>
+        </ul>
+      
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">Part C: Why the earlier answer is not the whole story</h4>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Analogy:</strong> A metal detector that rarely beeps, but is almost always right when it does. It is very <em>precise</em> but misses a lot of treasure.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">The "Pre = Full-time" rule is right about 92% of the time when it says "full-time".</li><li style="margin-bottom: 5px;">It only catches <strong>about half</strong> of the people who end up full-time (roughly 337 of 655 at Level 0.1). The other half were <em>not</em> full-time at the start and converted.</li><li style="margin-bottom: 5px;">The rule predicts <strong>staying the same</strong>, not <strong>changing</strong>. For a volunteer team, the interesting question is <strong>who converts</strong>, and this rule cannot answer that.</li>
+        </ul>
+      
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">Part D: Workshop level matters, but it is a trap</h4>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Last level</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Chose Full-time</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">0.1</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">52.1% (655 of 1,257)</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">0.2</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">68.0% (255 of 375)</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">0.3</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">89.8% (150 of 167)</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        It is tempting to say "later workshops make people go full-time." <strong>Don't conclude that.</strong>
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Analogy:</strong> It's like noticing that people who finish round 3 of a competition are more skilled than those eliminated in round 1. The competition didn't necessarily make them skilled. The keen, committed ones were the ones invited back and who kept showing up.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        So the 52% to 90% rise mostly reflects <strong>who was invited and stayed</strong>. That is why the analysis planned to compare people <em>within the same level</em>. Level 0.3 also has only about 17 non-full-time people, so its numbers are very shaky.
+      </p>
+    
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">4. What we do not know yet</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The dossier planned to test whether these add predictive power beyond the Pre answer:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">mindset scores (purpose, changemaker identity, life priorities)</li><li style="margin-bottom: 5px;">career-preference rankings</li><li style="margin-bottom: 5px;">income expectations</li><li style="margin-bottom: 5px;">demographics</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>No results were reported for those tests.</strong> So we cannot say whether any of them help. The honest answer is "unproven", not "they don't matter".
+      </p>
+    
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">5. Confidence: 55% (moderate)</h3>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Reason confidence is not higher</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">What it means</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Missing modelling results</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">The "what else predicts it" part is unanswered</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Observational data</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">These are associations; the workshop was not shown to <em>cause</em> choices</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Self-selection</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Later levels contain people who were already keen</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Coding choice</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">"Confused" counts as "not full-time", which affects the rates</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Small Level 0.3</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Only ~17 non-full-time people, so very unstable</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Some numbers come from plans</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">The 92% and "337 of ~655" figures were not independently verified</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>A note on the numbers:</strong> the 92% and 337 figures come from a slightly broader table that includes some people who later moved up a level. They are good approximations, but not perfectly matched to the 655 figure. Also, the Pre-answer link was only checkable at <strong>Level 0.1</strong>. Levels 0.2 and 0.3 had no matching "before" answers at the same level.
+      </p>
+    
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">6. What a volunteer team can do with this</h3>
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Use the earlier answer as a baseline, not a screening tool.</strong> It identifies likely "stayers" well but misses the converts.</li><li style="margin-bottom: 5px;"><strong>Don't credit or blame later levels</strong> for the rising full-time rates. Much of that is who stayed.</li><li style="margin-bottom: 5px;"><strong>Focus on the converts</strong>: the roughly 40% of people who were <em>not</em> full-time at Pre but chose it later. Understanding them is the real next step.</li><li style="margin-bottom: 5px;"><strong>Re-run the missing modelling steps</strong> to see whether mindset, priorities or demographics help, using a held-out test set so the results are honest.</li><li style="margin-bottom: 5px;"><strong>Check the "confused" coding</strong> by running the analysis with those people excluded.</li>
+        </ol>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">Summary in three lines</h4>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Question:</strong> What predicts choosing full-time at the last workshop?</li><li style="margin-bottom: 5px;"><strong>Answer:</strong> Mainly what the person already said before the workshop. Other factors (mindset, demographics) are unproven, and level differences mostly reflect who stayed.</li><li style="margin-bottom: 5px;"><strong>Remember:</strong> These are patterns, not proof of cause, and the confidence is moderate (55%).</li>
+        </ul>
+      
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #2
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Strategic Visuals &amp; Charts
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:49 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "In simple easy to understand words with intuition and analogy, what is the Takeaway, what is the question , what is the answer. Add as many visuals as needed. Add different types of visuals"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Generated 2 visual chart(s) illustrating the strategic findings.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #1
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:36 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "What is the question , what is the answer, takeaway . Output  in simple plan text format (no table) with simple shortest possible answer. Include  exact column names as per schema"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Question</strong> What predicts a participant choosing "Fulltime as a career" in the <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Career<em>Plan</em>Social<em>Action</em>Engagement</code> column at their last workshop (the highest <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Workshop<em>Level</code>, using the row where <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Workshop</em>Phase</code> = Post)?
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Answer</strong>
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">The best predictor is the same column's answer at the start. That is <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Career<em>Plan</em>Social<em>Action</em>Engagement</code> where <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Workshop_Phase</code> = Pre.</li><li style="margin-bottom: 5px;">At <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Workshop_Level</code> 0.1, 92.33% of people who said "Fulltime as a career" at Pre said it again at Post (337 of 365).</li><li style="margin-bottom: 5px;">Only 39.72% of the others chose it at Post.</li><li style="margin-bottom: 5px;"><code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Workshop_Level</code> is the second pattern. The full-time rate at Post rises from 52.1% at 0.1 to 68.0% at 0.2 and 89.8% at 0.3.</li><li style="margin-bottom: 5px;">That rise mostly reflects who was invited and stayed engaged, not that later workshops change minds.</li><li style="margin-bottom: 5px;">Overall, 59% of 1,799 participants with a usable Post answer chose full-time.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Takeaway</strong>
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Prior intent predicts who stays full-time, not who changes their mind. The Pre rule misses about half of the full-time choosers (337 of about 655 at Level 0.1).</li><li style="margin-bottom: 5px;">Whether mindset scores, rankings, income expectations (<code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Financial<em>Expected</em>Income<em>Age</em>30</code>) or demographics add anything beyond the Pre answer is not proven. The modelling steps produced no reported results.</li><li style="margin-bottom: 5px;">These are associations in observational data, not proof that the workshop caused any choice.</li><li style="margin-bottom: 5px;">Confidence is 55%.</li>
+        </ul>
+      
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 4. STRATEGIC VISUALIZATIONS & EMPIRICAL CHARTS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #d97706;">4</span>
+          <span>4. Strategic Visualizations &amp; Empirical Charts (2 Visualized)</span>
+          <span class="badge" style="background: #fef3c7; color: #92400e; border-color: #fde68a; margin-left: 6px;">2 Visuals</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Visual intelligence charts generated post-execution to illustrate empirical step metrics, distribution variances, and strategic performance.
+        </p>
+
+        
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">The Best Clue: What Someone Said Before the Workshop</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              bar Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">Share of level-0.1 participants who chose 'Full-time' at their last workshop, grouped by what they said BEFORE the workshop (Step 4). Analogy: if a runner already says 'I'm running the marathon' on day one, they usually still say it on race day.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Pre = Full-time</span>
+                  <span style="font-weight: 800; color: #10b981;">92.3%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 92.33%; background: #10b981; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">337 of 365 stayed full-time</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Pre = Not yet decided</span>
+                  <span style="font-weight: 800; color: #06b6d4;">48.7%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 48.7%; background: #06b6d4; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Undecided people split about 50/50</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Pre = Part time</span>
+                  <span style="font-weight: 800; color: #2563eb;">45.9%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 45.87%; background: #2563eb; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Many were drawn toward full-time</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Pre = Volunteering frequently</span>
+                  <span style="font-weight: 800; color: #f59e0b;">32.9%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 32.85%; background: #f59e0b; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">About 1 in 3 switched</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Pre = Monetary contribution</span>
+                  <span style="font-weight: 800; color: #8b5cf6;">31.3%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 31.33%; background: #8b5cf6; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Lower, but not zero</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Pre = Occasionally</span>
+                  <span style="font-weight: 800; color: #ec4899;">21.1%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 21.05%; background: #ec4899; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Only 19 people, so treat with caution</span>
+              </div>
+            
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> Prior intent is the dominant signal. 92% of people who started as 'Full-time' were still full-time afterwards. Among those who started with any other answer, only about 40% ended up full-time.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Question, Answer and Confidence at a Glance</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              kpi Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">Scorecard summarising what the 5-step analysis proved and what it did not. Analogy: we found the strongest signpost on the road, but the extra maps (mindset and demographics) were never delivered.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Pre-FT Odds Ratio</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #10b981; margin: 4px 0;">18.3×</div>
+                  <div style="font-size: 11px; color: #475569;">Odds of full-time vs. others (CI 12.2–27.4)</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Level Confounding</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #f59e0b; margin: 4px 0;">46% → 90%</div>
+                  <div style="font-size: 11px; color: #475569;">Full-time rate rises from level 0.1 to 0.3, but self-selection is likely</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #ec4899; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Modelling Steps with Results</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #ec4899; margin: 4px 0;">0 of 3</div>
+                  <div style="font-size: 11px; color: #475569;">Steps 2, 3, 5 returned 'undefined', so mindset lift is untested</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Verdict Confidence</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin: 4px 0;">55%</div>
+                  <div style="font-size: 11px; color: #475569;">Solid on prior intent, open on everything else</div>
+                </div>
+              
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> Prior intent is a very strong predictor, and level confounds comparisons. Whether mindset or demographics add anything is unproven because Steps 2, 3 and 5 returned no results. Confidence is moderate, at 55%.
+            </div>
+          
+        </div>
+      
+      </div>
+    </details>
+
+    <!-- 3. GUIDANCE & RECOMMENDATIONS ON NEXT STEPS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #2563eb;">3</span>
+          <span>3. Guidance &amp; Recommendations on Next Steps (How to Proceed)</span>
+          <span class="badge" style="background: #dbeafe; color: #1e40af; border-color: #bfdbfe; margin-left: 6px;">6 Actions</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Tailored recommendations explaining what to do next. Includes both an easy-to-understand explanation and technical column names ready for cut-and-pasting into future questions.
+        </p>
+
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#1</span> Lock in the confirmed baseline: 'Pre = Fulltime' as the benchmark to beat
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Many people who said they wanted a full-time social career before the workshop said the same afterwards (about 92% at Level 0.1). It is the simplest and strongest predictor we have. Before claiming that any mindset or background factor 'predicts' full-time, check that it does better than this simple rule.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Cohort: each participant's highest Workshop_Level, Post row preferred, non-null Career_Plan_Social_Action_Engagement, and a Pre row at the same level. Target is_fulltime_post = 1 if the answer equals 'Fulltime as a career', otherwise 0 (confused is coded 0). Baseline M0 predicts 1 if the Pre answer is 'Fulltime as a career'. Report precision, recall, F1 and AUC, plus P(Post FT | Pre FT) and P(Post FT | Pre not FT) per level, with the risk difference and odds ratio (add 0.5 to all cells if any cell is zero). Report the effective N at every stage and keep Participant_Id as a string.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Career_Plan_Social_Action_Engagement</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Using prod_nirman_questionnaire (Participant_Id cast to string, Workshop_Level via parseFloat), take each participant's highest Workshop_Level, keep the Post row with non-null Career_Plan_Social_Action_Engagement, and require a Pre row at the same Workshop_Level. Define is_fulltime_post = 1 if Career_Plan_Social_Action_Engagement == 'Fulltime as a career', else 0. For each Workshop_Level (0.1, 0.2, 0.3) report n, the full-time rate, P(Post FT | Pre FT), P(Post FT | Pre not FT), risk difference, odds ratio, and the precision/recall/F1 of the rule 'predict FT if Pre == Fulltime as a career'. Print effective N at every stage.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#2</span> Find the 'converts': who switches to full-time among people who were not full-time at Pre?
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Roughly half of the people who chose full-time at Post had not said so at Pre. Those people show what the workshops might help with, but the simple rule cannot find them. We should build and test a model only on people who were not full-time at the start, and see whether mindset, priorities or background help us spot likely switchers.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Restrict to Pre != 'Fulltime as a career' at Level 0.1 (about 1,256 total cohort; non-FT subset to be counted). Target = switched_to_fulltime (Post == 'Fulltime as a career'). Features are Pre-only: 13 theme scores (items only, reverse-coded with 6 − x, at least 50% of items non-null), inverted ranks (9 − x) for the 4 career-preference and 4 life-criteria shortlist items, log10 of clipped Financial_Expected_Income_Age_30, and demographics. Use an 80/20 participant-level split stratified by target and batch band (7–10, 11–14, 15–17), 5-fold CV on the training part, and L2 logistic regression (the TF.js single sigmoid layer) with class weights. Report AUC, PR-AUC with the base-rate baseline, recall and precision at a frozen threshold, and standardized odds ratios with bootstrap CIs. No Post items, deltas, Action_Plan_* columns, Point_2/Point_3 fields, Person_Years_Of_Social_Action or Current_Status_Of_Work (leakage).
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Career_Preference_Social_Entrepreneurship_Or_Ngo</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Career_Preference_Government_Service</span><span class="pill">Career_Preference_Private_Industry_Job</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Life_Criteria_Work_Satisfaction</span><span class="pill">Life_Criteria_Job_Security</span><span class="pill">Financial_Expected_Income_Age_30</span><span class="pill">Mindset_Found_Life_Purpose</span><span class="pill">Mindset_Visualizes_Self_As_Changemaker</span><span class="pill">Mindset_Social_Self_Efficacy_Confidence</span><span class="pill">Mindset_Visualizes_Social_Sector_Career</span><span class="pill">Mindset_Courage_Against_Conventional_Careers</span><span class="pill">Gender</span><span class="pill">Age_At_Workshop</span><span class="pill">Educational_Stream_Category</span><span class="pill">Education_Status</span><span class="pill">Workshop_Batch_Number</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                For Workshop_Level 0.1 participants whose last workshop is 0.1, who have a Post and a Pre row, and whose Pre Career_Plan_Social_Action_Engagement is NOT 'Fulltime as a career', predict switched_to_fulltime (Post Career_Plan_Social_Action_Engagement == 'Fulltime as a career'). Use only Pre-phase features: the 13 theme scores (items only, reverse-coded 6-x), inverted ranks (9-x) of Career_Preference_Social_Entrepreneurship_Or_Ngo, Career_Preference_Working_In_Ngo, Career_Preference_Government_Service, Career_Preference_Private_Industry_Job, Life_Criteria_Cause_Of_Work, Life_Criteria_Financial_Security, Life_Criteria_Work_Satisfaction, Life_Criteria_Job_Security, log10 of Financial_Expected_Income_Age_30 clipped to 5000-1000000, plus Gender, Age_At_Workshop (&gt;0 only), Educational_Stream_Category, Education_Status, Workshop_Batch_Number. Use an 80/20 split stratified by target and batch band, 5-fold CV, class-weighted L2 logistic regression. Report the base rate, effective N, test AUC, PR-AUC, recall, precision, and the top 10 standardized odds ratios with 95% bootstrap CIs. Explain results in plain language.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#3</span> Test whether mindset adds lift over prior intent (model ladder with confidence intervals)
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              This is the main open question. We compare four 'recipes' of increasing detail: the simple rule, Pre answer only, Pre answer plus background, and everything. If the detailed recipe is not clearly better than the simple one, we should say that mindset scores add little predictive power for this question.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Models: M0 = Pre-FT rule; M0b = 6-level Pre-category rate encoding; M1 = L2 logistic on Pre-category plus demographics; M2 = M1 plus themes, ranks and log income; M3 = TF.js MLP (Dense 16 → Dropout 0.3 → Dense 8 → sigmoid), kept only if CV AUC beats M2 by more than 0.01. Fit imputation, scaling and one-hot vocabularies on training data only. Evaluate once on the frozen test set, with a paired bootstrap (1,000 resamples) for ΔAUC and ΔPR-AUC versus M0 and M0b. Repeat within the Pre-not-FT and Pre-FT subsets. Check calibration (&lt;0.35, 0.35–0.65, &gt;0.65 bands) and subgroup stability by batch band and Gender (flag cells with fewer than 30 positives or negatives). Choose thresholds on out-of-fold training predictions (max-F1, and the lowest threshold with precision at least the rule's) and freeze them. Add permutation importance (20 shuffles per feature, plus grouped blocks) alongside standardized odds ratios. Verify checkpoints: n within ±2 of 1,256, Post-FT rate within ±1 point of 52.11%, Pre-FT to Post-FT rate within ±2 points of 92.33%.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Gender</span><span class="pill">Age_At_Workshop</span><span class="pill">Educational_Stream_Category</span><span class="pill">Education_Status</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Native_State</span><span class="pill">Financial_Expected_Income_Age_30</span><span class="pill">Metric_Life_Satisfaction_Global</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Run a staged, checkpointed analysis (try/catch, print N at every stage) on the Level 0.1 last-workshop cohort (Post Career_Plan_Social_Action_Engagement non-null, Pre row at Workshop_Level 0.1, matched to demographics by string Participant_Id; expect about 1256 participants and a 52.1% Post-FT rate). Compare on a stratified 80/20 held-out test set: (M0) rule 'Pre == Fulltime as a career', (M0b) Pre-category only, (M1) Pre-category + Gender, Age_At_Workshop, Educational_Stream_Category, Education_Status, Workshop_Batch_Number, Native_State (Maharashtra/Other/International), (M2) M1 + Pre theme scores + inverted career-preference and life-criteria ranks + log Financial_Expected_Income_Age_30. Report AUC, PR-AUC, recall, precision and F1, the bootstrap 95% CI of the AUC and PR-AUC gain over M0, results within Pre-not-FT only, and results by Workshop_Batch_Number band and Gender. State plainly whether the extra features add meaningful lift.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#4</span> Control for workshop level and treat later levels as self-selected
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              The percentage choosing full-time rises from about 52% to about 90% at later levels. That does not mean later workshops 'cause' full-time choices. People who were invited and stayed are probably already more committed. Always compare people within the same level.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Run all screening within Workshop_Level strata (0.1, 0.2; Level 0.3 descriptive only, with about 17 non-full-time cases). Pool using the inverse-variance-weighted mean of within-level effect sizes (Hedges g) or the within-level z-scored partial correlation, with bootstrap CIs stratified by level. Apply Benjamini-Hochberg FDR at q = 0.05. Flag a feature as level-confounded if the adjusted effect is under 50% of the crude effect, the CI crosses 0, or the sign differs between levels 0.1 and 0.2. Report each feature's correlation with level. Keep Workshops_Attended_Count out of the models because it is almost a copy of level. Use the ROBUST / ATTENUATED / NULL labels from Step 3, based on stratified AUC and the attenuation ratio.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Workshop_Level</span><span class="pill">Workshops_Attended_Count</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Participant_Id</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                For participants whose last Workshop_Level is 0.1 or 0.2 (describe 0.3 only, flagged unstable), with a Post Career_Plan_Social_Action_Engagement and a matching Pre row, compute for each Pre-phase theme score the pooled and the within-Workshop_Level AUC for predicting Post 'Fulltime as a career', the inverse-variance-weighted adjusted effect, a stratified bootstrap 95% CI, the attenuation ratio |stratified AUC - 0.5| / |pooled AUC - 0.5|, and label each feature ROBUST (CI excludes 0.5 and ratio &gt;= 0.7), ATTENUATED (ratio &lt; 0.7) or NULL. Also report the correlation of Workshops_Attended_Count with Workshop_Level and the effective N per level.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#5</span> Handle the 375 'Pre-fallback' participants and recent batches carefully
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              About 375 people (all at Level 0.1) have no Post answer for their last workshop, so their 'choice' is really their Pre answer. We should keep them separate or run the analysis with and without them. Recent batches have also had less time, so we should check whether batch affects the results.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Add the flag target_from_pre = 1 for rows where the Pre answer stands in for the last response. Run a sensitivity check that includes versus excludes these rows, and a second one that excludes 'Not yet decided / confused' from the 0 class. Control for Workshop_Batch_Number (7–17), or compare batch bands 7–10, 11–14 and 15–17. Use Current_Age − Age_At_Workshop as an exposure-years proxy, keeping only rows where both are greater than 0. Report how Pre career-plan availability varies by batch.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Workshop_Batch_Number</span><span class="pill">Workshop_Phase</span><span class="pill">Workshop_Level</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Current_Age</span><span class="pill">Age_At_Workshop</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Compare the Level 0.1 full-time rate (Career_Plan_Social_Action_Engagement == 'Fulltime as a career') by Workshop_Batch_Number band (7-10, 11-14, 15-17) for (a) Post-final participants only (1,257 expected) and (b) all 1,632 Level 0.1 participants using the Pre answer as fallback when no Post exists (flag target_from_pre). Also repeat (a) excluding 'Not yet decided / confused' answers. Report N, rate and a 95% CI for each group, and use Current_Age - Age_At_Workshop (both &gt; 0) as an exposure-years check.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#6</span> Harden the analysis code so results actually come back
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Steps 2 to 4 appear to have run into technical trouble, because no numbers were returned. Before any more modelling, the code should be simplified and print its progress, so every run produces either a result or a clear error message.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Wrap the code in try/catch and return {checkpoints, gate, error}. Use plain JS Maps for pairing and joining rather than Danfo merges. Print the distinct raw values and counts of Workshop_Phase, Workshop_Level and Career_Plan_Social_Action_Engagement before filtering. Cast with String(x).trim(), treat 'null', 'NaN' and '' as null, and round Workshop_Level with Math.round(x*10)/10. Assert non-empty counts at each stage. Use the gate: GO only if every stage has n &gt; 0, the Step 1 rates reproduce within ±1 point, the join rate is 100%, and at least one ROBUST feature exists. Do not return DataFrames.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Phase</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Name</span><span class="pill">Career_Plan_Social_Action_Engagement</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Write defensive plain-JavaScript code (try/catch, a stage variable, console checkpoints, no Danfo merges) that loads prod_nirman_questionnaire and prod_nirman_demographics, prints distinct raw values and counts of Workshop_Phase, Workshop_Level and Career_Plan_Social_Action_Engagement, casts Participant_Id and Workshop_Name to string, rounds Workshop_Level to 1 decimal, builds each participant's last-level Post row with a Pre row at the same level, and returns counts per stage plus the Post 'Fulltime as a career' rate per Workshop_Level, with PASS/FAIL against 52.11%, 68.00% and 89.82% (tolerance 1 point).
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 2. COMPLETE 5-STEP PROGRESSIVE EXPERIMENT TIMELINE & DECISIONS (COLLAPSIBLE BY DEFAULT, LAST IN SEQUENCE) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #4f46e5;">2</span>
+          <span>2. Complete 5-Step Progressive Experiment Timeline &amp; Decisions</span>
+          <span class="badge" style="background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; margin-left: 6px;">5 Steps</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Shows the exact question asked in each step, the choices proposed by the AI, the steering path chosen, and the empirical results.
+        </p>
+
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #1</span> Who Chose 'Full-time' at Their Last Workshop? (Defining the Target)
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">Data loading and cleaning:
+- Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to string in both tables.
+- Compare Workshop_Level with parseFloat.
+
+Finding the last workshop:
+- For each participant, take the maximum Workshop_Level.
+- Within that level, select the Post row. If no Post row exists, use the Pre row and set a flag column (target_from_pre = 1).
+
+Building the target (is_fulltime_last):
+- 1 if the answer is exactly 'Fulltime as a career'.
+- 0 for 'Part time', 'Volunteering frequently', 'Occasionally', 'Monetary contribution' and 'Not yet decided / confused'. A confused person did not choose full-time, so this assignment is stated explicitly.
+- Drop true nulls (about 4 rows).
+
+Profiling:
+- Show the full 6-category distribution of the answer.
+- Count participants by last level and by Workshop_Batch_Number (7 to 17).
+
+Joining to Demographics:
+- Inner-join on string Participant_Id.
+- Report N before and after the join.
+- Report missing-value counts for the candidate demographic columns.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                For each participant in the Questionnaire table, which workshop was their last one (highest Workshop_Level of 0.1, 0.2 or 0.3)? In that workshop's final response (Post preferred, Pre as a flagged fallback), what share chose 'Fulltime as a career', and how many participants remain after cleaning and joining to Demographics?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Post-only cohort, compare within each level</strong>: <span style="color:#64748b;">Restrict Step 2 to the 1,799 participants whose outcome is a Post response. Then compare full-time and non-full-time choosers within each last level (0.1, 0.2, 0.3), or pool the comparison while adjusting for level. This drops the 375 Pre-fallback cases. For those cases, using Pre-phase features from the same workshop would mean predicting an answer with features collected at the same moment, which is near-certain leakage. Adjusting for level keeps a feature from looking predictive just because it marks people who were invited to higher levels. Report effect sizes such as Cramér's V, point-biserial r or standardized mean differences, with level-stratified estimates. Flag any feature whose effect disappears once level is accounted for.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Compare Like with Like (Recommended) &mdash; <em>Think of a baking contest. You only judge cakes that have finished baking, not bowls of raw batter, and you judge beginners against beginners and experts against experts. Here, the 'finished cakes' are the 1,799 people who answered after their workshop. We set aside the 375 people who only answered before their workshop, because their answer was given at the same moment as the other information we'd use to explain it. That would be a bit like peeking at the answer key. We also compare people only within their own workshop level, so the invite-only groups don't make a trait look important just because those people were already keen.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Keep all 2,174, add control flags</strong>: <span style="color:#64748b;">Keep the full sample. Add response type (Post vs Pre-fallback) and last level as explicit covariates or stratification variables. For Pre-fallback rows, either exclude the Pre-phase features from that same workshop or mark them as contemporaneous. This keeps the full sample size and lets you check whether feature-outcome relationships look similar in both response types. The cost is more complexity and some leftover risk of leakage and mixing in the Pre-fallback group.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Use Everyone, but Put a Label on Each &mdash; <em>This is like a sports tryout where you keep scores from both the warm-up and the real match, so nobody is left out. You stick a label on each score saying 'warm-up' or 'real match' and note which team level each player is on. You get the biggest crowd to learn from. But warm-up scores and match scores aren't quite the same thing, and they can still muddy the picture a little even with labels.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Focus on level 0.1 Post entrants</strong>: <span style="color:#64748b;">Narrow Step 2 to the 1,257 level-0.1 Post responders, where 52.11% chose full-time. This is the largest group, close to evenly split on the outcome, and not yet filtered by invitation. Self-selection into levels 0.2 and 0.3 cannot distort this group, so it gives the most general picture of what distinguishes full-time intent at first exposure. The trade-off is that you learn nothing yet about the highly committed, invitation-only participants.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Study the Newcomers First &mdash; <em>It's like finding out why kids decide to join the chess club on their very first visit, before anyone gets invited onto the advanced team. Those 1,257 first-level people are the biggest group, and they are split almost exactly half-and-half between full-time and not. Nobody has been hand-picked yet, so it's a fair, everyday crowd.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Reframe target as Pre-to-Post switching</strong>: <span style="color:#64748b;">Change the target to within-person change. Among participants with both a Pre and a Post answer at the same workshop, identify who moved to full-time (switchers) versus who stayed non-full-time. Then ask which Pre-phase features predict switching. This removes much of the baseline-commitment confound, because each person is compared against their own starting point, and it says more about how the workshop relates to change. It requires checking how many paired records exist, and it changes the Step 1 definition of the target.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Track Who Changed Their Mind &mdash; <em>Picture a taste test. Instead of counting who likes chocolate, you look for the people who said 'vanilla' before tasting and 'chocolate' afterward. In the same way, we'd find people who did NOT plan a full-time career before their workshop but DID afterward. Each person is compared with their own starting point, so people who were already committed from the start don't skew the results.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Post-only cohort, compare within each level</span>
+                  
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **Who is in the data:** The Questionnaire has 2,177 unique participants. The filters removed no rows, and there were no duplicate rows to drop. For their last workshop, 1,632 participants were at level 0.1, 376 at level 0.2 and 169 at level 0.3. Of the 2,177 final responses, 1,802 are Post and 375 are Pre-fallback. All 375 Pre-fallback cases are at level 0.1, meaning those people only have a before-workshop answer. Cleaning removed 3 participants (1 at level 0.2 and 2 at level 0.3) because their selected Post row had no career-plan answer. That leaves 2,174. The Demographics join matched everyone, so the effective N is still 2,174 and every before-join and after-join figure is identical.
+
+**What people chose:** Overall, 1,152 of 2,174 participants (52.99%) chose &quot;Fulltime as a career&quot;. The share rises sharply by last level: 45.77% at 0.1 (747 of 1,632), 68.00% at 0.2 (255 of 375) and 89.82% at 0.3 (150 of 167). Post responses show 58.92% fulltime (1,060 of 1,799), against 24.53% for Pre-fallback (92 of 375). Because all Pre-fallback cases sit at level 0.1, they pull that level's number down. Looking only at Post responses at level 0.1, the figure is 52.11% (655 of 1,257). That is the fairer comparison with the higher levels, and the upward trend still holds. The other answers are Part time (27.18%), Volunteering frequently (15.27%), Monetary contribution (2.76%), Not yet decided / confused (0.92%) and Occasionally (0.87%).
+
+**How to read this:** These are descriptive, observational numbers, so they don't show that the workshops cause people to choose fulltime careers. Attendance at levels 0.2 and 0.3 is by invitation, so those participants are self-selected and may have been more committed to begin with. Pre-fallback answers were given before the workshop, so they shouldn't be compared directly with Post answers. The Questionnaire covers only batches 7–17, while Demographics covers batches 1–17.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #2</span> Level-Adjusted Screening: Which Pre-Workshop Signals Separate Full-time Choosers Within the Same Workshop Level?
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">COHORT CONSTRUCTION
+- Load both tables and cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to string.
+- Compare levels with parseFloat(Workshop_Level).
+- Rebuild the Step 1 last-level selection and keep only participants whose selected outcome row is Post with a non-null career plan (expected N = 1,799).
+- Target: y = 1 if the Post answer is 'Fulltime as a career', else 0. 'Not yet decided / confused' counts as 0; also run a sensitivity check that excludes those cases.
+- Inner-merge each participant's Pre row at the SAME Workshop_Level, using suffixes _pre and _post. A merge, not a groupby.
+- Report N per level before and after pairing (expected 0.1 ≈ 1,257, 0.2 ≈ 375, 0.3 ≈ 167, minus any without a Pre row), along with the full-time base rate per level.
+- Join to Demographics on string Participant_Id and report the post-join N.
+
+CLEANING
+- Set 0 to NaN in all scored Pre columns, except Financial_Years_To_Independence.
+- Set values above 8 on rank items and above 5 on agreement items to NaN.
+- Clip income to 5,000–1,000,000, then take log10.
+- Keep Age_At_Workshop only where it is greater than 0.
+- Never impute.
+- For each feature, compute per-level coverage. Drop any feature with more than 20% missing in levels 0.1 or 0.2, or with 2 or fewer distinct values. Questionnaire versions may differ by level, so log the dropped features.
+
+RE-SCALING AND THEMES
+- Invert rank items as 9 − x and reverse-code the listed negative items as 6 − x, so higher always means stronger.
+- Compute the Pre theme scores as row-wise means of each theme's 'items' list, never mixing in alt-wording items. Require at least 50% of a theme's items to be non-null for the score to count.
+- Add the insecurity index as an optional feature, reported with its reduced N.
+- Exclude action_plans (Post-only), all not_usable columns, and low_variance_weak_predictors, logging the reason for each.
+- Feature groups:
+  - The 13 Pre theme scores.
+  - Selected raw headline items: Mindset_Prefers_Safety_And_Security_Path, Mindset_Courage_Against_Conventional_Careers, Mindset_Visualizes_Social_Sector_Career.
+  - The 8 inverted career-preference ranks and 9 inverted life-criteria ranks.
+  - Log Financial_Expected_Income_Age_25 and _30, plus Financial_Years_To_Independence.
+  - PRIOR INTENT: Pre Career_Plan_Social_Action_Engagement as an ordinal 1–5, a 'confused' indicator, and a binary Pre-fulltime flag.
+  - Demographics: Gender, Age_At_Workshop, Educational_Stream_Category (one-hot), Education_Status (one-hot), Workshop_Batch_Number, and Native_State coded as Maharashtra vs Other.
+- Workshops_Attended_Count is a near-proxy of level. Report its correlation with level and keep it out of the shortlist; treat it as a level marker only.
+
+LEAKAGE EXCLUSIONS
+- All Post items and deltas.
+- Current_Status_Of_Work.
+- Person_Years_Of_Social_Action.
+- Point_2 and Point_3 invitation and attendance flags.
+
+SCREENING FOR EACH FEATURE
+- Crude statistics on the pooled sample:
+  - Point-biserial r.
+  - Cohen's d for full-time vs other.
+  - Group means.
+- Level-stratified statistics:
+  - The same r and d within 0.1 and 0.2.
+  - At 0.3, report descriptively only and flag 'unstable', because there are only about 17 non-full-time cases.
+- Level-adjusted pooled estimates:
+  - An inverse-variance-weighted mean of the within-level d values (Hedges g with small-sample correction).
+  - The partial correlation of the feature with y after within-level z-scoring of both, which demeans by level.
+  - Each estimate gets a 95% bootstrap CI (1,000 resamples, stratified by level).
+- Categorical features:
+  - Full-time rate by category within each level.
+  - Crude and within-level Cramér's V.
+  - A Mantel-Haenszel pooled risk difference or odds ratio across levels.
+- Multiplicity: apply Benjamini-Hochberg FDR at q = 0.05 to the level-adjusted p-values.
+- ATTENUATION FLAG: mark a feature 'level-confounded' if any of these holds:
+  - The level-adjusted effect is less than 50% of the crude effect.
+  - The CI crosses 0 after adjustment.
+  - The sign differs between strata 0.1 and 0.2.
+  - Also report each feature's correlation with level itself.
+- REDUNDANCY:
+  - Build a Pearson correlation matrix on the within-level z-scored features.
+  - For any pair with |r| &gt; 0.8, keep the feature with the larger adjusted effect.
+  - Compute a VIF check (VIF &gt; 5) on the final set.
+- Run the ranking twice, once with the prior-intent features and once without, to show how much signal mindset adds beyond stated Pre intent.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                The cohort is the 1,799 participants whose last-workshop outcome is a Post response and who also have a Pre row at that same Workshop_Level. Within that cohort, which features best separate those who chose 'Fulltime as a career' in the Post response from those who did not, after accounting for last level (0.1 / 0.2 / 0.3)? The candidate features are Pre-phase theme scores, inverted career-preference and life-criteria ranks, log income expectations, Pre-phase career-plan intent and demographics. Which features keep their effect within levels, and which lose it once level is controlled?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Re-run screening with checkpoints before splitting</strong>: <span style="color:#64748b;">Re-execute Step 2 with explicit checks that print results at each stage. First print the cohort N (participants with both a Pre and a Post row at their highest Post level). Then print N after dropping missing values and N after the demographics join. Then print the full-time rate per level (0.1/0.2/0.3) and the count of blank or 'Not yet decided' answers coded as 0. After that, run the per-feature associations, both ignoring level and within level. Fail loudly if any stage is empty. Step 3 only starts once these numbers exist. Without them, the stratified split and the baselines would rest on an unverified target and possibly an empty cohort. This also confirms whether 'Pre: Fulltime as a career' is clean enough to serve as baseline (b).</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check the Ingredients Before Cooking &mdash; <em>Like checking that the fridge actually has eggs, milk, and butter, and counting them out loud, before promising everyone pancakes. If something's missing, you find out right away instead of halfway through cooking.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Fold cohort checks into a self-contained Step 3</strong>: <span style="color:#64748b;">Skip a separate re-run and make Step 3 rebuild everything on its own. It would construct the target, report the cohort N and per-level base rates, and run the 80/20 split stratified by both level and outcome. It would then compare three baselines: (a) always 'not full-time', (b) the Pre-survey 'Fulltime as a career' rule, and (c) a level-only prior. Each baseline gets AUC, balanced accuracy, and full-time recall. This saves a step, but the feature-level screening insights are deferred.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Count and Measure in One Go &mdash; <em>Like taking attendance while the race is already starting. It's faster, but you skip the warm-up chat where you learn about each runner.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Focus on Level 0.1 only</strong>: <span style="color:#64748b;">Levels 0.2 and 0.3 are expected to be small and self-selected, which makes them a likely source of instability, possibly including whatever caused the empty output. Restrict screening and the baselines to Level 0.1, the largest group. Within that group, the analysis can report the cohort N, the base rate, the univariate associations, and the 80/20 split with baselines (a) and (b). The higher levels would be summarized descriptively only.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Start With the Biggest Crowd &mdash; <em>Like testing a new recipe at the big family dinner, where lots of people can tell you if it's good, before trying it at a tiny dessert party with just three guests.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Use cross-validation instead of one split</strong>: <span style="color:#64748b;">The cohort is modest (around 1,800 expected) and the full-time class may be rare. A single 80/20 split could give noisy baseline estimates. Instead, use repeated stratified 5-fold cross-validation, stratified by level × outcome. Report mean and spread of AUC for the 'always not full-time' rule, the Pre-intent rule, and a level-only prior. Cohort and base-rate checks still run first.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Test Many Times, Not Once &mdash; <em>Like tasting soup from several spoons scooped from different parts of the pot, instead of judging the whole pot by one sip that might have been all salt.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Re-run screening with checkpoints before splitting</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 1 showed that the full-time rate climbs steeply with last workshop level (Post-only: 52.11% at 0.1, 68.00% at 0.2, 89.82% at 0.3). It also showed that the 375 Pre-fallback outcomes cannot be paired with earlier same-workshop features without near-certain leakage. Following the steering choice, Step 2 is now restricted to the 1,799 Post-outcome participants, and every predictor is taken from the Pre row of the same last workshop. All effect sizes are estimated both crudely and within each level stratum (0.1 / 0.2 / 0.3), then pooled with level adjustment, so that features which only mark invitation to higher levels are flagged rather than shortlisted. The plan also addresses the very thin non-full-time group at level 0.3 (about 17 people) and the near-collinearity of Workshops_Attended_Count with level, which the original plan did not handle.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **No results came through, so I can't report any findings yet.** The analysis output was &quot;undefined,&quot; meaning the analysis either didn't run or its results weren't passed to me. I won't guess at the cohort size (the expected ~1,799), the full-time base rates per level, or which features matter, because any numbers would be invented.
+
+**What the analysis will tell you once it runs:**
+- **Cohort and base rates.** It will first confirm how many participants have both a Pre and a Post row at their highest Post level. It will report that N at each step: the cohort, after dropping missing values, and after joining demographics. It will also show what share of people chose &quot;Fulltime as a career&quot; at each level (0.1, 0.2, 0.3), and how many Post answers were blank or &quot;Not yet decided,&quot; which count as 0. Levels 0.2 and 0.3 are small and self-selected, so their numbers should be treated cautiously.
+- **Feature associations.** Each Pre-workshop feature (theme scores, career and life-priority rankings, income expectations, earlier career intent, demographics) will be compared with the full-time outcome in two ways. The first ignores level. The second compares people only within the same level. If a feature's effect holds up within levels, it is a more trustworthy signal. If it shrinks a lot or flips sign, it was mostly reflecting which level people were in, not the feature itself.
+- **Combined model.** A multivariable model would show how well all the features together predict the outcome. It would be judged by AUC (0.5 is a coin flip, 1.0 is perfect) against a baseline that only knows the level. The gain over that baseline shows how much the features add. All of this describes associations, not causes.
+
+If you re-run the analysis or share the output, I can write the full plain-language summary with the real numbers.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #3</span> Checkpointed Re-run of Level-Adjusted Screening: Verify Cohort, Target and Prior-Intent Before Any Modelling
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">**Defensive execution**
+- Wrap the code in try/catch and always `return {checkpoints, gate, error}`, even on failure.
+- Each stage pushes `{stage, n, detail}` to the checkpoint array and calls `console.log`.
+- A helper `assertNonEmpty(stage, n)` throws `Error('EMPTY at &lt;stage&gt;')`.
+- Use plain-JS Maps for the pairing and the join, instead of Danfo merge, to avoid silent type and merge failures. Use Danfo only for the final tabular display.
+
+**Stage 0 – Load and cast**
+- Locate both files by name. Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to string.
+- Apply `parseFloat` to Workshop_Level.
+- Check that every planned column exists. Missing columns are logged, not assumed.
+- Expect 4,304 rows and 2,177 participants.
+
+**Stage 1 – Find each participant's last workshop**
+- Take the highest Workshop_Level per participant, prefer the Post row, and keep Post-final participants with a non-null career plan.
+- Expect about 1,799 participants. Print counts by level.
+
+**Stage 2 – Pre/Post pairing**
+- Require a Pre row at the same Participant_Id and Workshop_Level.
+- Print N by level and the number of unpaired participants dropped.
+
+**Stage 3 – Cleaning, Pre columns only**
+- Set 0 to NaN in all scored columns, except Financial_Years_To_Independence.
+- Set out-of-range values to NaN: above 8 on rank items, above 5 on agreement items.
+- Clip income to 5,000–1,000,000 INR, then apply log10.
+
+**Stage 4 – Feature build, with no Post items, no deltas and no Point_2/Point_3/Person_Years fields**
+- Score 10 agreement themes as item means after reverse-coding with 6 − x. Use `items` only, never alt-wording items, and exclude the action_plans block because it is Post-only:
+  - purpose_and_direction
+  - meaning_vs_happiness
+  - social_commitment_and_changemaker_identity
+  - social_knowledge_and_competence
+  - values_and_moral_reasoning
+  - courage_agency_autonomy
+  - support_community_mentorship
+  - wellbeing_self
+  - money_attitudes
+  - citizenship_and_environment
+- Build the insecurity index with its N reported separately.
+- Invert 8 ranks with 9 − x:
+  - Career_Preference_Social_Entrepreneurship_Or_Ngo, Career_Preference_Working_In_Ngo, Career_Preference_Government_Service, Career_Preference_Private_Industry_Job
+  - Life_Criteria_Cause_Of_Work, Life_Criteria_Financial_Security, Life_Criteria_Work_Satisfaction, Life_Criteria_Job_Security
+- Add log Financial_Expected_Income_Age_30.
+- Add Pre intent as an ordinal (1–5) plus two flags: `pre_fulltime` (0/1) and `pre_undecided_or_missing`.
+- Print the non-missing N for every feature.
+- Mark features with more than 20% missing as limited, and never drop rows cohort-wide.
+
+**Stage 5 – Demographics join**
+- Use a string-key Map.
+- Bring in Gender, Age_At_Workshop (values above 0 only, otherwise NaN), Educational_Stream_Category, Education_Status and Workshop_Batch_Number.
+- Print the match rate. Expect 100%, otherwise throw.
+
+**Stage 6 – Target audit**
+- Set `is_ft_post = 1` only for 'Fulltime as a career'. Everything else is 0, with the 'Not yet decided / confused' count printed.
+- Print the rate per level and the deviation from Step 1. Flag any deviation above 1 percentage point.
+
+**Stage 7 – Prior-intent audit**
+- Build a Pre-answer × Post-full-time crosstab per level.
+- Report P(Post FT | Pre FT), P(Post FT | Pre not FT), and the share of Post full-time choosers who were not full-time at Pre (the 'converts').
+- Report the Pre missing/undecided count and the Pre career-plan availability by Workshop_Batch_Number.
+- Baseline (b) is marked CLEAN if Pre missing plus undecided is at most 5% and every level has at least 10 participants in each Pre class.
+
+**Stage 8 – Screening**
+- For each feature, compute the pooled univariate AUC (Mann–Whitney) and the standardised mean difference.
+- Compute a level-stratified AUC as the N-weighted mean of within-level AUCs. Include a level only if it has at least 10 participants in each outcome class; level 0.3 has about 17 non-full-time participants and may be borderline, so log whether it was included.
+- Compute 200-replicate bootstrap 95% confidence intervals, resampling within level.
+- Compute the attenuation ratio as |stratified AUC − 0.5| / |pooled AUC − 0.5|.
+- Label each feature:
+  - **ROBUST**: the stratified confidence interval excludes 0.5 and the attenuation ratio is at least 0.7.
+  - **ATTENUATED**: the attenuation ratio is below 0.7.
+  - **NULL**: the stratified confidence interval includes 0.5.
+- Categorical demographics use one-vs-rest rates, with the within-level difference as a weighted average.
+
+**Stage 9 – Gate**
+- GO for Step 4 only if all of the following hold: every stage has n &gt; 0, the target rates match Step 1, the join rate is 100%, and at least one ROBUST feature exists.
+- Emit the top single feature by stratified AUC (excluding Pre intent) for the Step 4 heuristic baseline.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Take the participants whose last-workshop outcome is a Post response with a non-null Career_Plan_Social_Action_Engagement (Step 1 found 1,799) and who also have a Pre row at that same Workshop_Level. Five questions follow. (1) How many remain at each stage: Post-final, with a matching Pre row, after cleaning, and after the Demographics join? (2) Does the Post 'Fulltime as a career' rate per level reproduce Step 1, within ±1 percentage point: 52.11% at 0.1 (655/1,257), 68.00% at 0.2 (255/375) and 89.82% at 0.3 (150/167)? How many Post answers are 'Not yet decided / confused' and coded 0? (3) How clean and informative is the Pre-phase career-plan answer? This covers missing and undecided counts, P(Post FT | Pre FT) and P(Post FT | Pre not FT) within each level. (4) Which Pre-phase features separate full-time choosers both pooled and within level? (5) Which features lose their effect once level is held fixed?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Minimal reproduction run before any modelling</strong>: <span style="color:#64748b;">Pause Step 4 and run the smallest possible analysis that must return output. Rebuild only the Post-final cohort and the binary target, then print a compact table: participant counts at each filter stage and full-time rates by Workshop_Level, checked against Step 1 within ±1 point. Add one small cross-tab of Pre career plan × Post full-time by level, with the 'Not yet decided' and null Pre answers shown as separate rows. Keep the output to a few short tables, with no feature screen and no models. Two runs have already failed silently, so a tiny result will show whether the pipeline works at all. It will also confirm the target is correct and show how strong prior intent is. All of that is needed before the 'with vs without Pre plan' question in Step 4 means anything.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Make Sure the Engine Starts First &mdash; <em>Like turning the key and checking the dashboard lights before planning a road trip. Our last two tries quietly came back empty, so before mapping the route we just want to hear the engine start.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Model with a pre-registered, compact feature set</strong>: <span style="color:#64748b;">Go ahead with Step 4, but stop depending on the missing Step 2 screen. Fix a small feature list in advance: Workshop_Level, Pre career plan (one-hot, with undecided and null as their own categories), and a handful of demographic and Pre-survey items chosen before seeing results. Build checkpoints into the same run: the cohort counts and target rates must match Step 1 before training starts. Train a logistic regression and a small TensorFlow.js network using stratified 5-fold CV. Note that a majority-class baseline and a per-level majority baseline both give about 58.9% accuracy, because full-time is the majority class at every level. Accuracy therefore can't tell the models apart, so judge them on ROC-AUC and log loss against a level-only logistic baseline.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Write the Shopping List, Then Cook &mdash; <em>Like writing your shopping list before entering the store, so you don't get tempted by whatever looks shiny on the shelves. We decide in advance which clues to use, so we can't be fooled by lucky-looking patterns.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Nested logistic models only, skip the neural net</strong>: <span style="color:#64748b;">Narrow Step 4 to the question that matters most: how much does prior intent explain beyond workshop level? Fit three nested logistic regressions, each with the Step 1 checkpoint first: (1) Workshop_Level only, (2) Level plus Pre career plan, and (3) Level plus Pre plan plus a few demographics. Report the change in AUC, likelihood-ratio tests, and level-stratified odds ratios for Pre intent. With about 1,800 rows and only 167 participants at level 0.3, a neural network adds risk and little insight. Nested models give an interpretable answer about how much intent carries forward, and they are less likely to fail silently.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Add One Spice at a Time &mdash; <em>Like tasting a soup after each new spice, so you know exactly which one made the difference. We skip the complicated gadget and use a simple recipe that is easy to understand.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Focus on level 0.1, where outcomes vary most</strong>: <span style="color:#64748b;">Restrict the next step to the 1,257 level-0.1 participants, after a checkpoint confirming 52.11% full-time. At level 0.3 nearly everyone (89.8%) chooses full-time and only 167 people are left, so there is little to predict and estimates would be unstable. At level 0.1 the split is close to 50/50, which gives the most statistical power and avoids confounding by level entirely. Train the logistic regression, and optionally the small NN, on this group and compare performance with and without the Pre career plan. The trade-off is that the findings apply only to entry-level participants.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Zoom In on the Close Game &mdash; <em>Like studying a close football match instead of a 10–0 blowout. A close game tells you much more about what actually decides the winner.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Minimal reproduction run before any modelling</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 2 returned 'undefined', so no cohort size, level-specific base rates or feature rankings exist. The planned split and baselines (zero-rule, prior-intent, top-theme heuristic) would therefore rest on an unverified target and possibly an empty cohort. Following the steering choice, Step 3 is now a hardened re-run of the Step 2 screening. Each stage prints a checkpoint, throws a named error if a stage is empty, and always returns a partial checkpoint log, so the output can no longer be silently undefined. It also explicitly audits the Pre 'Fulltime as a career' answer as a candidate baseline. Step 2 ends with a GO/NO-GO gate and a validated feature shortlist, and only a GO lets the deferred split-and-baselines step run next.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **No analysis results came through, so I can't report any findings.** The results field was empty (&quot;undefined&quot;), and I won't invent counts, rates or feature rankings. The only numbers I have are the Step 1 targets from your brief: 1,799 participants (1,257 at level 0.1, 375 at 0.2, 167 at 0.3) and full-time rates of 52.11%, 68.00% and 89.82%. Those are what the new run should be checked against, not results from it.
+
+Once the output is available, this is how I would explain each part:
+
+- **Q1 (participant counts):** The counts at each stage show how many people remain after each filter. These are the Post-final cohort, those with a matching Pre row, complete cases after cleaning, and those who match in Demographics. A large drop at any stage means the later findings describe a smaller and possibly different group.
+- **Q2 (full-time rates):** The rate is the number choosing &quot;Fulltime as a career&quot; divided by everyone with a valid answer at that level. If a rate is within ±1 percentage point of Step 1, it reproduces. The &quot;Not yet decided / confused&quot; answers are counted as non-full-time, so I would report how many there are.
+- **Q3 (Pre answers and Post outcome):** This compares Post full-time rates for people who already said &quot;full-time&quot; at Pre with those who didn't. A large gap suggests prior intention carries forward. The undecided and null Pre rows are shown separately so they don't distort the comparison.
+- **Q4 (features that separate the groups):** Cohen's d or correlation shows how large each difference is, and the p-value shows how likely it is to be chance. With this many tests, I would put more weight on size and consistency across levels than on p-values alone.
+- **Q5 (level confounding):** A feature whose effect shrinks by half or more, or reverses, once Workshop_Level is held fixed mostly reflects the fact that higher levels have more full-time choosers. Features that stay stable are stronger candidates for a real link.
+
+Whatever the numbers show, they are associations from single-arm observational data, not proof of cause. Post-level participation is invitation-gated, so the results may not generalize to everyone who attended. If you re-run the analysis and share the output, I'll turn it into a full narrative.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #4</span> Minimal Pipeline Reproduction: Rebuild the Post-Final Cohort and Full-time Target, Validate Against Step 1, and Cross-Tab Prior Intent (No Models)
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">Defensive, minimal JavaScript with plain arrays and objects. Danfo is optional and is not needed for merges.
+
+(a) Loading and silent-failure guards:
+- Wrap the whole body in try/catch. Track a `stage` variable, and in the catch return {status:'error', stage, message, stack}.
+- Locate files with Object.keys(data) and .toLowerCase().includes('prod_nirman_questionnaire' / 'prod_nirman_demographics').
+- If either file is missing or empty, return immediately with the list of available filenames.
+- Log a console checkpoint after every stage.
+
+(b) Casting and value diagnostics:
+- Cast Participant_Id with String(x).trim() in both tables.
+- Cast Workshop_Phase and Career_Plan_Social_Action_Engagement with String(x).trim(), treating null, undefined, 'null', 'NaN' and '' as null.
+- Parse Workshop_Level with parseFloat, then round it with Math.round(x*10)/10 to avoid float mismatch.
+- Before filtering, return the distinct raw values and counts of Workshop_Phase, Workshop_Level and Career_Plan_Social_Action_Engagement. A string mismatch is the most likely cause of the earlier empty results.
+
+(c) Cohort construction:
+- Index the rows per participant as a Map(pid -&gt; {level -&gt; {Pre: row, Post: row}}).
+- lastLevel = the maximum level over all of that participant's rows.
+- Keep the participant if a Post row exists at lastLevel and its career plan is non-null.
+- Flag whether a Pre row exists at that same level, and check membership in a Set of Demographics Participant_Ids.
+
+(d) Target:
+- is_fulltime_post = 1 if the plan equals exactly 'Fulltime as a career', else 0. 'Not yet decided / confused' is coded 0 and counted separately.
+
+(e) Validation:
+- For each level, compute n, the number of full-time choices and the rate.
+- Compute the absolute difference from the Step 1 reference rates and mark PASS if it is 1.0 pt or less, else FAIL.
+
+(f) Cross-tab:
+- Classify each participant's Pre plan into one of 8 categories: Fulltime as a career, Part time, Volunteering frequently, Occasionally, Monetary contribution, Not yet decided / confused, Pre null, No Pre row.
+- For each level × Pre category, report n, the number of Post full-time choices and the Post full-time rate.
+- For each level, compute P(FT|Pre FT), P(FT|Pre not FT), the risk difference and the odds ratio (add 0.5 to every cell if any cell is zero).
+- This is descriptive arithmetic only.
+
+(g) Output:
+- End with an explicit `return` of plain objects and arrays, rounded to 2 decimals. Return no DataFrames.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Using only the Questionnaire table plus a Participant_Id existence check against Demographics, the run should answer four questions. (1) How many participants remain at each stage? The stages are: all participants; last workshop = highest Workshop_Level; last-level row is Post; Post Career_Plan_Social_Action_Engagement is non-null; a Pre row exists at the same Workshop_Level; matched in Demographics. (2) Does the Post 'Fulltime as a career' rate per level reproduce Step 1 within ±1 percentage point: 0.1 = 52.11% (655/1,257), 0.2 = 68.00% (255/375), 0.3 = 89.82% (150/167)? How many Post answers are 'Not yet decided / confused' and coded 0? (3) Within each level, what is the Post full-time rate for each Pre career-plan category? The categories are the 5 named options, plus 'Not yet decided / confused', null Pre, and no Pre row, each shown as its own row. (4) Within each level, what are P(Post FT | Pre FT) and P(Post FT | Pre not FT), and what are the risk difference and odds ratio between them?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Level-0.1 model benchmarked against Pre-FT rule</strong>: <span style="color:#64748b;">Build the model only on the level-0.1 flow population (one row per participant, last level = 0.1, n≈1,256), because Pre features do not exist at 0.2/0.3. Use a participant-grouped 80/20 split, stratified by target and batch. The key benchmark is a one-rule baseline: predict full-time if Pre = 'Fulltime as a career'. Report AUC, PR-AUC, recall and precision for the baseline versus the best model. Show the incremental lift of the other features (demographics and the other Pre categories) on top of Pre-FT. Break results down by batch, not level. Tune the threshold on the validation fold so the program can see the catch-vs-false-alarm trade-off. This keeps the evaluation honest: a model that only rediscovers prior intent adds little practical value.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Beat the Obvious Guess First &mdash; <em>Like a fancy weather app. Before you trust it, check whether it does better than simply saying 'tomorrow will be like today.' If it can't beat that lazy guess, it isn't worth much.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Predict converters among non-full-time starters</strong>: <span style="color:#64748b;">Drop the participants who already said full-time at Pre. Model only the Pre-not-FT group at level 0.1 (n≈1,085, 39.72% converted to full-time). This removes the dominant intent effect and targets the actionable question: who switches toward full-time? Use a participant-grouped split, class-balanced evaluation (PR-AUC, recall at fixed precision), and feature-direction analysis such as SHAP or coefficients. Flag small Pre subgroups like 'Occasionally' (n=19) as unstable.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Find the Mind-Changers &mdash; <em>Like a sports coach who ignores the kids already signed up for the team. Instead, the coach scouts the ones who weren't planning to join but might be won over.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>All-levels model without Pre-intent features</strong>: <span style="color:#64748b;">Keep all 2,177 last-level participants, using the Step 1 target, which reproduces exactly. Use only features available at every level: demographics, batch and last workshop level. Exclude Pre answers entirely. Then performance can be compared across levels 0.1, 0.2 and 0.3 as originally planned. The price is losing the strongest signal. Treat last level as a possible proxy for progression, since full-time rates climb from 52% to 68% to 90% across levels, and report results both with and without it.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Use What Everyone Has &mdash; <em>Like a cooking contest judged only on ingredients every contestant brought. It is fair to everyone, even though you can't use the secret spice only some people had.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Audit missing Pre data at levels 0.2/0.3</strong>: <span style="color:#64748b;">Before modelling, investigate why every level-0.2 and level-0.3 participant (542 people) has no Pre row at their level. It could be a design choice (Pre is asked only at entry), a level-coding mismatch, or a join error. If their level-0.1 Pre answers can legitimately be carried forward, the modelling cohort roughly grows from 1,256 to about 1,800 and covers all levels. This adds one step of delay but could substantially change sample size and generalisability.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Find the Missing Puzzle Pieces &mdash; <em>Like checking under the sofa for lost puzzle pieces before deciding the puzzle can't be finished.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Level-0.1 model benchmarked against Pre-FT rule</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Steps 2 and 3 both returned 'undefined'. That means the pipeline failed silently somewhere between loading, pairing, or returning results, so no feature screen exists yet and any model trained on 'Step 2 features' would rest on nothing. Following the human steering choice, Step 4 is cut down from a 4-variant TF.js training run to a minimal, defensively coded reproduction. It rebuilds only the Post-final cohort and the binary target, checks the per-level full-time rates against Step 1 (52.11% / 68.00% / 89.82%, ±1 pt), and cross-tabulates Pre career plan against Post full-time by level. Modelling, including the with/without prior-intent comparison, is deferred until this run proves the pipeline returns output and the target is correct.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **Participant flow and reconciliation.** The questionnaire has 2,177 distinct participants. 1,632 (74.97%) last reached level 0.1, 376 (17.27%) reached 0.2, and 169 (7.76%) reached 0.3. The first big drop is at S2: 375 participants, all at level 0.1, have no Post row at their last level. A further 3 are lost at S3 because their Post answer is blank. At S4, 543 more are dropped because there is no Pre row at the same level. That includes **every** participant at levels 0.2 and 0.3 (375 and 167), so the Pre-Post flow ends with 1,256 people, all at level 0.1. All of them are found in the demographics table, so S5 removes no one. Step 1's full-time rates reproduce as follows:
+
+| Level | Rate | Target | Difference | Result |
+|---|---|---|---|---|
+| 0.1 | 52.89% (768/1,452) | 52.11% | +0.78 pp | PASS |
+| 0.2 | 71.81% (377/525) | 68.00% | +3.81 pp | FAIL |
+| 0.3 | 89.82% (150/167) | 89.82% | 0 | PASS |
+
+- **Why 0.1 and 0.2 differ from the targets:** The gap comes from who is counted. Step 1's targets count only participants whose *last* level is that level (655/1,257 at 0.1, 255/375 at 0.2). My all-Post-rows count also includes people who later moved up a level. At 0.1 that adds 195 rows with a 57.95% full-time rate, and at 0.2 it adds 150 rows with an 81.33% rate. On the flow population, both levels match the targets exactly.
+- **Caution on the 0.1 PASS:** It is within tolerance, but the underlying counts still differ from the target. It is not an exact match.
+- **Undecided and blank answers:** &quot;Not yet decided / confused&quot; answers are in the denominator and coded 0 (21 Post rows at level 0.1, none at 0.2 or 0.3). Blank Post answers were excluded: 0 at level 0.1, 1 at 0.2, and 2 at 0.3.
+
+**Pre category and Pre-FT effect (level 0.1 only).** Levels 0.2 and 0.3 have no Pre rows, so Sections 3 and 4 can only be calculated at 0.1. There, 92.33% of people who started as &quot;Fulltime as a career&quot; (337/365) were full-time at Post. For the other starting groups, the Post full-time rates were:
+- Part time: 45.87%
+- Volunteering frequently: 32.85%
+- Occasionally: 21.05% (only 19 people, so treat it cautiously)
+- Monetary contribution: 31.33%
+- Not yet decided / confused: 48.70%
+
+The 2 people with no Pre row had 0 full-time outcomes. Comparing Pre-FT with everyone else (effective N = 1,450):
+- **Post-FT rate:** 92.33% for Pre-FT (n = 365) versus 39.72% for Pre-not-FT (n = 1,085).
+- **Risk difference:** 52.61 percentage points. Starting full-time goes with a much higher chance of being full-time afterwards.
+- **Odds ratio:** 18.26 (95% CI 12.19–27.36). The odds of Post full-time are roughly 18 times higher for Pre-FT participants. No Haldane correction was needed because no cell was zero.
+
+These are associations only. This is single-arm, self-selected observational data, so it does not show that the workshop caused any change. Much of the pattern may simply reflect people keeping the plan they already had.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #5</span> Beyond Prior Intent: Do Pre-Workshop Mindset, Priorities and Demographics Add Predictive Lift Over the 'Pre = Full-time' Rule for Level-0.1 Participants?
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1) COHORT REBUILD AND CHECKPOINTS. Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to string. Take each participant's last level and keep rows where the last level is 0.1 (parseFloat), the Post career plan is non-null and a Pre row exists at 0.1. Inner-merge Pre (_pre) and Post (_post) on Participant_Id, then join Demographics. Log N at each stage and assert: n within ±2 of 1,256; Post-FT rate within ±1 pp of 52.11%; Pre-FT→Post-FT rate within ±2 pp of 92.33%. Report the Pre-FT count and rate within this flow cohort, which may differ from Step 4's 1,450-row table. Target is Post == 'Fulltime as a career' → 1, otherwise 0, with 'Not yet decided / confused' coded 0.
+
+2) FEATURES (Pre-phase plus demographics only).
+- Prior intent: one-hot Pre career plan with 6 levels (5 options plus 'Not yet decided / confused'). Its 48.70% FT rate stays a separate category.
+- Theme scores: clean first (0 → NaN, out-of-range → NaN, reverse-code 6 − x). Average `items` only, never alt_wording items, giving about 13 agreement themes. Add the insecurity index as an optional block with a missingness indicator, because of ~371 nulls; report N with and without it.
+- Ranks: invert (9 − x) the career-preference shortlist (Social_Entrepreneurship_Or_Ngo, Working_In_Ngo, Government_Service, Private_Industry_Job) and life criteria (Cause_Of_Work, Financial_Security, Work_Satisfaction, Job_Security).
+- Income: log of Financial_Expected_Income_Age_30, clipped to 5,000–1,000,000.
+- Demographics: Gender; Age_At_Workshop (0 → NaN, median-imputed from train, plus an unknown flag); Educational_Stream_Category; Education_Status; Workshop_Batch_Number (numeric plus band); Native_State collapsed to Maharashtra / Other / International.
+- EXCLUDED for leakage or post-outcome reasons: all Post items and deltas, Action_Plan_* (Post-only), Workshops_Attended_Count, Point_2/3 flags, Person_Years_Of_Social_Action, Current_Status_Of_Work.
+- Fit imputation (train medians), standardization (train mean/SD) and one-hot vocabularies on the training split only.
+
+3) SPLIT. One row per participant, so the split is participant-grouped by construction. Use an 80/20 split stratified on target × batch band with a fixed seed. Inside the 80%, run 5-fold stratified CV for hyperparameters and out-of-fold (OOF) probabilities.
+
+4) MODELS.
+- M0: Pre-FT rule (binary score).
+- M0b: Pre-category rate encoding (6-level train-set FT rate, ordinal score).
+- M1: L2 logistic regression on Pre-category plus demographics.
+- M2: L2 logistic regression on M1 plus themes, ranks and income. Implement it in TF.js as a single dense sigmoid layer with an L2 grid of {0.001, 0.01, 0.1}, class-weighted binary cross-entropy (weights from the train base rate), Adam, and early stopping on the CV fold.
+- M3: TF.js MLP (Dense 16 ReLU → Dropout 0.3 → Dense 8 ReLU → Dense 1 sigmoid) with L2 = 0.01, class weights, at most 200 epochs, and early stopping (patience 15). Keep M3 only if its CV AUC beats M2 by more than 0.01; otherwise M2 is 'best' for interpretability.
+- Fit a likelihood-ratio-style comparison on train (M2 deviance vs M0b deviance) as a secondary check.
+
+5) TEST EVALUATION (single frozen pass).
+- Metrics: ROC-AUC (Mann-Whitney), PR-AUC (step interpolation) with the base rate as the PR baseline, and confusion matrices at 0.5 and at the tuned threshold.
+- Paired bootstrap (1,000 resamples of the test set) for ΔAUC and ΔPR-AUC of M1/M2/M3 versus M0 and M0b.
+- Repeat AUC and PR-AUC within the Pre-not-FT test subset and within the Pre-FT subset.
+- Calibration: decile or low/medium/high bands (&lt;0.35, 0.35–0.65, &gt;0.65) of predicted probability with the observed FT rate and n.
+
+6) DRIVERS.
+- M2 standardized coefficients converted to odds ratios per 1 SD, with 95% CIs from 500 bootstrap refits on train.
+- Test-set permutation importance for the best model: AUC drop, 20 shuffles per feature, plus grouped permutation per block (prior intent, themes, ranks, income, demographics).
+- Spearman rank agreement between |coef| and permutation importance over the top 15.
+- Refit M2 on Pre-not-FT train rows only to get switcher-specific drivers.
+
+7) SUBGROUPS. Test-set n, positives, AUC, recall and precision at the tuned threshold, by batch band and by Gender. Flag cells with fewer than 30 positives or negatives as unstable and do not split by level.
+
+8) THRESHOLD.
+- Build a precision/recall/F1/%-flagged table on train OOF predictions for thresholds 0.20–0.70 in steps of 0.05.
+- Choose two operating points: max-F1, and the lowest threshold with precision ≥ the rule's OOF precision. Freeze both and apply them to the test set.
+- Compare with the rule's single point (expected precision ≈0.92 and recall well under 0.5, since 337 of ~655 FT choosers were Pre-FT).</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Cohort: the level-0.1 flow population, defined as participants whose last workshop is level 0.1, with a non-null Post Career_Plan_Social_Action_Engagement, a Pre row at 0.1, and a Demographics match (expected n≈1,256, Post-FT base rate ≈52.1%). Using a participant-level 80/20 split stratified by target × batch band (7–10, 11–14, 15–17), answer five questions. (1) On the held-out test set, how do AUC, PR-AUC, recall, precision and F1 compare across: the one-rule baseline (predict FT if Pre = 'Fulltime as a career'); a Pre-category-only model; Pre-category plus demographics; and the full model (plus Pre theme scores, inverted career-preference and life-criteria ranks, and log income expectation)? What are the bootstrap 95% CIs of the AUC and PR-AUC gains over the rule? (2) Among Pre-not-FT participants only, where the rule has AUC = 0.5 by construction, how well does the best model identify who switches to full-time at Post? (3) Which features drive predictions, in which direction and how strongly, judged by standardized logistic odds ratios, by test-set permutation importance, and by the agreement between the two? (4) Does performance hold across batch bands and Gender? (5) Which probability threshold, chosen on out-of-fold training predictions and then frozen, gives a better catch-vs-false-alarm trade-off than the rule's single operating point?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Staged modelling run with printed checkpoints</strong>: <span style="color:#64748b;">Rebuild Step 5 in small blocks that each print their output, starting from the Step 4 code that is known to work. Block A reloads the level-0.1 cohort and prints N after each filter or merge: max level 0.1, Pre/Post merge, non-null outcome and demographics merge. It should also check that ID dtypes match across tables. Block B computes only the base rate and the M0 rule's accuracy, precision, recall, F1 and AUC on a stratified 80/20 split with a fixed seed. Block C fits one L2 logistic regression on standardised pre-workshop features with simple imputation, then reports AUC, PR-AUC and the bootstrap CI of the gain over M0. Gradient boosting, permutation importance, subgroups and threshold tuning are added only after A to C return real numbers. This isolates whichever stage has been silently failing and still answers the core question: does anything beat the rule?</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Build It Brick by Brick &mdash; <em>Like testing each string of fairy lights before plugging them all in together. If one string stays dark, you know exactly where the broken bulb is, instead of staring at a whole tree that won't light up.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>No-model switcher profiling in Pre-not-FT group</strong>: <span style="color:#64748b;">Skip predictive modelling for now and extend the Step 4 approach, which works, to the hardest question: who switches to full-time? Restrict the data to level-0.1 participants whose Pre answer was not 'Fulltime'. Report each feature's full-time switch rate by category (demographics, priorities) or by quartile (mindset scores). Add Wilson 95% CIs, standardised mean differences and BH-adjusted chi-square or Mann-Whitney p-values. This delivers interpretable insight into switchers with very little pipeline risk, and it narrows down which features are worth modelling later.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Meet the Mind-Changers &mdash; <em>Like interviewing the players who switched teams mid-season to find out what they have in common, before trying to guess who will switch next.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Lock in rule baseline as interim result</strong>: <span style="color:#64748b;">Treat the 'Pre = Full-time' rule as the current operating benchmark and produce a full, reportable evaluation of it on the level-0.1 cohort. Report the confusion matrix, precision, recall, F1, balanced accuracy and an approximate AUC from the binary rule, with bootstrap CIs. Break these down by workshop batch and key demographics to check whether the rule degrades for recent batches with shorter follow-up. This gives stakeholders a defensible deliverable now and a fixed bar that any future model must clearly beat.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Measure the Simple Rule Properly &mdash; <em>Like carefully timing your usual route to school before deciding whether a new shortcut is really faster.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Parsimonious feature-block lift test</strong>: <span style="color:#64748b;">Test whether lift exists at all before building a full model. Fit nested logistic regressions on the level-0.1 cohort: M0 uses the Pre-FT flag only, M1 adds mindset scores, M2 adds priorities and M3 adds demographics. Use 5-fold stratified CV and report the AUC and log-loss change for each block, with likelihood-ratio tests. This is computationally light and shows which feature family, if any, adds information beyond prior intent. It guides feature retention without the complexity that has broken earlier runs.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Add One Ingredient at a Time &mdash; <em>Like tasting the soup after adding each new spice, so you know which one actually made it better and which ones did nothing.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Staged modelling run with printed checkpoints</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 4 showed that Pre-phase rows exist only at Workshop_Level 0.1, so every 0.2 and 0.3 participant drops out of any Pre→Post model. It also showed that prior intent dominates the outcome: 92.33% of Pre-FT participants stay full-time versus 39.72% of the rest (OR 18.26). The planned Step 5 assumed a multi-level cohort, a level breakdown and an unspecified 'best model', none of which hold. Step 5 is therefore re-scoped to the level-0.1 flow population (n≈1,256) and benchmarked against the one-rule Pre-FT baseline. Lift is measured specifically among Pre-not-FT 'switchers', where the rule cannot discriminate. Subgroups are reported by batch band instead of level, and the threshold is tuned on out-of-fold training predictions before a single frozen evaluation on the held-out 20%.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                I can't report any findings yet, because the analysis results came back as &quot;undefined&quot;. No code output, sample sizes, or metrics were passed to me, so I haven't made up any numbers. The figures in your brief (about 1,256 participants and a 52.1% full-time rate) are your expectations, not confirmed results.
+
+Once the pipeline runs, here is how to read each part:
+- **Effective N:** It should shrink at each step (max level 0.1, Pre/Post merge, non-null outcome, demographics merge). A large drop at any step suggests a join or type-casting problem, such as mismatched string IDs.
+- **Base rate and rule (M0):** The base rate is the share of people who ended up full-time. The one-rule baseline simply guesses that people who already said &quot;Fulltime&quot; will stay that way. A model only matters if it beats this rule, and the bootstrap confidence intervals show whether the gain is real or just noise. If an interval includes zero, the improvement isn't reliable.
+- **AUC and PR-AUC:** AUC is the chance the model ranks a random full-timer above a random non-full-timer, where 0.5 is a coin flip. PR-AUC and the precision, recall and F1 scores show how well it finds true full-timers without too many false alarms.
+- **Q2, Pre-not-FT subgroup:** This is the hardest question, because it asks who switches to full-time. Expect modest scores and a smaller sample.
+- **Q3, drivers:** Odds ratios above 1 mean higher odds of full-time per 1 SD (or per category). Permutation importance shows which features the model actually relies on, and agreement between the two rankings adds confidence.
+- **Q4, subgroups:** Treat small cells with caution.
+- **Q5, threshold:** The threshold is frozen from out-of-fold predictions and then applied once to the test set. It lets you compare catch rate against false-alarm rate with the rule's single operating point.
+
+All results are associations, not proof that the workshop causes outcomes. The most recent batches may look worse simply because they haven't had time to reach full-time work.
+
+Please re-run the analysis or share the output, and I'll write up the real findings.
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 6. PROJECT DATASET COLUMN REFERENCE BANK (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #475569;">6</span>
+          <span>6. Project Dataset Column Reference Bank (210 Columns)</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 12.5px; color: #64748b; margin: 0 0 12px 0;">
+          Columns detected in your uploaded dataset. You can cut and paste any of these column names into subsequent questions:
+        </p>
+        <div>
+          <span class="pill">Participant_Name</span><span class="pill">Participant_Id</span><span class="pill">Gender</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Current_Age</span><span class="pill">Age_At_Workshop</span><span class="pill">Workshop_Name</span><span class="pill">Workshop_Type</span><span class="pill">Workshop_Month_Year</span><span class="pill">Workshop_Month_Name</span><span class="pill">Workshop_Month_Number</span><span class="pill">Workshop_Financial_Year</span><span class="pill">Workshops_Attended_Count</span><span class="pill">Educational_Stream</span><span class="pill">Educational_Stream_Category</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Person_Years_Of_Social_Action</span><span class="pill">Education_Status</span><span class="pill">Native_State</span><span class="pill">Native_District</span><span class="pill">Native_Tehsil_Town</span><span class="pill">Raw_Native_State</span><span class="pill">Raw_Native_District</span><span class="pill">Raw_Native_Tehsil</span><span class="pill">State_Match_Status</span><span class="pill">District_Match_Status</span><span class="pill">Tehsil_Match_Method</span><span class="pill">Point_2_Workshop_Name</span><span class="pill">Point_2_Workshop_Invited</span><span class="pill">Point_2_Workshop_Attended</span><span class="pill">Point_3_Workshop_Name</span><span class="pill">Point_3_Workshop_Invited</span><span class="pill">Point_3_Workshop_Attended</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Career_Preference_Government_Service</span><span class="pill">Career_Preference_Private_Industry_Job</span><span class="pill">Career_Preference_Own_Business</span><span class="pill">Career_Preference_Social_Entrepreneurship_Or_Ngo</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Career_Preference_Academia</span><span class="pill">Career_Preference_Undecided</span><span class="pill">Career_Preference_Other</span><span class="pill">Life_Criteria_Geographical_Location</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Life_Criteria_Work_Satisfaction</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Life_Criteria_Career_Growth</span><span class="pill">Life_Criteria_Work_Life_Balance</span><span class="pill">Life_Criteria_Financial_Prosperity</span><span class="pill">Life_Criteria_Fame_And_Recognition</span><span class="pill">Life_Criteria_Job_Security</span><span class="pill">Insecurity_Social_Acceptability</span><span class="pill">Insecurity_Monetary_Compensation</span><span class="pill">Insecurity_Parental_Response</span><span class="pill">Insecurity_Suitable_Life_Partner</span><span class="pill">Insecurity_Underutilized_Talent_And_Skills</span><span class="pill">Insecurity_Less_Comfortable_Lifestyle</span><span class="pill">Insecurity_No_Visible_Impact</span><span class="pill">Insecurity_Professionally_Left_Out</span><span class="pill">Insecurity_Lack_Of_Life_Satisfaction</span><span class="pill">Insecurity_Future_Comfort_Reduction</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Mindset_Happiness_And_Self_Esteem</span><span class="pill">Mindset_Understands_Social_Issues_And_Severity</span><span class="pill">Mindset_Has_Life_Purpose</span><span class="pill">Mindset_Clear_Long_Term_Sector</span><span class="pill">Mindset_Knows_Personal_Values</span><span class="pill">Mindset_Has_Mentorship_Support_For_Future</span><span class="pill">Mindset_Takes_Stand_On_Social_Issues</span><span class="pill">Mindset_Courage_Against_Conventional_Careers</span><span class="pill">Mindset_Knowledge_Of_Social_Problem_Solving_Approaches</span><span class="pill">Mindset_Reads_Moral_And_Political_Philosophy</span><span class="pill">Mindset_Translates_Social_Intentions_To_Action</span><span class="pill">Mindset_Knows_Swa_Dharma</span><span class="pill">Financial_Attitude_Secure_About_Future</span><span class="pill">Mindset_Social_Change_Responsibility</span><span class="pill">Mindset_Has_Like_Minded_Peer_Network</span><span class="pill">Mindset_Found_Life_Purpose</span><span class="pill">Mindset_Aware_Of_Personal_Motivations_For_Social_Action</span><span class="pill">Mindset_Career_Social_Work_Integration</span><span class="pill">Mindset_Active_Meaning_Making</span><span class="pill">Mindset_Has_Larger_Social_Dream</span><span class="pill">Mindset_Belongs_To_Caring_Community</span><span class="pill">Mindset_Understands_Social_Problem_Solving_Vs_Work</span><span class="pill">Mindset_Has_Failure_Support_System</span><span class="pill">Mindset_Finds_Social_Problem_Solving_Exciting</span><span class="pill">Mindset_Visualizes_Self_As_Changemaker</span><span class="pill">Mindset_Social_Engagement_Crucial_For_Meaning</span><span class="pill">Mindset_Has_Inspiring_Social_Role_Models</span><span class="pill">Mindset_Social_Self_Efficacy_Confidence</span><span class="pill">Mindset_Understands_Happiness_Vs_Meaning</span><span class="pill">Mindset_Emotionally_Mature_Adult</span><span class="pill">Mindset_Acknowledges_Personal_Privilege</span><span class="pill">Mindset_Distinguishes_Needs_Vs_Wants</span><span class="pill">Mindset_Visualizes_Future_Youth_Inspiration</span><span class="pill">Mindset_Has_Guiding_Life_Philosophy</span><span class="pill">Mindset_Confident_In_Life_Experimentation</span><span class="pill">Mindset_Has_Reflection_Opportunities</span><span class="pill">Metric_Life_Satisfaction_Global</span><span class="pill">Mindset_Believes_Morals_Are_Absolute</span><span class="pill">Mindset_Comfortable_Expressing_Feelings</span><span class="pill">Mindset_Prosocial_Purpose_Boosts_Wellbeing</span><span class="pill">Mindset_Understands_Flourishing_Youth_Meaning</span><span class="pill">Mindset_Understands_Scientific_Purpose_Definition</span><span class="pill">Mindset_Excited_By_Life_Possibilities_In_20s</span><span class="pill">Mindset_Purpose_Finding_Is_Urgent_Priority</span><span class="pill">Mindset_Understands_Happy_Vs_Meaningful_Life</span><span class="pill">Mindset_Understands_Goal_Vs_Purpose</span><span class="pill">Financial_Attitude_Money_Equals_Happiness</span><span class="pill">Mindset_Applies_Categorical_Moral_Framework</span><span class="pill">Mindset_Excited_By_Purpose_Pursuit_Process</span><span class="pill">Financial_Attitude_Unbothered_By_Future_Earnings</span><span class="pill">Mindset_Privilege_Implies_Obligation</span><span class="pill">Mindset_Values_Work_Freedom_Over_Financial_Gain</span><span class="pill">Mindset_Understands_Purpose_Importance_And_Benefits</span><span class="pill">Mindset_Social_Contribution_Is_Deepest_Quest</span><span class="pill">Mindset_Knows_Impactful_Organisation_Functioning</span><span class="pill">Mindset_Inspired_By_Known_Changemakers</span><span class="pill">Mindset_Visualizes_Social_Sector_Contribution</span><span class="pill">Financial_Knows_Threshold_Vs_Aspirational_Income</span><span class="pill">Mindset_Alcohol_Safe_Within_Limits</span><span class="pill">Action_Identified_Books_To_Read</span><span class="pill">Action_Plan_Reduce_Carbon_Footprint</span><span class="pill">Action_Plan_Personal_Flourishing_6_Months</span><span class="pill">Action_Plan_Social_Contribution_6_Months</span><span class="pill">Action_Plan_Purpose_Journey</span><span class="pill">Mindset_Knows_How_To_Become_Flourishing_Youth</span><span class="pill">Mindset_Visualizes_Five_Career_Paths</span><span class="pill">Mindset_Spends_Day_In_Meaningful_Pursuits</span><span class="pill">Mindset_Committed_To_Social_Change</span><span class="pill">Mindset_Has_Mentor_For_Life_Matters</span><span class="pill">Mindset_Has_Guiding_Philosophy</span><span class="pill">Mindset_Can_Analyse_Social_Change_Intervention</span><span class="pill">Financial_Attitude_Anxiety_About_Aspirations</span><span class="pill">Mindset_Knows_Social_Problem_Solving_Building_Blocks</span><span class="pill">Mindset_Clarity_On_Purpose_Finding_Process</span><span class="pill">Mindset_Firm_On_Values_Against_Norms</span><span class="pill">Mindset_Understands_Social_Change_Approaches</span><span class="pill">Mindset_Understands_Purpose_Identification_Urgency</span><span class="pill">Mindset_Has_Values_For_Life_Decisions</span><span class="pill">Mindset_Has_Idea_About_Life_Direction</span><span class="pill">Mindset_Identified_Daily_Moral_Resolutions</span><span class="pill">Action_Plan_Purpose_Journey_1_Year</span><span class="pill">Mindset_Clear_Professional_Life_Sector</span><span class="pill">Action_Plan_Social_Change_Journey_1_Year</span><span class="pill">Mindset_Empowered_As_Active_Citizen_With_State</span><span class="pill">Mindset_Clear_Sense_Of_Purpose</span><span class="pill">Mindset_Visualizes_Five_Life_Possibilities</span><span class="pill">Mindset_Life_Beyond_Materialistic_Pleasures</span><span class="pill">Mindset_Anxiety_About_Finding_Purpose</span><span class="pill">Mindset_Sole_Credit_For_Own_Success</span><span class="pill">Mindset_Youth_In_Social_Sector_Is_Societal_Need</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Opposition</span><span class="pill">Mindset_Follows_Moral_Resolutions</span><span class="pill">Mindset_Distinguishes_Meaning_Vs_Pleasure_Seeking</span><span class="pill">Mindset_Understands_Social_Sector_Need_And_Role</span><span class="pill">Mindset_Courage_To_Live_Authentically</span><span class="pill">Mindset_Thought_Through_Life_Direction</span><span class="pill">Mindset_Life_Choice_Independent_Of_Peers</span><span class="pill">Financial_Knows_Needs_Vs_Aspirational_Income</span><span class="pill">Mindset_Visualizes_Social_Sector_Career_Despite_Norms</span><span class="pill">Mindset_Elevation_Motivates_Social_Action</span><span class="pill">Mindset_Self_Actualization_Linked_To_Society</span><span class="pill">Mindset_Unclear_Needs_Vs_Wants</span><span class="pill">Mindset_Poor_Understanding_Of_Socioeconomic_Issues</span><span class="pill">Mindset_Lacks_Reflection_Opportunities</span><span class="pill">Mindset_Believes_Morals_Are_Relative</span><span class="pill">Mindset_Doubts_Social_Purpose_Wellbeing_Impact</span><span class="pill">Mindset_Parental_Approval_Mandatory_For_Career</span><span class="pill">Mindset_Prefers_Safety_And_Security_Path</span><span class="pill">Mindset_Eco_Friendly_Lifestyle_Changes</span><span class="pill">Mindset_Responsibility_To_Give_Back_To_Society</span><span class="pill">Mindset_Own_Efforts_Over_Birth_Circumstances</span><span class="pill">Mindset_Maximize_Materialistic_Pleasures</span><span class="pill">Mindset_Privilege_Drives_Contribution</span><span class="pill">Mindset_Knows_Ways_To_Help_Those_In_Need</span><span class="pill">Mindset_Compassion_Motivates_Social_Action</span><span class="pill">Mindset_Applies_Value_Based_Decision_Criteria</span><span class="pill">Mindset_Righteous_Anger_Motivates_Social_Action</span><span class="pill">Mindset_Understands_Social_Sector_Unique_Roles</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Others</span><span class="pill">Mindset_Chance_Over_Effort_In_Life_Outcome</span><span class="pill">Mindset_Gratitude_Drives_Social_Contribution</span><span class="pill">Mindset_Moral_Test_For_Life_Decisions</span><span class="pill">Financial_Attitude_Confident_Future_Earnings</span><span class="pill">Mindset_Visualizes_Social_Sector_Career</span><span class="pill">Mindset_Parental_Agreement_Mandatory_For_Decisions</span><span class="pill">Mindset_Values_Harmony_With_Nature</span><span class="pill">Mindset_Inspired_To_Create_Social_Impact</span><span class="pill">Mindset_Excited_About_Life_Purpose_Discovery</span><span class="pill">Mindset_Committed_To_Social_Change_Movement</span><span class="pill">Mindset_Purpose_Is_Meaningful_Social_Difference</span><span class="pill">Mindset_Committed_To_Youth_Social_Change_Community</span><span class="pill">Mindset_Can_Enact_Active_Citizen_Duty</span><span class="pill">Mindset_Preoccupied_With_Safety_And_Security</span><span class="pill">Mindset_Bucket_List_Happiness_Approach</span><span class="pill">Mindset_Daily_Intentional_Purpose_Linked_Living</span><span class="pill">Mindset_Urgency_To_Act_On_Climate_Change</span><span class="pill">Mindset_Loneliness_While_Contemplating_Social_Change</span><span class="pill">Mindset_Income_Inequality_Is_Justified</span><span class="pill">Mindset_Steps_Toward_Independent_Responsible_Adulthood</span><span class="pill">Mindset_Considers_Needs_Before_Purchases</span><span class="pill">Mindset_Values_Growth_Mentors</span><span class="pill">Mindset_Actively_Cultivating_Mentor_Relationship</span><span class="pill">Financial_Expected_Income_Age_25</span><span class="pill">Financial_Expected_Income_Age_30</span><span class="pill">Financial_Planning_Sheet_Income</span><span class="pill">Financial_Planning_Sheet_Income_Halved</span><span class="pill">Financial_Years_To_Independence</span>
+        </div>
+      </div>
+    </details>
+
+    <!-- 7. RISKS, MODEL CONSTRAINTS & GOVERNANCE (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #64748b;">7</span>
+          <span>7. Risks, Model Constraints &amp; Governance</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="margin: 0; font-size: 13px; color: #334155; line-height: 1.65;">
+          1) Evidence gap: only Step 1 has reported results. The model metrics, feature rankings and thresholds for Steps 2 to 5 were never reported, so this dossier can only say that Pre intent is a strong predictor. It cannot say that any mindset, priority or demographic factor adds lift, and the confidence score reflects this. 2) Observational, single-group data: all findings are associations. They do not show that the workshop caused anyone to choose full-time. 3) Self-selection: the rise in full-time rates from 52% to 68% to 90% across Levels 0.1, 0.2 and 0.3 mostly reflects who was invited and who stayed. Level 0.3 has only about 17 non-full-time people, so its results are very unstable. 4) Target definition: 'Not yet decided / confused' is coded as 'not full-time', which affects the rates. A sensitivity check excluding those cases is planned but not reported. 5) Pre-fallback group: 375 Level 0.1 participants have only a Pre answer, which is a different kind of outcome from a Post answer. 6) Prior-intent dominance: the 'Pre = full-time' rule has about 0.92 precision but catches only about half of the full-time choosers, so it is a baseline and not a usable screening tool. People who say 'confused' at Pre still choose full-time about 49% of the time, so Pre answers are imperfect signals. 7) Data quality: questionnaire 0 values mean 'not answered', and Age_At_Workshop = 0 means unknown, so both must be set to missing. Rank scales run from 1 (strongest) to 8, so they must be inverted. The insecurity items have about 371 nulls each. Income values must be clipped to 5,000–1,000,000 before taking logs. 7 of 17 batches (1–6) have no questionnaire data. 8) Leakage: Post items, deltas, Action_Plan_* columns, Point_2/Point_3 flags, Person_Years_Of_Social_Action and Current_Status_Of_Work must stay out of predictors. 9) Modelling risks: with about 1,256 participants and 40 or more features, overfitting is likely. Use a held-out test set, a frozen threshold, bootstrap CIs and multiple-testing control, and avoid reading too much into small gaps. The 'Pre-FT to Post-FT 92.33%' and '337 of ~655' figures come from the experiment plans and have not been independently verified here.
+        </p>
+      </div>
+    </details>
+
+    <!-- Sign-off Footer -->
+    <div class="footer">
+      Generated by <strong>Answer Strategically</strong> &bull; Answer Consistency Engine &bull; Tailored for Easy to understand for College graduate volunteer
+       &bull; Includes 3 Post-Execution Clarifications
+    </div>
+  </div>
+</body>
+</html>

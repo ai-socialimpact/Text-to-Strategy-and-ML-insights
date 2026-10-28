@@ -1,0 +1,1857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Strategic Action Report — How does the participants’ response to Cause of Work as a Career Criteria corelate with their choice of engagement in social action during their productive lifetime? 
+</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      margin: 0;
+      padding: 32px 16px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      padding: 36px 40px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05);
+    }
+    .header {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 22px;
+      margin-bottom: 24px;
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: #e0e7ff;
+      color: #3730a3;
+      border: 1px solid #c7d2fe;
+    }
+    .badge-audience { background: #f3e8ff; color: #6b21a8; border-color: #d8b4fe; }
+    .badge-success { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .badge-consult { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .question-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 14px 0 10px 0;
+    }
+    .question-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    h1.report-question {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+      color: #0f172a;
+      line-height: 1.45;
+    }
+    .subtitle { color: #475569; font-size: 13px; margin-top: 4px; }
+    .audience-note {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: #334155;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 20px 0 28px 0;
+    }
+    .kpi-card {
+      background: #f8fafc;
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .kpi-val { font-size: 24px; font-weight: 800; color: #0f172a; }
+    .kpi-lbl { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-top: 4px; letter-spacing: 0.04em; }
+    .verdict-box {
+      border-left: 5px solid #059669;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left-width: 5px;
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 24px;
+    }
+    .verdict-title { font-size: 18px; font-weight: 800; color: #166534; margin: 0 0 10px 0; }
+    .verdict-text { font-size: 13.5px; color: #1e293b; line-height: 1.65; }
+    details.collapsible-section {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #ffffff;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    details.collapsible-section summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: #f8fafc;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      transition: background 0.15s ease;
+    }
+    details.collapsible-section summary:hover {
+      background: #f1f5f9;
+    }
+    details.collapsible-section[open] summary {
+      background: #f1f5f9;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    details.collapsible-section summary::-webkit-details-marker {
+      display: none;
+    }
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .summary-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    .summary-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .summary-chevron {
+      font-size: 10px;
+      color: #64748b;
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    details.collapsible-section[open] .summary-chevron {
+      transform: rotate(180deg);
+    }
+    .collapsible-body {
+      padding: 20px;
+      background: #ffffff;
+    }
+    .step-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .step-title { font-size: 14.5px; font-weight: 700; color: #0f172a; }
+    .step-num { background: #4f46e5; color: #ffffff; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+    .sub-box { background: #ffffff; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; font-size: 12.5px; color: #334155; }
+    .sub-lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 4px; letter-spacing: 0.04em; }
+    .choice-badge { display: inline-block; padding: 3px 8px; background: #e0e7ff; color: #3730a3; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #c7d2fe; }
+    .replan-badge { display: inline-block; padding: 2px 8px; background: #fae8ff; color: #86198f; border-radius: 6px; font-size: 10px; font-weight: 800; margin-left: 6px; }
+    .rec-card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px 20px; margin-bottom: 18px; }
+    .rec-title { font-size: 15px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .rec-easy { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #14532d; font-size: 13px; line-height: 1.6; }
+    .rec-tech { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #1e3a8a; font-size: 12.5px; line-height: 1.5; }
+    .prompt-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #38bdf8; word-break: break-word; user-select: all; margin-top: 6px; }
+    .pill { display: inline-block; background: #e2e8f0; color: #1e293b; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-family: monospace; font-weight: 700; margin-right: 6px; margin-bottom: 4px; border: 1px solid #cbd5e1; }
+    .inquiry-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .inquiry-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; }
+    .inquiry-query { font-size: 14px; font-weight: 700; color: #0f172a; margin: 4px 0 10px 0; }
+    .inquiry-response { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 13px; color: #1e293b; line-height: 1.6; margin-bottom: 10px; }
+    .chart-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="badge-bar">
+        <span class="badge">Strategic Master Dossier</span>
+        <span class="badge badge-audience">Tailored For: Easy to understand for College graduate volunteer</span>
+        <span class="badge badge-success">Confidence: 68%</span>
+        <span class="badge badge-consult">5 Post-Execution Inquiries Documented</span>
+      </div>
+      <div class="question-block">
+        <div class="question-label">
+          <span>🎯</span>
+          <span>Core Strategic Question</span>
+        </div>
+        <h1 class="report-question">How does the participants’ response to Cause of Work as a Career Criteria corelate with their choice of engagement in social action during their productive lifetime? 
+</h1>
+      </div>
+      <div class="subtitle">
+        Project: <strong>NIRMAN</strong> &middot; Generated on 10/28/2026 &middot; Multi-Step Progressive Analytics
+      </div>
+    </div>
+
+    <!-- Audience Note -->
+    <div class="audience-note">
+      <strong>Audience Comprehension Level:</strong> Easy to understand for College graduate volunteer<br/>
+      Clear, structured, professional explanations covering business metrics, proportions, and logic with practical context.
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-val">68%</div>
+        <div class="kpi-lbl">Strategic Confidence</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">5 / 5</div>
+        <div class="kpi-lbl">Empirical Steps Completed</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">Multi-Step Discovery</div>
+        <div class="kpi-lbl">Framework Mode</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">210</div>
+        <div class="kpi-lbl">Dataset Columns Audited</div>
+      </div>
+      
+      <div class="kpi-card">
+        <div class="kpi-val">5</div>
+        <div class="kpi-lbl">Follow-up Clarifications</div>
+      </div>
+      
+      
+      <div class="kpi-card">
+        <div class="kpi-val">4</div>
+        <div class="kpi-lbl">Visual Charts Added</div>
+      </div>
+      
+    </div>
+
+    <!-- 1. STRATEGIC VERDICT & EASY-TO-UNDERSTAND TAKEAWAYS (PROMINENT AT TOP) -->
+    <div class="verdict-box">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #047857; margin-bottom: 4px;">
+        1. Strategic Verdict &amp; Easy-to-Understand Takeaways
+      </div>
+      <div class="verdict-title">Participants who put 'Cause of Work' higher in their career criteria are consistently more likely to plan fulltime social action, and those whose Cause-of-Work priority rises are about 35% more likely (odds) to switch to fulltime. The association is modest, it is not proven causal, and it has not yet been linked to actual long-term social-action outcomes.</div>
+      <div class="verdict-text">
+        Short answer: participants who rank 'Cause of Work' as a higher priority in a career also tend to choose deeper social-action plans, but the link is real and modest, not strong. Among 2,001 Pre-workshop participants, 47% of those who ranked Cause of Work #1 planned 'Fulltime as a career' in social action. For those who ranked it 3rd to 6th the figure was only about 14-21%. After the workshop (1,430 participants), 66% of those ranking it #1 chose fulltime, against about 32% for those ranking it 6th to 8th. Participants who plan fulltime social action also have a clearly better (lower) average Cause-of-Work rank: 2.69 for fulltime versus 4.15 for 'Monetary contribution' at Pre, and 1.99 versus 3.47 at Post.
+
+The within-person change view gives the same direction. We followed 1,289 people who gave valid answers both before and after the workshop. Cause of Work moved from an average rank of 3.61 to 2.39 (rank 1 is most important). Fulltime plans rose from 28.2% to 53.8%. People whose Cause-of-Work importance went up were more likely to move up the engagement ladder (47.0% vs 32.9%, a 14-point gap). Among the 925 people not already planning fulltime, they were also more likely to switch to fulltime (42.6% vs 31.6%, an 11-point gap). Each one-step rise in importance goes with about 35% higher odds of switching (odds ratio 1.35, 95% CI 1.23-1.48). The result held when we removed people already at the 'ceiling' (780 people, switching gap about 18.5 points). It also held after adjusting for workshop batch (odds ratio about 1.39). The overall correlation is small (Spearman 0.16), so Cause of Work is one useful signal, not a predictor that settles the outcome.
+
+What is NOT yet answered: (1) the question says 'productive lifetime', but all evidence so far concerns stated career plans at the workshop (Career_Plan_Social_Action_Engagement), not what people actually did later (Current_Status_Of_Work, Person_Years_Of_Social_Action). (2) Steps 2, 4 and 5 produced no recorded results, so we cannot say whether Cause of Work is a unique driver or just a proxy for lower financial or job-security priorities. (3) All findings are associations in single-arm observational data and do not show that the workshop or Cause of Work caused anything.
+      </div>
+    </div>
+
+    <!-- 5. STRATEGIC CLARITY & FOLLOW-UP CONSULTATION LOG (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #0284c7;">5</span>
+          <span>5. Strategic Clarity &amp; Follow-Up Consultation Log</span>
+          <span class="badge badge-consult" style="margin-left: 6px;">5 Inquiries</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Post-execution follow-up consultations answering specific questions, framing subsequent analytical queries, auditing column metadata, and clarifying empirical results.
+        </p>
+
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #5
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:50 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "In simple easy to understand words with intuition and analogy, what is the Takeaway, what is the question , what is the answer"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Cause of Work and Social Action: Plain-Language Explanation</h2>
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">1. The question</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>"Do people who care more about the <em>cause</em> behind their work, when choosing a career, also choose to give more of their working life to social action?"</strong>
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>"Cause of Work"</strong> is one of several career criteria participants ranked, alongside things like financial security, job security, career growth and work-life balance. Rank 1 means "this matters most to me."</li><li style="margin-bottom: 5px;"><strong>"Engagement in social action"</strong> is what each participant said they plan to do. The options run from <em>Monetary contribution → Occasionally → Volunteering frequently → Part time → Fulltime as a career</em>.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">2. The answer</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Yes, they go together, but the link is real and modest, not strong or proven.</strong>
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        People who put Cause of Work higher are consistently more likely to plan a deeper commitment, especially full-time. But plenty of people don't follow the pattern, and the data can't show that one <em>causes</em> the other.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">3. The takeaway</h3>
+
+        <blockquote style="border-left: 4px solid #3b82f6; background: #eff6ff; padding: 12px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; font-size: 12px; color: #1e40af; line-height: 1.6;">
+          Cause of Work is a <strong>useful signal</strong> of who is likely to go deep into social action. It is <strong>not a crystal ball</strong>, and it is <strong>not yet proven</strong> to predict what people actually do over a career.
+        </blockquote>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">4. An analogy</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Think of <strong>height and basketball</strong>. Taller people are more likely to play basketball seriously, so height is a useful hint. But many short players are excellent, many tall people never touch a ball, and height alone doesn't tell you who will make the team.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Cause of Work is like height here: a real, repeatable hint, but only one factor among many.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">5. The evidence</h3>
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">A. Snapshot: who plans full-time social action?</h4>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Group (by Cause-of-Work rank)</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Before workshop (2,001 people)</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">After workshop (1,430 people)</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Ranked it <strong>#1</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>47%</strong> plan full-time</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>66%</strong> plan full-time</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Ranked it low (3rd–6th before, 6th–8th after)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">about 14–21%</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">about 32%</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The average Cause-of-Work rank also differs by plan. People planning full-time average <strong>2.69</strong> (Before) and <strong>1.99</strong> (After). People who only plan a monetary contribution average <strong>4.15</strong> and <strong>3.47</strong>. A lower number means they ranked it higher.
+      </p>
+    
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">B. Change within the same people</h4>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        We followed <strong>1,289 people</strong> who answered both before and after.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Average Cause-of-Work rank improved from <strong>3.61 to 2.39</strong>, so it became more important to them.</li><li style="margin-bottom: 5px;">Full-time plans rose from <strong>28% to 54%</strong>.</li><li style="margin-bottom: 5px;">People whose Cause-of-Work importance <strong>went up</strong> were more likely to move up the engagement ladder (<strong>47% vs 33%</strong>).</li><li style="margin-bottom: 5px;">Among the 925 people not already planning full-time, those whose Cause-of-Work importance went up were more likely to <strong>switch to full-time</strong> (<strong>43% vs 32%</strong>).</li>
+        </ul>
+      
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">C. The "35%" figure</h4>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Each <strong>one-step rise</strong> in Cause-of-Work importance goes with about <strong>35% higher odds</strong> of switching to full-time (odds ratio 1.35, plausible range 1.23–1.48).
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">"Odds" are not the same as "chance." It does <strong>not</strong> mean "35% more people switch."</li><li style="margin-bottom: 5px;">The plain version is the 43% vs 32% gap above.</li>
+        </ul>
+      
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">D. How strong is it?</h4>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The correlation is about <strong>0.16</strong>, where 0 is no link and 1 is a perfect link. That is small. Cause of Work explains only a small slice of who goes full-time.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The result held up when we removed people who had no room to move up (already at the top) and when we adjusted for workshop batch. That gives some confidence in the direction.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">6. What we can't say yet</h3>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Limit</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Plain meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Plans ≠ actions</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">We measured what people <em>said they'd do</em> at the workshop, not what they did over their working lives. "Productive lifetime" is not yet tested.</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Association ≠ cause</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">There was no comparison group. We can't say the workshop or a Cause-of-Work mindset <em>made</em> anyone choose social action.</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Possible proxy</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Ranking is a zero-sum game: if Cause of Work moves up, something else (money, security) moves down. We couldn't test whether Cause of Work matters on its own or only looks important because money concerns fell. The analyses meant to answer this (Steps 4 and 5) returned no results.</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Post-workshop enthusiasm</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">People may answer in a way that fits what the workshop encouraged.</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Who was included</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Some "not yet decided" answers were excluded, and only some participants answered both times.</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The <strong>68% confidence</strong> reflects a consistent direction across analyses, but missing evidence on independence and long-term outcomes.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">7. What a volunteer can do with this</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Use Cause of Work as one conversation starter</strong>, not a label. Someone who ranks it #1 is a promising candidate for deeper involvement, but don't assume it.</li><li style="margin-bottom: 5px;"><strong>Don't promise that the workshop changes careers.</strong> The before-and-after shift is encouraging but isn't proof of impact.</li><li style="margin-bottom: 5px;"><strong>To answer the real "lifetime" question</strong>, follow up with participants later. Track what they are doing now and how many years they've spent in social action.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">One-sentence summary</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Participants who rank "Cause of Work" higher tend to plan deeper, more full-time social action, and rising importance goes with a higher chance of switching to full-time (43% vs 32%). The link is modest, based on stated plans rather than long-term actions, and is not proven to be causal.</strong>
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #4
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Strategic Visuals &amp; Charts
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:49 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "In simple easy to understand words with intuition and analogy, what is the Takeaway, what is the question , what is the answer. Add as many visuals as needed. Add different types of visuals"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Generated 2 visual chart(s) illustrating the strategic findings.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #3
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:40 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "What is the question , what is the answer, takeaway . Output in simple plan text format (no table) with simple shortest possible answer. Include exact column names as per schema"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        QUESTION Do participants who rank Life<em>Criteria</em>Cause<em>Of</em>Work higher as a career criterion also choose deeper social action (Career<em>Plan</em>Social<em>Action</em>Engagement) for their productive lifetime?
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        ANSWER Yes, but only modestly.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Rank 1 means most important. Before the workshop (Workshop<em>Phase = Pre), 47% of people who ranked Life</em>Criteria<em>Cause</em>Of_Work #1 planned "Fulltime as a career". Among those who ranked it 3rd to 6th, only about 14-21% did.</li><li style="margin-bottom: 5px;">After the workshop (Workshop_Phase = Post), the figures were 66% for rank #1 and about 32% for rank 6th to 8th.</li><li style="margin-bottom: 5px;">In the 1,289 people with answers in both phases, those whose Cause-of-Work importance rose were about 35% more likely (odds ratio 1.35) to switch to fulltime.</li><li style="margin-bottom: 5px;">The correlation is small (Spearman about 0.16 to 0.28), so Life<em>Criteria</em>Cause<em>Of</em>Work is one useful signal and not a strong predictor.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        TAKEAWAY A stronger "cause" priority goes with a stronger social-action plan. This is an association, not proof that one causes the other.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        CAVEATS
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Career<em>Plan</em>Social<em>Action</em>Engagement records stated plans, not what people actually did. Current<em>Status</em>Of<em>Work and Person</em>Years<em>Of</em>Social_Action have not been analysed yet, so "productive lifetime" is not answered.</li><li style="margin-bottom: 5px;">Steps 2, 4 and 5 produced no usable results. We cannot tell whether Cause of Work is a unique driver or just reflects lower financial or job-security priorities, because the ranks compete with each other.</li><li style="margin-bottom: 5px;">There is no control group, so the workshop cannot be credited with the changes.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Confidence: 68%.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #2
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Strategic Visuals &amp; Charts
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:35 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "What is the question , what is the answer, takeaway . Output  in simple plan text format (no table) with simple shortest possible answer. Include  exact column names as per schema"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Generated 2 visual chart(s) illustrating the strategic findings.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #1
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:28 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "What is the question , what is the answer, takeaway . Output  in simple plan text format (no table) with simple shortest possible answer. Include  exact column names as per schema"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        QUESTION Do participants who rank "Cause of Work" higher as a career criterion (Life<em>Criteria</em>Cause<em>Of</em>Work) also choose deeper social action (Career<em>Plan</em>Social<em>Action</em>Engagement)?
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        ANSWER Yes, but the link is modest.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Rank 1 means most important. Before the workshop (Workshop<em>Phase = Pre), 47% of people who ranked Life</em>Criteria<em>Cause</em>Of_Work #1 planned "Fulltime as a career". Only about 14-21% of those who ranked it 3rd to 6th did.</li><li style="margin-bottom: 5px;">After the workshop (Workshop_Phase = Post), the figures were 66% for rank #1 and about 32% for ranks 6-8.</li><li style="margin-bottom: 5px;">When a person's Cause of Work importance rose from Pre to Post, their odds of switching to "Fulltime as a career" were about 35% higher (odds ratio 1.35, 95% CI 1.23-1.48). This is based on 1,289 people with valid answers in both phases.</li><li style="margin-bottom: 5px;">The overall correlation is small (Spearman about 0.16 for change), so Cause of Work is one useful signal, not a deciding factor.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        TAKEAWAY Higher Cause of Work priority goes with stronger plans for social action. Confidence is 68%, and three limits apply:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">This is association, not proof that Cause of Work or the workshop caused anything.</li><li style="margin-bottom: 5px;">The data are stated plans (Career<em>Plan</em>Social<em>Action</em>Engagement), not what people actually did over their "productive lifetime". Current<em>Status</em>Of<em>Work and Person</em>Years<em>Of</em>Social_Action have not been analysed yet.</li><li style="margin-bottom: 5px;">We could not check whether Cause of Work matters on its own or simply reflects lower financial or job-security priorities, because Steps 2, 4 and 5 produced no recorded results.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Practical use: treat Life<em>Criteria</em>Cause<em>Of</em>Work as a helpful early indicator of who may commit to full-time social action. Do not use it as a predictor on its own.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 4. STRATEGIC VISUALIZATIONS & EMPIRICAL CHARTS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #d97706;">4</span>
+          <span>4. Strategic Visualizations &amp; Empirical Charts (4 Visualized)</span>
+          <span class="badge" style="background: #fef3c7; color: #92400e; border-color: #fde68a; margin-left: 6px;">4 Visuals</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Visual intelligence charts generated post-execution to illustrate empirical step metrics, distribution variances, and strategic performance.
+        </p>
+
+        
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">The Cause-Lovers Lean Toward Full-Time: Full-Time Choice by Cause Ranking</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              bar Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">Share of participants choosing 'Fulltime as a career', split by how highly they ranked Cause of Work (Step 1). Think of it like a compass: the closer people point toward 'cause', the more of them head down the full-time road. The last bar shows the Post-workshop figure for the same #1 group.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Ranked #5 (Pre)</span>
+                  <span style="font-weight: 800; color: #94a3b8;">14%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 14.14%; background: #94a3b8; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Cause is a lower priority</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">All participants (Pre)</span>
+                  <span style="font-weight: 800; color: #06b6d4;">29%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 28.64%; background: #06b6d4; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Baseline before the workshop</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Ranked #1 (Pre)</span>
+                  <span style="font-weight: 800; color: #2563eb;">47%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 47.38%; background: #2563eb; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Cause is the top priority</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">All participants (Post)</span>
+                  <span style="font-weight: 800; color: #f59e0b;">54%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 53.71%; background: #f59e0b; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Whole group, after the workshop</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Ranked #1 (Post)</span>
+                  <span style="font-weight: 800; color: #10b981;">66%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 65.69%; background: #10b981; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Top-priority group, after the workshop</span>
+              </div>
+            
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> At Pre, people who ranked Cause of Work #1 chose full-time about 3x as often as people who ranked it #5 (47% vs 14%). After the workshop, the #1 group rose to 66%. This is a pattern in the answers, not proof that cause priority drives the choice.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Scorecard: What the Evidence Says (and How Far to Trust It)</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              kpi Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">The four numbers to remember. The link is real but modest, like a gentle tailwind rather than a steering wheel. Changes in Cause priority go with changes in career plans, but the evidence is correlational and the final model checks (Steps 4 and 5) returned no results.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #8b5cf6; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Overall confidence</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin: 4px 0;">68%</div>
+                  <div style="font-size: 11px; color: #475569;">Moderate: consistent, but not causal</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Link strength (Spearman rho, Post)</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin: 4px 0;">0.28</div>
+                  <div style="font-size: 11px; color: #475569;">Modest positive link (Pre was 0.22)</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Odds of switching to full-time</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #10b981; margin: 4px 0;">+35%</div>
+                  <div style="font-size: 11px; color: #475569;">Per 1-step rise in Cause priority (OR 1.35)</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Full-time share, Pre to Post</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #f59e0b; margin: 4px 0;">+25 pts</div>
+                  <div style="font-size: 11px; color: #475569;">28.6% to 53.7%; this does not show the workshop caused it</div>
+                </div>
+              
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> Cause priority and full-time plans move together, and a rise in priority goes with about 35% higher odds of switching to full-time. The link is modest (rho 0.22 to 0.28), not proven causal, and not yet tied to real long-term action.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Full-Time Social Action Choice by Cause-of-Work Rank</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              bar Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">QUESTION: Does ranking Life_Criteria_Cause_Of_Work higher go with choosing 'Fulltime as a career' in Career_Plan_Social_Action_Engagement? ANSWER: Yes. At Pre, 47.38% of people who ranked it #1 chose full-time, against 14.14% of those who ranked it #5. At Post, 65.69% of #1 rankers chose full-time. Bars show % choosing 'Fulltime as a career' (Workshop_Phase = Pre or Post).</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Pre, Rank #5</span>
+                  <span style="font-weight: 800; color: #f59e0b;">14.14%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 14.14%; background: #f59e0b; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Life_Criteria_Cause_Of_Work = 5</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Pre, Overall</span>
+                  <span style="font-weight: 800; color: #8b5cf6;">28.64%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 28.64%; background: #8b5cf6; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Workshop_Phase = Pre</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Pre, Rank #1</span>
+                  <span style="font-weight: 800; color: #2563eb;">47.38%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 47.38%; background: #2563eb; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Life_Criteria_Cause_Of_Work = 1</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Post, Overall</span>
+                  <span style="font-weight: 800; color: #06b6d4;">53.71%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 53.71%; background: #06b6d4; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Workshop_Phase = Post</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Post, Rank #1</span>
+                  <span style="font-weight: 800; color: #10b981;">65.69%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 65.69%; background: #10b981; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Life_Criteria_Cause_Of_Work = 1</span>
+              </div>
+            
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> TAKEAWAY: A higher Cause-of-Work priority consistently goes with full-time plans. This is an association only, not proof the workshop caused it.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Strength of the Link: Modest, Positive, Not Proven Causal</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              kpi Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">QUESTION: How strong is the link between Life_Criteria_Cause_Of_Work and Career_Plan_Social_Action_Engagement? ANSWER: Modest but positive. Spearman rho is 0.22 at Pre and 0.28 at Post (1,289 paired Participant_Id). Where Cause-of-Work importance rose (cause_importance = 9 - rank), the odds of switching to full-time were about 35% higher (OR 1.35).</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Spearman rho, Pre</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin: 4px 0;">0.22</div>
+                  <div style="font-size: 11px; color: #475569;">95% CI 0.17-0.27</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Spearman rho, Post</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #10b981; margin: 4px 0;">0.28</div>
+                  <div style="font-size: 11px; color: #475569;">95% CI 0.23-0.33</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #8b5cf6; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Odds of switching to full-time</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin: 4px 0;">OR 1.35</div>
+                  <div style="font-size: 11px; color: #475569;">Per 1-step rise in cause_importance</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Confidence</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #f59e0b; margin: 4px 0;">68%</div>
+                  <div style="font-size: 11px; color: #475569;">Observational, single-group data</div>
+                </div>
+              
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> TAKEAWAY: The link is real but modest. Cause-of-Work shifts are linked to full-time plans, but causality and long-term outcomes are unproven (confidence 68%).
+            </div>
+          
+        </div>
+      
+      </div>
+    </details>
+
+    <!-- 3. GUIDANCE & RECOMMENDATIONS ON NEXT STEPS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #2563eb;">3</span>
+          <span>3. Guidance &amp; Recommendations on Next Steps (How to Proceed)</span>
+          <span class="badge" style="background: #dbeafe; color: #1e40af; border-color: #bfdbfe; margin-left: 6px;">5 Actions</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Tailored recommendations explaining what to do next. Includes both an easy-to-understand explanation and technical column names ready for cut-and-pasting into future questions.
+        </p>
+
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#1</span> Test whether Cause of Work is a unique driver or a stand-in for money/security priorities
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              So far we know people who care more about the cause of their work tend to plan fulltime social action. But those same people may simply care less about salary and job security, and that could be what is really behind the pattern. This step checks whether Cause of Work still matters once we account for those other priorities. Run it in small stages so any error shows up early instead of the whole analysis failing.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Rebuild the Step 3 paired Point-1 cohort (parseFloat(Workshop_Level) === 0.1, inner merge Pre/Post on String(Participant_Id), expected N = 1,289). Invert ranks (9 - rank) after setting 0 to NaN and values above 8 to NaN. Join demographics on string Participant_Id. Model A0/A1: is_fulltime_pre ~ cause_pre, then add other criteria and NGO preference. Model B0 to B2: switched_to_fulltime (restricted to Pre not fulltime, about 925 people) ~ cause_delta + cause_pre + engagement_pre, then add Financial Security, Financial Prosperity and Job Security Pre and delta, then the remaining criteria. Check the B0 odds ratio is near 1.35. Use hand-coded IRLS logistic regression with a tiny ridge, convergence logging and a try/catch stage log. Report the percentage attenuation in log-odds from B0 to B1, McFadden R2 and likelihood-ratio tests. Run general dominance on about 6 predictor groups with a seeded bootstrap (mulberry32 seed 42), reporting failed resamples. Check VIF and drop one reference criterion (Life_Criteria_Fame_And_Recognition). Report effective N at every stage and describe results as associations only.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Life_Criteria_Financial_Prosperity</span><span class="pill">Life_Criteria_Job_Security</span><span class="pill">Life_Criteria_Career_Growth</span><span class="pill">Life_Criteria_Work_Satisfaction</span><span class="pill">Life_Criteria_Work_Life_Balance</span><span class="pill">Life_Criteria_Fame_And_Recognition</span><span class="pill">Career_Preference_Social_Entrepreneurship_Or_Ngo</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Gender</span><span class="pill">Educational_Stream_Category</span><span class="pill">Workshop_Batch_Number</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Using Point-1 participants (Workshop_Level 0.1) with valid Pre and Post answers in both phases, restricted to those whose Career_Plan_Social_Action_Engagement at Pre is not 'Fulltime as a career', run a staged logistic regression (print N at every stage and wrap each stage in try/catch). The outcome is switched to 'Fulltime as a career' at Post. First fit Life_Criteria_Cause_Of_Work change (Post minus Pre, ranks inverted as 9 minus rank) plus Pre Cause_Of_Work and Pre engagement. Then add the Pre levels and changes of Life_Criteria_Financial_Security, Life_Criteria_Financial_Prosperity and Life_Criteria_Job_Security, plus Gender, Educational_Stream_Category and Workshop_Batch_Number. Report the odds ratio for the Cause_Of_Work change in each model with 95% CI, how much it shrinks as a percentage of log-odds, and McFadden R2. Then compute each criterion block's share of explained variance with a 200-resample seeded bootstrap and report how often Cause of Work ranks first. Join demographics on string Participant_Id and state the effective N.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#2</span> Connect Cause-of-Work priority to what people actually did later in life
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Everything so far is about what participants said they plan to do. To answer the question about their working lives, we need to check whether people who ranked Cause of Work highly at the start were later found doing social-impact work, and for how many years. Use only what they said before the workshop, so the result is a fair 'look ahead' and not a case of using the answer to predict itself.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Join questionnaire Pre rows (Workshop_Level 0.1, Workshop_Phase 'Pre') to demographics on string Participant_Id. Predictor: inverted Life_Criteria_Cause_Of_Work (9 - rank). Outcome 1: Current_Status_Of_Work mapped per the label_map (positive 'Social Impact Work'; 'Previously SIW' as engaged-then-left; negative 'Other Work' and 'Different Trajectory'; exclude 'Student' and 'Not Sure'; state your choice for 'Educational Break'). Outcome 2: Person_Years_Of_Social_Action (low coverage, mostly null; filter to non-null, report N, never impute 0, and note it can only be modelled for people with recorded social action). Do not use Post-phase columns, deltas, or Point_2/Point_3 fields as predictors. Control for Workshop_Batch_Number and exposure years (Current_Age - Age_At_Workshop, both above 0) because recent batches have had less time to realise outcomes. Use logistic regression with class weights and report base rate, AUC and recall, plus odds ratios with CIs. Add Gender, Educational_Stream_Category and Education_Status as covariates. Describe results as associations only.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Person_Years_Of_Social_Action</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Current_Age</span><span class="pill">Age_At_Workshop</span><span class="pill">Gender</span><span class="pill">Educational_Stream_Category</span><span class="pill">Education_Status</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Join the Point-1 Pre-phase rows of prod_nirman_questionnaire (Workshop_Level 0.1, Workshop_Phase 'Pre') to prod_nirman_demographics on string Participant_Id. Using only Pre Life_Criteria_Cause_Of_Work (inverted as 9 minus rank, zeros set to missing), test whether it predicts Current_Status_Of_Work being 'Social Impact Work' versus 'Other Work' or 'Different Trajectory' (exclude 'Student' and 'Not Sure'; state how you treat 'Previously SIW' and 'Educational Break'). Control for Workshop_Batch_Number, Gender, Educational_Stream_Category and years since workshop (Current_Age minus Age_At_Workshop, both above 0). Report the base rate, odds ratio per one-step rise with 95% CI, AUC, recall and the effective N after the join. Then repeat for Person_Years_Of_Social_Action among participants where it is non-null, reporting that N and the median years by Cause-of-Work rank group (1-2, 3-5, 6-8). Do not use Post-phase columns or Point_2/Point_3 fields as predictors.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#3</span> Finish the Pre-vs-Post strength-of-association test with uncertainty ranges
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              We saw that the Cause-of-Work/engagement link looks stronger after the workshop than before, but we never put a number and a margin of error on that difference. This step does that, so we can say honestly whether the link really got stronger.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              On the 1,289 paired Point-1 participants, compute Spearman rho and Kendall tau-b between inverted Life_Criteria_Cause_Of_Work (9 - rank) and ordinal Career_Plan_Social_Action_Engagement (Fulltime 5, Part time 4, Volunteering frequently 3, Occasionally 2, Monetary contribution 1; 'Not yet decided / confused' as NaN), separately for Pre and Post. Bootstrap 2,000 participant-level resamples (seeded) for percentile 95% CIs and for delta_rho = rho_post - rho_pre, so within-person dependence is kept. Also report the fulltime percentage in Top (rank 1-2), Middle (3-5) and Low (6-8) Cause-of-Work buckets with Wilson CIs and the Top-minus-Low risk difference. Sensitivity: collapse 'Occasionally' and 'Monetary contribution' into one level, and repeat on the full unpaired samples (2,001 Pre, 1,430 Post).
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Workshop_Batch_Number</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                For Point-1 participants (Workshop_Level 0.1) with valid Life_Criteria_Cause_Of_Work and Career_Plan_Social_Action_Engagement in both Pre and Post (expected N 1,289), compute Spearman rho and Kendall tau-b between inverted Cause_Of_Work importance (9 minus rank) and engagement (Fulltime as a career=5, Part time=4, Volunteering frequently=3, Occasionally=2, Monetary contribution=1) separately for Pre and Post, with 2,000-resample seeded participant bootstrap 95% CIs. Report the Post-minus-Pre difference in rho with its CI and the share of resamples where it is above 0. Also give the percentage choosing 'Fulltime as a career' in Cause-of-Work buckets rank 1-2, 3-5 and 6-8 for each phase with Wilson 95% CIs and the Top-minus-Low risk difference. Print effective N at each filter and repeat on the full unpaired samples.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#4</span> Handle ceiling effects and the 'Not yet decided / confused' group explicitly
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Some people already ranked Cause of Work first, or already planned fulltime work, before the workshop, so they could not go any higher. Others said 'Not yet decided / confused' and were left out. Both groups can distort the picture. This step checks how much they matter and what the undecided group looks like.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Step 3 found 28.24% at engagement ceiling (Pre = 5), 20.95% at Cause-of-Work rank 1, and 39.49% at either ceiling; excluding them left N = 780 with similar or larger effects. Next: (a) compare the Cause-of-Work rank of the 175 undecided rows (154 Pre, 21 Post) with committed respondents per phase using Mann-Whitney U, medians and rank-biserial effect size, noting Post has only 21 rows and results are tentative; (b) recode undecided as 'not fulltime' as a sensitivity check and report the new N; (c) report results by Workshop_Batch_Number groups (7-10, 11-14, 15-17).
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Workshop_Batch_Number</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                For Point-1 rows (Workshop_Level 0.1), compare Life_Criteria_Cause_Of_Work ranks (0 set to missing) between participants whose Career_Plan_Social_Action_Engagement is 'Not yet decided / confused' and those with a committed answer, separately for Workshop_Phase 'Pre' and 'Post'. Use a Mann-Whitney U test and report medians, rank-biserial effect size and N per group. Then rerun the Pre-to-Post switch-to-fulltime analysis with 'Not yet decided / confused' recoded as not fulltime instead of excluded, and compare the odds ratio for change in Cause-of-Work importance with the primary result (OR 1.35). Finally repeat by Workshop_Batch_Number groups 7-10, 11-14 and 15-17 and print the effective N for every group.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#5</span> Find which participant groups show the strongest Cause-of-Work link
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              The overall link is modest, but it may be stronger for some groups, for example by gender, field of study or batch. Knowing this helps the program decide who to support with extra mentoring and where the Cause-of-Work message is already working.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Merge the Pre/Post paired Point-1 cohort with demographics on string Participant_Id. Compute, per Gender and Educational_Stream_Category, the Spearman correlation between cause_delta and eng_delta and the switched_to_fulltime rate by cause_change_group (Increased / Same / Decreased), with Wilson CIs. Fit a logistic model with interaction terms (cause_delta x Gender, cause_delta x Educational_Stream_Category) and test them with likelihood-ratio tests. Pool small groups, state the effective N for each subgroup, and treat subgroup findings as exploratory, since many comparisons raise the chance of false positives.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Gender</span><span class="pill">Educational_Stream_Category</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Workshop_Phase</span><span class="pill">Workshop_Level</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Among Point-1 paired participants (Workshop_Level 0.1, valid Life_Criteria_Cause_Of_Work and Career_Plan_Social_Action_Engagement in both Pre and Post) joined to demographics on string Participant_Id, compare by Gender and by Educational_Stream_Category: (1) the Spearman correlation between the change in inverted Cause-of-Work importance and the change in engagement score, and (2) the percentage switching to 'Fulltime as a career' among those not fulltime at Pre, split by whether Cause-of-Work importance increased, stayed the same or decreased. Give Wilson 95% CIs and N per subgroup. Fit a logistic model with interaction terms between Cause-of-Work change and Gender, and between Cause-of-Work change and Educational_Stream_Category, controlling for Workshop_Batch_Number, and report likelihood-ratio tests for the interactions. Flag subgroups with fewer than 30 people.
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 2. COMPLETE 5-STEP PROGRESSIVE EXPERIMENT TIMELINE & DECISIONS (COLLAPSIBLE BY DEFAULT, LAST IN SEQUENCE) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #4f46e5;">2</span>
+          <span>2. Complete 5-Step Progressive Experiment Timeline &amp; Decisions</span>
+          <span class="badge" style="background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; margin-left: 6px;">5 Steps</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Shows the exact question asked in each step, the choices proposed by the AI, the steering path chosen, and the empirical results.
+        </p>
+
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #1</span> Building a Clean Dataset: Cause of Work vs. Social Action Plans
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">Column profiling and cleaning in Danfo.js. Produce frequency tables of the Cause-of-Work rank (1-8) and the engagement category by Workshop_Phase, count unique participants, and report the share of 'Undecided' answers. Also report what share of participants rank Cause of Work as their #1 or #2 criterion.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                After cleaning, how many Point-1 participants (Pre and Post) have a valid Cause-of-Work rank and a valid social-action engagement answer? How are both answers distributed?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Ordinal association within phase, paired cohort first</strong>: <span style="color:#64748b;">Quantify the within-phase link with rank-based statistics that suit two ordinal variables: Spearman's rho and Kendall's tau-b, each with bootstrap 95% confidence intervals. Run them separately for Pre and Post, using the 1,289 paired participants as the primary sample and the full 2,001 Pre / 1,430 Post rows as a sensitivity check. Add a proportional-odds (ordinal logistic) model of the 1–5 engagement score on Cause-of-Work rank, with a test of the proportional-odds assumption. Engagement categories with very few responses (e.g., 'Occasionally' at Post, n=3) should be merged with an adjacent level so estimates stay stable. This directly answers the planned question, keeps Pre and Post comparable, and gives effect sizes with uncertainty instead of only raw percentages.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Measure How Tightly the Two Go Together &mdash; <em>Picture a sports coach who wants to know whether players who say they love the game really show up to practice more. The coach doesn't just eyeball it. They give it a score from 'barely connected' to 'always together' and add an honest 'give or take' range. We also compare the same players before and after the season so the comparison stays fair.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Binary full-time outcome with rank as categories</strong>: <span style="color:#64748b;">Recode engagement as Full-time vs everything else. Then fit a logistic regression with Cause-of-Work rank entered as a categorical variable (rank #1 as the reference), plus phase and a rank × phase interaction. For the paired cohort, use GEE or cluster-robust standard errors because the same people appear twice. This shows the full-time gradient across each rank (e.g., 47.38% vs 14.14% at Pre) as odds ratios, and tests whether the gradient flattens at Post now that full-time is the majority choice (65.69% at rank #1). It sets aside detail in the lower engagement levels in exchange for a clear, easy-to-explain headline.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Focus on the Big Yes: Full-Time Career &mdash; <em>Think of tryouts for a team. Instead of sorting everyone into five levels of interest, you ask just one question: 'Did they sign up to join full-time, yes or no?' It's simpler to explain, though you lose some of the in-between detail.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Stress-test the 'Not yet decided' exclusion</strong>: <span style="color:#64748b;">Before interpreting the link, check how much excluding the 175 'Not yet decided / confused' answers (154 at Pre vs 21 at Post) shapes the results. Compare their Cause-of-Work ranks with those of decided respondents. Then rerun the within-phase association in two ways: (a) treating undecided as its own category in a multinomial model, and (b) bounding it by assigning undecided to the lowest and then the highest engagement level. If the Pre–Post gap in the link changes a lot, selection rather than real change explains part of the pattern.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check Who We Left Out &mdash; <em>Imagine a class vote on the school trip where the 'not sure' kids were left out of the count. Before announcing the winner, you'd want to know whether counting them would change the result. That matters even more here, because far more kids were unsure at the start (154) than at the end (21).</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Paired change-on-change transition analysis</strong>: <span style="color:#64748b;">Go beyond snapshots by using the 1,289 paired participants to relate each person's change in Cause-of-Work rank (Post minus Pre) to their change in engagement. Build a Pre→Post transition matrix for engagement, broken down by whether the person's rank improved, stayed the same, or worsened. Test the overall shifts with Wilcoxon signed-rank tests and use Spearman correlation between the two change scores. This asks whether people whose cause priority rose are the same people who moved toward full-time. It goes beyond the planned within-phase question but makes better use of the paired design. It remains observational and cannot show causation.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Follow the Same People Over Time &mdash; <em>Think of tracking your own friends instead of comparing two different crowds at the gym. You check whether the friends who got more excited about fitness are the same ones who started showing up to the gym more often.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Ordinal association within phase, paired cohort first</span>
+                  
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **What was kept:** Of 4,304 rows loaded, 695 were dropped because they were not Point-1 Pre/Post rows. Another 2 were dropped because Cause-of-Work was 0 (not answered), and 176 because the engagement answer was invalid (175 &quot;Not yet decided / confused&quot; and 1 blank). That leaves 3,431 rows from 2,142 unique participants: 2,001 Pre, 1,430 Post, and 1,289 people valid in both phases. The &quot;Not yet decided / confused&quot; answers were more common at Pre (154) than Post (21), and they are excluded from every average and percentage. Because the Pre and Post groups include different people, the 1,289 paired participants give the fairest like-for-like comparison.
+
+**What the data show (descriptive only):**
+- **Cause-of-Work rank (1 = most important, so lower is stronger):** At Pre, 23.84% ranked it #1, with a mean of 3.28 and a median of 3. At Post, 50.35% ranked it #1, with a mean of 2.40 and a median of 1. Among the paired participants the pattern is the same: the mean goes from 3.61 to 2.39, and #1 rankings from 20.95% to 50.89%.
+- **Engagement:** The share choosing &quot;Fulltime as a career&quot; went from 28.64% (Pre) to 53.71% (Post). The 1–5 average rose from 3.81 to 4.27, and the paired group shows nearly identical values (3.74 to 4.28). Fewer people chose &quot;Volunteering frequently&quot; at Post (28.19% to 16.22%).
+- **Link between the two questions:** Within each phase, people who ranked the cause higher were more likely to choose full-time work. At Pre, 47.38% of those ranking it #1 chose full-time, versus 14.14% of those ranking it #5. At Post, the figure for #1 was 65.69%. Average ranks by category follow the same order: full-time 2.69 at Pre and 1.99 at Post, against 4.15 and 3.47 for &quot;Monetary contribution.&quot;
+
+These are observational, single-group snapshots, so they show how answers differ between Pre and Post but not why. They cannot show that the workshop caused the changes. Some of the shift may also reflect who gave a usable answer, since many more &quot;Not yet decided&quot; responses were removed at Pre. Some rare categories have very small counts (for example, &quot;Occasionally&quot; at Post has only 3 responses), so treat those percentages cautiously.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #2</span> Ordinal Association Between Cause-of-Work Priority and Social-Action Engagement: Paired Pre vs Post Effect Sizes with Uncertainty
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1) LOAD and CAST. Load the questionnaire table. Cast Participant_Id, Workshop_Phase and Career_Plan_Social_Action_Engagement to string. Keep rows where parseFloat(Workshop_Level) == 0.1 and Workshop_Phase is 'Pre' or 'Post'.
+
+2) CLEAN. Set Life_Criteria_Cause_Of_Work values of 0 or above 8 to NaN. Map engagement as follows: 'Fulltime as a career' = 5, 'Part time' = 4, 'Volunteering frequently' = 3, 'Occasionally' = 2, 'Monetary contribution' = 1. Treat 'Not yet decided / confused' and blank as NaN. Then dropNa on both columns.
+
+3) INVERT THE RANK. Define cause_importance = 9 - rank, so that 8 means top priority and higher means stronger.
+
+4) MERGE SPARSE LEVELS. Collapse 'Occasionally' (2) with 'Monetary contribution' (1) into a single 'Low/occasional' level. This gives a 4-level ordinal engagement_4 (1 = Low/occasional, 2 = Volunteering frequently, 3 = Part time, 4 = Fulltime as a career). Apply the same merge in both phases so they stay comparable. Print the cell counts before and after the merge. Keep the original 5-level score for one sensitivity rerun of rho.
+
+5) BUILD THE PAIRED COHORT. Split by phase, add _pre/_post suffixes, and inner-merge on Participant_Id. Report the effective N and confirm it equals 1,289.
+
+6) ASSOCIATION STATISTICS for each phase:
+- Compute Spearman rho using average ranks for ties.
+- Compute Kendall tau-b from the 8x4 contingency table (concordant, discordant and tie counts via cell-pair sums, which is O(cells^2) and fast).
+- Compute asymptotic p-values.
+- Run a nonparametric bootstrap with B = 2,000 resamples of participants and a seeded PRNG such as mulberry32, and take percentile 95% CIs.
+
+7) PRE vs POST DIFFERENCE. Within each paired bootstrap resample, compute delta_rho = rho_post - rho_pre and delta_tau = tau_post - tau_pre. Resample participants rather than rows, so the within-person dependence is preserved. Report the 95% CI and the share of resamples with delta &gt; 0.
+
+8) PROPORTIONAL-ODDS MODEL in TensorFlow.js, fitted separately per phase:
+- Model: logit P(Y &lt;= j) = theta_j - beta * z, where z is cause_importance standardised within phase. Also report the odds ratio per raw 1-unit step.
+- Ordered thresholds: theta_1 is free and theta_j = theta_1 + sum of softplus(delta_k).
+- Loss: negative log-likelihood. Optimiser: Adam with lr 0.05, about 500-1,500 epochs, stopping early when the loss changes by less than 1e-6.
+- Standard error of beta: from the numerical Hessian, or from bootstrap if the Hessian is unstable. Report the odds ratio exp(beta) with a 95% CI and the McFadden pseudo-R2 against a thresholds-only model.
+
+9) PROPORTIONAL-ODDS ASSUMPTION CHECK.
+- Fit a generalized (non-proportional) ordered logit with a separate beta_j for each cut point, in the same TF.js framework.
+- Run a likelihood-ratio test: LR = 2(LL_gen - LL_po), df = J - 2 = 2 for 4 levels.
+- Brant-style descriptive check: fit binary logits for each cumulative split (Y &gt;= 2, Y &gt;= 3, Y &gt;= 4) and compare the slopes.
+- If the assumption is violated (p &lt; 0.05 with materially different slopes), report the cut-specific odds ratios. The key one is the odds ratio for full-time vs rest.
+
+10) FULL-TIME CONTRAST. In each phase, compute the % choosing 'Fulltime as a career' in each Cause-of-Work bucket: Top (rank 1-2), Middle (3-5) and Low (6-8). Give Wilson 95% CIs and the risk difference Top minus Low with its CI. This makes the effect easy to read.
+
+11) SENSITIVITY CHECKS.
+- Repeat steps 6, 8 and 10 on the full unpaired samples (2,001 Pre / 1,430 Post).
+- Repeat rho using the original 5-level engagement score.
+- Repeat the PO model adding Workshop_Batch_Number as a covariate, to check whether cohort composition is driving the result.
+
+12) SECONDARY UNDECIDED CHECK. Reload the 175 'Not yet decided / confused' rows that have a valid rank. Compare their Cause-of-Work rank with committed respondents in each phase using Mann-Whitney U, and report the medians, the rank-biserial effect size and N. Interpret this cautiously, since Post has only 21 such rows.
+
+13) VALIDATE. Check that every column exists in the YAML, that all string literals match exactly, that dropNa was applied before every statistic, and that the effective N is printed at every stage. Round all displayed values to 2 decimals.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Among the 1,289 Point-1 participants with valid answers in both phases, how strong is the monotonic association between Cause-of-Work importance (inverted rank) and the 1-5 Career_Plan_Social_Action_Engagement level at Pre and at Post? Is the association stronger at Post than at Pre? Does the same conclusion hold in the full 2,001 Pre / 1,430 Post samples?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Paired change-score analysis with transition tables</strong>: <span style="color:#64748b;">Proceed with the planned Step 3 on the 1,289 paired participants. First classify each person's Cause-of-Work change as decreased, unchanged or increased. Then cross-tabulate it against engagement change (moved down, stayed, moved up, switched to full-time). Test the association with an ordinal method: Spearman on signed change scores plus a proportional-odds model of engagement change on priority change, adjusting for Pre levels to handle ceiling and floor effects and regression to the mean. Report effect sizes with bootstrap CIs, and report the share of participants stuck at the top category. This goes straight at the within-person question that the borderline cross-sectional rho difference cannot settle.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Follow Each Person's Own Journey &mdash; <em>Like a coach tracking each player across the season to see whether the ones who trained harder also scored more goals. Comparing this year's team photo with last year's can't tell you that.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Focus on full-time switchers as binary outcome</strong>: <span style="color:#64748b;">Narrow the outcome to a single high-stakes transition: switching to full-time social action between Pre and Post. Fit a logistic regression of this switch on Cause-of-Work change, controlling for Pre priority and Pre engagement. Exclude people already full-time at Pre, since they cannot switch. Report odds ratios, predicted probabilities and CIs. This gives an easy-to-communicate headline metric, though it discards information from the middle rungs of the ladder.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Spotlight the Big Leapers &mdash; <em>Like a talent show that only counts the people who quit their day job to perform full-time. It ignores everyone who just started singing more in the shower.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Segment by Pre-level to probe ceiling effects</strong>: <span style="color:#64748b;">Before modelling change, stratify the paired cohort by Pre-phase Cause-of-Work level (low, mid, high). Within each stratum, estimate the Pre and Post rho and the change-on-change association. The modest rho values and borderline gain may hide heterogeneity. People who already rated the cause highly may have no room to rise, which would dilute any overall effect. This tells us where movement is actually possible before we commit to a pooled model.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Group People by Where They Started &mdash; <em>Like a video game where some players start at level 1 and others are already at level 99. The level-99 players can't climb much, so you check progress separately for beginners, middle players and experts.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Firm up the Pre-vs-Post rho difference first</strong>: <span style="color:#64748b;">Before moving to change scores, address the borderline result directly (p=0.09, CI -0.01 to 0.12). Rerun the dependent-correlation comparison with more bootstrap resamples and BCa intervals. Add Kendall's tau-b and polychoric correlation as sensitivity checks suited to tied ordinal data. Also check whether response-category collapsing or a few outlier categories drive the gap. This settles whether the 'strengthening' claim is reportable at all, but it delays the substantive within-person question.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Double-Check the Close Call &mdash; <em>Like a referee reviewing a goal-line replay from several camera angles when the ball looked like it maybe just crossed the line.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Paired change-score analysis with transition tables</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 1 showed a clear within-phase gradient: 47.38% of Pre participants who ranked Cause of Work #1 chose full-time, against 14.14% of those who ranked it #5. It also showed that the Pre and Post samples contain different people and that some engagement cells are very sparse ('Occasionally' at Post n=3). Following the human steering choice, Step 2 therefore replaces the planned bucketed crosstab and Kruskal-Wallis test with ordinal-appropriate effect sizes (Spearman rho and Kendall tau-b, each with bootstrap 95% CIs) plus a proportional-odds model with an explicit assumption check. Both run separately by phase, with the 1,289 paired participants as the primary sample and the full 2,001 Pre / 1,430 Post rows as a sensitivity check, and sparse engagement levels are merged so the estimates stay stable.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **What we found.** We looked at whether people who rank &quot;cause of work&quot; as more important also report a deeper level of social-action engagement, using Point-1 rows from the questionnaire table. In the 1,289 participants with valid answers in both phases, the Spearman correlation (rho, which measures how consistently two rankings move together, from -1 to +1) was 0.22 at Pre (95% CI 0.17-0.27) and 0.28 at Post (95% CI 0.23-0.33). Both are positive and statistically clear (p &lt; 0.01), but they are modest in size: people who rate the cause as more important tend to report more engagement, with plenty of individual exceptions. The Post correlation is about 0.05 higher than the Pre one. The unrounded values give 0.05, even though the rounded figures differ by 0.06. This gap is only borderline. The dependent-correlation test gave a two-sided p of 0.09 (one-sided 0.05), and the bootstrap interval for the difference ran from -0.01 to 0.12, which just includes zero. So the paired data lean toward a stronger link at Post, but they do not prove it by the usual 0.05 standard.
+
+**Does it hold in the full samples?** Not convincingly. Using all valid rows (2,001 Pre, 1,430 Post), rho was 0.25 (CI 0.21-0.29) at Pre and 0.28 (CI 0.23-0.33) at Post. The difference of 0.03 is small and not statistically significant (two-sided p = 0.37). The Post value is slightly higher, but the gap is well within what chance could produce. The same people appear in both groups, so this test is only a rough sensitivity check. Overall, the link between cause importance and engagement is consistently positive and modest at both time points, with a hint of strengthening at Post that the evidence does not firmly support. These are associations only. This is a single group observed over time with no comparison group, so the results say nothing about whether the workshop caused any change.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #3</span> Do Priority and Engagement Move Together? Within-Person Change Analysis with Transition Tables and Pre-Level-Adjusted Ordinal Models
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1. LOAD AND CLEAN. Use the same rules as Steps 1–2:
+- Cast Participant_Id, Workshop_Phase and Career_Plan_Social_Action_Engagement to string.
+- Keep rows where parseFloat(Workshop_Level) === 0.1.
+- Set Life_Criteria_Cause_Of_Work values of 0 or above 8 to NaN.
+- Map engagement to an ordinal scale: 'Fulltime as a career' = 5, 'Part time' = 4, 'Volunteering frequently' = 3, 'Occasionally' = 2, 'Monetary contribution' = 1. 'Not yet decided / confused' and null become NaN.
+- Define cause_importance = 9 - rank, so higher means more important, consistent with Step 2.
+
+2. PAIR. Split by Workshop_Phase, add _pre/_post suffixes, inner-merge on Participant_Id, then dropNa. Assert N = 1,289 and log any mismatch.
+
+3. CHANGE VARIABLES.
+- cause_delta = cause_importance_post - cause_importance_pre.
+- cause_change_group: Decreased (&lt;0), Unchanged (0) or Increased (&gt;0).
+- eng_delta = eng_post - eng_pre.
+- eng_change_group, mutually exclusive: Switched to full-time (pre &lt; 5 and post = 5), Moved up but not to full-time, Stayed, Moved down.
+
+4. CEILING AND FLOOR AUDIT. Report the share of participants with:
+- Pre rank = 1 (cannot increase).
+- Pre engagement = 5 (cannot move up).
+- Both at the top at Pre and Post (stuck at top).
+- Pre engagement = 1 (floor).
+
+5. TRANSITION TABLES.
+- Build a 3x4 cross-tab of cause_change_group by eng_change_group, with counts, row % and column %.
+- Test it with chi-square and Cramér's V. Use a Monte-Carlo permutation p-value (2,000 shuffles) where any expected cell count is below 5.
+- Also report 8x8 Pre-to-Post transition matrices for Cause rank and a 5x5 matrix for engagement, as context.
+
+6. MARGINAL SHIFTS. Run a Wilcoxon signed-rank test, with a normal approximation and tie correction, on cause_importance and on engagement Pre vs Post. Report the median change and the matched-pairs rank-biserial r.
+
+7. DELTA ASSOCIATION.
+- Compute Spearman rho(cause_delta, eng_delta) with a percentile bootstrap 95% CI (2,000 resamples of participants).
+- Repeat after excluding ceiling cases (Pre rank = 1 or Pre engagement = 5).
+- Compute a partial Spearman controlling for cause_importance_pre and eng_pre: rank-transform all variables, take residuals from OLS on the Pre ranks, then correlate the residuals.
+
+8. SWITCH MODEL. Restrict to participants with Pre engagement below 5.
+- Report switched_to_fulltime rates by cause_change_group, with Wilson CIs and a Cochran-Armitage trend test.
+- Fit a logistic regression in TF.js (tf.sequential, single sigmoid unit, Adam, L2 = 0.01, class-weighted binary cross-entropy): switched ~ cause_delta + cause_importance_pre + eng_pre (standardised).
+- Report the odds ratio per 1-step increase in cause_delta, with a bootstrap 95% CI (500–1,000 refits), and the AUC.
+
+9. PROPORTIONAL-ODDS MODEL.
+- Outcome: eng_change collapsed to 3 ordered levels (down &lt; stay &lt; up, where up includes switching to full-time).
+- Predictors: cause_delta, cause_importance_pre, eng_pre, and Workshop_Batch_Number as a cohort control.
+- Implement as a custom TF.js cumulative-logit model: shared linear predictor, two ordered cutpoints parameterised as c1 and c1 + softplus(d), negative log-likelihood loss, Adam with lr = 0.05 for about 500 epochs.
+- Report the cumulative odds ratio for cause_delta with a bootstrap CI.
+- Run a rough proportional-odds check by comparing the slopes from two separate binary logits (up vs not-up, and down vs not-down).
+
+10. SENSITIVITY CHECKS.
+- Recompute the key estimates on participants not at the ceiling at Pre.
+- Recompute them by batch tercile (7–10, 11–14, 15–17).
+
+Round all displayed figures to 2 decimals and print the effective N at every filter.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Among the 1,289 Point-1 participants with valid Cause-of-Work and engagement answers at both Pre and Post, is a within-person increase in Cause-of-Work importance associated with moving up the engagement ladder or switching to 'Fulltime as a career'? Does this association remain after adjusting for each person's Pre levels of both variables, and how much of the sample is stuck at a ceiling where upward change is impossible?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Ranking-aware competing-drivers model, Pre and change</strong>: <span style="color:#64748b;">Run the planned competing-priorities test with two fixes. First, handle the fact that the career criteria are ranked against each other. Because a person's ranks always add to the same total, raising one criterion forces another down. Including all criteria at once would make the model unsolvable or misleading. So drop one reference criterion (or use log-ratio transforms of the ranks) and report results relative to it. Second, fit two models side by side. The first predicts Pre fulltime plan from Pre ranks. The second predicts switching to fulltime from changes in all criteria, adjusted for starting levels, matching the Step 3 design. Add background factors and workshop batch as fixed effects. Then rank the drivers using dominance analysis on the pseudo-R², with bootstrap confidence intervals around each driver's rank. This directly answers whether Cause of Work is a unique driver or just one side of a trade-off. For example, rising Cause of Work may simply mirror a falling salary priority.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Fair Race Among the Priorities &mdash; <em>Picture a pizza with a fixed number of slices shared among friends. If one friend gets more slices, someone else must get fewer. People's career priorities work the same way. They ranked them against each other, so when 'caring about the cause' goes up, something like 'money' has to go down. This choice judges the friends fairly, knowing they share one pizza, so we can tell whether 'cause' is truly special or only looks big because 'money' shrank.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Run driver analysis only on non-ceiling 780</strong>: <span style="color:#64748b;">Restrict the competing-drivers analysis to the 780 participants who had room to move on both scales. These are people not already fulltime and not already ranking Cause of Work first. In Step 3, ceiling effects and regression to the mean dominated the baseline coefficients (engagement_pre -0.59, R² 0.39 mostly from baseline). This subgroup gives a cleaner view of which priorities go with real movement toward fulltime. Run the full-sample model as a check, and present the subgroup results as the primary estimate while noting the loss in sample size and how far the results generalize.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Only Watch Those Who Could Climb &mdash; <em>Imagine testing whether a new training plan helps runners get faster. Runners who already hold the world record can't improve much, so you only time the runners who still have room to get better.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Gradient boosting with SHAP, batch-grouped validation</strong>: <span style="color:#64748b;">Treat the driver question as prediction. Train a gradient-boosted classifier, such as LightGBM, to predict the fulltime plan from all criteria ranks, background features, and baseline engagement. Validate it with cross-validation that holds out whole workshop batches, so the model is always tested on batches it has not seen. Compare drivers using SHAP values and permutation importance, and check performance against a logistic baseline. This approach catches non-linear and threshold effects, such as Cause of Work mattering only once it is ranked in the top 2, and interactions between priorities. The trade-off is that the effects are harder to interpret than odds ratios, and with modest effect sizes the model may only slightly outperform the baseline.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Let the Machine Sort the Clues &mdash; <em>Like a detective dog sniffing every clue at once. It can spot sneaky patterns, such as 'caring about the cause only matters once it's in someone's top two,' or two priorities that only matter when they appear together.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Test who the link is strongest for</strong>: <span style="color:#64748b;">Before ranking drivers, check whether the modest Cause of Work and engagement link (OR 1.35) is driven by particular segments. Add interaction terms between Cause of Work change and background factors, and with batch included as a random effect. Possible background factors include gender, education, prior volunteering, and age group. Use false-discovery-rate correction across the interactions. A weak average effect may hide a strong effect in one group, which matters for targeting future workshops.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Find Who It Works Best For &mdash; <em>Like finding out a medicine helps most people only a little but helps one particular group a lot. Knowing that tells the doctor exactly who should get it.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Ranking-aware competing-drivers model, Pre and change</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 2 found a modest, positive association between Cause-of-Work importance and engagement at both phases (rho 0.22 Pre, 0.28 Post). The Pre-vs-Post difference was borderline (paired p = 0.09, bootstrap CI -0.01 to 0.12), so comparing cross-sectional snapshots cannot settle whether priority and engagement change together within the same person. Following the chosen paired change-score trajectory, Step 3 is re-scoped to the exact 1,289 paired participants from Steps 1–2 instead of the ~1,450 originally expected. It replaces the simple three-group switch-rate comparison with a full transition cross-tab, Spearman on signed deltas, and ordinal and logistic models that adjust for Pre levels. These adjustments address ceiling and floor effects and regression to the mean, which matter here because 20.95% already ranked Cause #1 at Pre and the Post engagement distribution piles up at 'Fulltime as a career'.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                Matching the expected 1,289, the analysis kept 1,289 participants with complete Pre and Post answers. On average, Cause of Work importance rose from 5.39 to 6.61 (median 6 to 8), and career engagement rose from 3.74 to 4.28 (median 4 to 5). The share answering &quot;Fulltime as a career&quot; went from 28.24% to 53.76%. Paired Wilcoxon tests show both shifts are very unlikely to be chance (p &lt; 0.001). People whose Cause of Work importance rose were more likely to also move up the engagement ladder. 46.98% of them moved up, versus 32.90% of everyone else, a gap of about 14 percentage points. Among those not already fulltime, 42.63% switched to fulltime versus 31.61%, a gap of about 11 points. The correlations between the two change scores are positive but weak (Spearman 0.16, Pearson 0.13), so this is a real but modest link. After adjusting for starting levels, each one-step rise in Cause of Work importance goes with about 0.09 more steps of engagement change. It also goes with about 35% higher odds of moving up (odds ratio 1.35) and of switching to fulltime (odds ratio 1.35). An odds ratio above 1 means the outcome is more likely. Adding workshop batch barely changed these results.
+
+The results hold up when I exclude people who had no room to improve. This covers the 364 people (28.24%) already at fulltime engagement and the 270 (20.95%) already ranking Cause of Work first. In total, 509 people (39.49%) were at one ceiling or the other, which leaves 780. In this group the associations stayed similar or got larger (for example, a risk difference of 17.31 points for moving up). Part of that increase is mechanical, because this group no longer includes people who could not rise. The negative baseline coefficients, such as engagement_pre at -0.59 in the OLS model, are partly regression to the mean and ceiling effects. People who start high have little room to rise, and extreme scores tend to drift back toward average. The baseline-engagement coefficient, not Cause of Work change, accounts for most of the model's explanatory power (R² 0.39). The exception is the switch-to-fulltime model, where higher starting engagement slightly raises the odds of switching (odds ratio 1.27). This makes sense because people already at &quot;Part time&quot; are one step from fulltime. Finally, this is a single group followed over time with no comparison group. These are within-person associations and do not show that the workshop caused the changes. Excluding &quot;Not yet decided&quot; and missing answers could also bias the sample.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #4</span> Unique Driver or Trade-Off? Ranking-Aware Competing-Priorities Models (Pre Level and Pre→Post Change) with Bootstrap Dominance Analysis
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1) DATA: Rebuild the Step 3 paired cohort from Point-1 rows (parseFloat(Workshop_Level) === 0.1). Inner-merge Pre and Post on String(Participant_Id). Map engagement to 1-5 and set 'Not yet decided / confused' to NaN. Left-join demographics on String(Participant_Id). Report N at each stage: paired 1,289 → after demographics join → after dropNa per model. 
+2) CLEANING: Set 0 to NaN in all 9 Life_Criteria_* items and Career_Preference_Working_In_Ngo. Set Life_Criteria_Work_Satisfaction values above 8 to NaN. Invert ranks as importance = 9 − rank, so higher means more important. 
+3) RANK-STRUCTURE DIAGNOSTICS: Before modelling, report the distribution of each person's rank-sum and the share of complete, non-tied rankings. Print the Pre Spearman correlation matrix of the 9 importance items and the matrix of their Pre→Post deltas. Highlight the correlation of ΔCause_Of_Work with ΔFinancial_Security, ΔFinancial_Prosperity, ΔJob_Security and ΔCareer_Growth, which gives direct descriptive evidence on the trade-off. 
+4) RANKING-AWARE PARAMETERISATION: 
+(a) Primary: Use 8 of the 9 criteria and drop Life_Criteria_Geographical_Location as the reference, chosen as least substantively relevant. Read each coefficient as importance relative to location. 
+(b) Sensitivity 1: Re-fit with Life_Criteria_Financial_Security as the reference, so the Cause-of-Work coefficient reads directly as cause-versus-salary-security priority. 
+(c) Sensitivity 2: Use centred log-ratio (clr) features, log(importance_j) − mean_k log(importance_k), on persons with all 9 items valid. Drop one clr column to avoid the sum-to-zero singularity. 
+Also check VIF and the condition number, and report any predictor with VIF above 5. 
+5) MODELS (plain-JS IRLS logistic regression, standardised numeric inputs, with batch dummies pooling batches with fewer than 30 people into adjacent batches and stream dummies with 'Arts/Commerce/Science/Pharmacy' as the reference): 
+Model A: is_fulltime_pre ~ Pre importance of 8 criteria + Pre NGO-preference importance + Gender + stream + batch FE, on all eligible paired participants. 
+Model B: switched_to_fulltime, restricted to is_fulltime_pre = 0 (about 925 people), ~ Δimportance of 8 criteria + Pre importance of the same 8 + engagement_pre + ΔNGO preference + Pre NGO preference + Gender + stream + batch FE. 
+Fit each model in two versions. The unweighted version gives coefficients, odds ratios and pseudo-R². The class-weighted version (w_pos = n_neg/n_pos) gives recall. Report odds ratios per 1 SD and per one rank step, in the form 'each one-step rise in Cause-of-Work importance changes the odds by X%'. Use 95% CIs from the Wald method and from a bootstrap (B = 500). 
+6) DOMINANCE ANALYSIS: Group predictors into 7 blocks to keep the subset count at 2^7 = 128 fits per resample: 
+- Cause of Work 
+- Financial (Security + Prosperity) 
+- Job Security 
+- Work Satisfaction + Career Growth 
+- Lifestyle/Status (Work-Life Balance + Fame) 
+- NGO career preference 
+- Background (Gender + stream) 
+Batch FE and the Model B baseline controls (Pre levels, engagement_pre) are always included as a base model. Compute general dominance weights as the average incremental McFadden R² over all subsets, as a share of the total, and report the Tjur R² version as a check. Bootstrap B = 200 participant resamples (about 26k fits per model). Report each block's mean weight, its 95% CI, its median rank and its rank 95% CI, plus P(Cause of Work ranks #1) and P(Cause of Work ranks in the top 2). 
+7) VALIDATION: Use stratified 5-fold cross-validation for AUC (with a Mann-Whitney implementation), recall and precision at the class-weighted 0.5 threshold, plus a confusion matrix. Compute permutation importance (ΔAUC on held-out folds, 20 shuffles) for each block as a secondary, model-agnostic ranking. Optional cross-check: a small tf.sequential model (16 ReLU units, dropout 0.2, sigmoid output, class weights, early stopping on a 20% validation split) for Model B, comparing AUC only. 
+8) CEILING SENSITIVITY: Re-run Model B and its dominance analysis excluding the people who ranked Cause of Work #1 at Pre (the 270 identified in Step 3), and state that any increase in effect size is partly mechanical. 
+9) VERDICT RULE, stated in advance: 
+- 'Independent driver': the Cause-of-Work odds ratio CI excludes 1 under all three parameterisations, AND its dominance rank CI sits within the top 2 blocks. 
+- 'Trade-off/proxy': its effect loses significance or shrinks by more than 50% relative to the Step 3 OR of 1.35 once financial and security blocks are included, OR its dominance weight overlaps those of the Financial or Job Security blocks with a rank CI spanning more than 3 positions. 
+- 'Mixed': any other pattern.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Among the 1,289 paired Point-1 participants (joined to demographics), two questions are tested, each net of the other ranked career criteria, Pre NGO-career preference, Gender, Educational_Stream_Category and Workshop_Batch_Number fixed effects. (A) Does Pre Cause-of-Work importance still predict a Pre 'Fulltime as a career' plan? (B) Among the participants not fulltime at Pre, does a Pre→Post rise in Cause-of-Work importance still predict switching to fulltime, after adjusting for Pre levels? In both models, where does Cause of Work rank among the competing drivers by general dominance (share of pseudo-R²), and how stable is that rank across bootstrap resamples? Is its Step 3 change effect (OR 1.35) retained, or absorbed by simultaneous drops in financial or security priorities?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Debug and re-run Step 4 with staged checks</strong>: <span style="color:#64748b;">Re-execute the competing-priorities pipeline in staged blocks, each with an explicit check, so that any failure points to a specific stage. (1) Print N after filtering and the Fulltime class balance for Model A (Pre) and Model B (non-Fulltime-at-Pre subset). (2) Confirm the 9 − x reversal of all rank items. Handle the ranking constraint, where ranks sum to a constant, by dropping one reference item to avoid perfect collinearity, which is a likely cause of a silent failure. (3) Fit both logits and return the OR, 95% CI and p-value for Cause of Work. Report the percent change in log-odds when Financial Security, Financial Prosperity and Job Security are added. (4) Run dominance analysis on McFadden R² with 500 bootstrap resamples. Use a fixed seed, and record failed resamples rather than letting them crash the run. Declare up front how 'Not yet decided / confused' is coded, with a sensitivity run that excludes it. This keeps Step 5 from building on an untested premise.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Fix the Broken Machine First &mdash; <em>Like baking a cake that comes out of the oven as an empty tray. Instead of guessing, you redo the recipe one step at a time. You check the bowl after mixing, the pan before baking, and the oven temperature. That way, if something goes wrong again, you know exactly which step lost the batter.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Run a lean Step 4, then Step 5</strong>: <span style="color:#64748b;">Swap the heavy bootstrap dominance analysis for a lighter, more robust version. Fit Model A and Model B as penalized (ridge) logistic regressions with the rank items, and report the Cause of Work OR before and after adding the financial and security items. Use 200 bootstrap resamples to estimate only the CI on Cause of Work's coefficient and how often it ranks in the top 3 by standardized coefficient. This trades some depth for a quick, reliable answer, then moves straight into the planned reality check.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Quick Check, Then Move On &mdash; <em>Like using a quick kitchen thermometer instead of sending the food to a lab. You don't get every detail, but you find out fast whether the chicken is cooked, and you can keep making dinner.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Skip to Step 5 using Step 2–3 findings</strong>: <span style="color:#64748b;">Set the competing-priorities question aside and proceed with the reality check. Define the high Cause of Work group (e.g., top tertile of reversed Pre or Post rank) and the Fulltime-plan group from the validated Step 1–3 dataset. Then test them against real-world impact work and person-years of social action in the Demographics follow-up, using ordinal or negative-binomial models. Clearly label all claims as not adjusted for competing priorities. This is fastest, but you cannot say whether any link reflects Cause of Work specifically rather than general non-financial motivation.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Jump to the Real-World Test &mdash; <em>Like skipping the practice quiz and walking straight into the final exam. You might do great, but you know there's a chapter you never studied.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Audit the follow-up data linkage first</strong>: <span style="color:#64748b;">Before any more modeling, check that the Demographics follow-up can actually support Step 5. Measure the match rate between the 1,289-person paired cohort and the follow-up records. Check how complete the impact-work and person-years fields are, and compare responders with non-responders on Pre Cause of Work rank and Fulltime plan. If attrition is selective, build inverse-probability-of-response weights. This guards against a second silent failure and against biased real-world comparisons.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check Who Showed Up Later &mdash; <em>Like planning a class reunion to see how everyone's life turned out. Before judging, you count who actually came back. If only the most successful classmates showed up, your picture of 'how everyone did' would be way too rosy.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Debug and re-run Step 4 with staged checks</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 3 found a modest but robust within-person link: each one-step rise in Cause-of-Work importance went with about 35% higher odds of switching to fulltime (OR 1.35), with baseline levels and ceilings (39.49% of the sample) explaining most of the variance. It could not tell whether this reflects Cause of Work itself or simply the other side of a ranked trade-off, such as a falling Financial Security priority. Following the steering choice, Step 4 is re-planned as a ranking-aware, two-model design. Model A uses Pre ranks to predict the Pre fulltime plan. Model B uses criterion changes, adjusted for Pre levels, to predict switching, matching the Step 3 design. Rank interdependence is handled with a dropped reference criterion plus a log-ratio sensitivity check, and drivers are ranked by bootstrap dominance analysis on pseudo-R² rather than by single-model odds ratios. The heavy TensorFlow.js model in the original plan is demoted to an optional cross-check, so browser compute goes to the dominance bootstrap, which is what directly answers the 'unique driver vs trade-off' question.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                I can't report any findings yet because the analysis results came through as &quot;undefined&quot;. No model output reached me, so I have no effective N (the ~1,289 is only your expectation), no odds ratios, no confidence intervals and no dominance rankings. I won't invent them. Please re-run the pipeline or resend the output, and I'll turn it into a full write-up.
+
+When the results arrive, this is how I'll explain them.
+
+- **Model A** compares participants who planned a full-time social-action career with those who didn't, before the workshop. The odds ratio (OR) says how much the odds of choosing &quot;Fulltime&quot; change for each 1-rank rise in how much someone values &quot;Cause of Work.&quot; An OR above 1 means higher importance goes with higher odds. The confidence interval gives the plausible range, and a p-value below 0.05 suggests the pattern isn't just chance.
+- **Model B** looks only at people who weren't full-time before. It asks whether those who raised the importance of Cause of Work after the workshop were more likely to switch. I'll compare its OR with the earlier 1.35. I'll also show how much that OR shrinks once money and security criteria (Financial Security, Financial Prosperity, Job Security) are added, as a percent change in log-odds. A big drop would mean Cause of Work overlaps with those priorities.
+- **Dominance analysis** splits the model's explanatory power (McFadden pseudo-R²) among the drivers, so each gets a percentage share and a rank. The bootstrap repeats this on hundreds of resampled participant sets. It shows how stable Cause of Work's rank is: its most common rank, how often it is #1 or in the top 3, and a CI on its share.
+
+I'll also state the choices I make: whether &quot;Not yet decided / confused&quot; is counted as not full-time or excluded, and that rank items are flipped (9 − x) so higher means more important.
+
+**Caveats:**
+- This is single-arm observational data, so the results show associations, not causation.
+- The career plan is measured right after the workshop, so Post answers and changes may partly reflect momentary enthusiasm rather than lasting change.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #5</span> Staged Re-run of the Competing-Priorities Models: Is Cause of Work a Unique Driver of Full-Time Social-Action Plans, Net of Financial and Security Criteria? (Diagnostics, Nested Logits, Bootstrap Dominance)
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">Wrap every stage in try/catch. Push {stage, status, n, message} into a stageLog array. Always return a structured object, even with partial results, so 'undefined' cannot recur. Use synchronous code only; if dfd is used, avoid un-awaited promises.
+
+STAGE 0, load and cast. Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to string. Filter parseFloat(Workshop_Level) === 0.1.
+
+STAGE 1, cleaning and cohort checks.
+- Set 0 → NaN on all 9 Life_Criteria items, Career_Preference_Working_In_Ngo and Career_Preference_Social_Entrepreneurship_Or_Ngo.
+- Set values &gt; 8 → NaN on Life_Criteria_Work_Satisfaction and Career_Preference_Social_Entrepreneurship_Or_Ngo.
+- Map engagement to 1–5 and fulltime to 1/0.
+- Pair Pre and Post by inner merge on Participant_Id, using _pre/_post suffixes.
+- Inner-join Demographics, using Gender, Educational_Stream_Category and Workshop_Batch_Number.
+- Drop rows with any NaN among the model columns.
+- Print N at every filter, including the 1,289 target and the post-join N.
+- Print the fulltime class balance for Model A (expected ~28% positive).
+- For Model B, print the subset size (expected ~925) and the switch rate.
+- Halt with an explicit message if either model has fewer than 50 events.
+
+STAGE 2, scale and collinearity diagnostics.
+- Apply x' = 9 − x to all rank items. Assert that min/max of the reversed values lie in [1, 8], and that mean cause_pre ≈ 5.39 and mean cause_post ≈ 6.61, matching Step 3.
+- Compute per-row sums of the 9 reversed criteria and report their mean, SD and % of rows with constant sum. Note that 9 items sit on a 1–8 scale, so the sum may not be perfectly fixed.
+- Drop a reference item regardless: Life_Criteria_Fame_And_Recognition, or Geographical_Location if Fame is sparse. State that all criteria coefficients are relative to it.
+- Report the condition number of the standardized design matrix and each VIF. Flag VIF &gt; 10.
+- Batch handling: check events per batch. Collapse batches with fewer than 5 events into adjacent groups, or fall back to batch groups 7–10 / 11–13 / 14–17, to avoid separation.
+- One-hot encode Gender and Educational_Stream_Category with reference levels dropped.
+- Standardize the continuous predictors, and also keep unstandardized versions for the per-rank ORs.
+
+STAGE 3, nested logits fitted with a hand-coded IRLS/Newton logistic regression in plain JS or tf.js.
+- Add a tiny L2 ridge (λ = 1e-4) for numerical stability only, and report it.
+- Cap at 50 iterations. Log convergence, and log any |β| &gt; 10 as a separation warning.
+- Compute SEs from the inverse Hessian, Wald 95% CIs and p-values via the normal CDF.
+- Model A0: fulltime_pre ~ cause_pre + covariates.
+- Model A1: A0 + other criteria_pre + NGO preferences_pre.
+- Model B0: switch ~ cause_delta + cause_pre + engagement_pre. This replicates Step 3's OR of 1.35 as a sanity check; flag a deviation &gt; 0.1.
+- Model B1: B0 + covariates + deltas and Pre levels of Financial Security, Financial Prosperity and Job Security.
+- Model B2: B1 + remaining criteria deltas.
+- Report the attenuation of Cause of Work as % change in log-odds: (β_B0 − β_B1) / β_B0, and likewise for A0 → A1.
+- Also report McFadden R² and the likelihood-ratio test for each nested addition.
+
+STAGE 4, general dominance on McFadden R².
+- To keep 2^k fits tractable in the browser, use k ≈ 6 predictor groups:
+  - Cause of Work (level, or level + delta)
+  - Financial/Security block
+  - Other criteria
+  - NGO preference
+  - engagement_pre (Model B only)
+  - Demographics + batch (always forced in as a base set)
+- Run 500 bootstrap resamples of participants with a seeded PRNG (mulberry32, seed = 42).
+- Wrap each resample fit in try/catch. Count failed or non-converged resamples rather than crashing.
+- If runtime exceeds a time budget, stop at the completed count and report it.
+- Report:
+  - the share of total R² for each group, with a percentile 95% CI
+  - Cause of Work's modal rank, P(rank = 1) and P(top 3)
+
+STAGE 5, sensitivity. Recode 'Not yet decided / confused' as not fulltime (0) instead of excluding it. This expands the paired cohort, so report the new N. Re-run A1 and B1, then compare the Cause of Work ORs and dominance share against the primary run.
+
+Report all results as associations in single-arm observational data, not workshop effects.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Using the verified Point-1 paired cohort (expected N = 1,289, 'Not yet decided / confused' excluded) joined to Demographics on string Participant_Id, the step tests two models, each net of the other ranked Life_Criteria items, Pre NGO-career preference, Gender, Educational_Stream_Category and batch. (A) Does Pre Cause-of-Work importance (9 − rank) still predict a Pre 'Fulltime as a career' plan? (B) Among participants not fulltime at Pre, does a Pre→Post rise in Cause-of-Work importance still predict switching to fulltime, keeping the bivariate-adjusted OR of 1.35 from Step 3? If the B estimate shrinks, the step asks how much of the log-odds is absorbed once the deltas of Financial Security, Financial Prosperity and Job Security are added. Finally, the step asks where Cause of Work ranks by general dominance on McFadden R², and how stable that rank is across 500 seeded bootstrap resamples. Every stage must pass an explicit check before the next stage runs.
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Minimal smoke test: Stage 0 plus one logit</strong>: <span style="color:#64748b;">Two identical silent failures point to a pipeline or serialization fault, not a statistical one. The likely culprits are the bootstrap loop, a VIF-triggered item drop that breaks downstream code, or a return object that isn't JSON-serializable. Strip the run down to essentials and make every stage print and return a plain dict, even on failure. First, reconcile the cohort to 1,289 with an attrition table (Workshop_Level filter, Pre/Post pairing, 'Not yet decided'/blank removal, demographics join). Second, fit a single logit of full-time social-action plan on Cause-of-Work change plus Pre level, and report the OR against 1.35. Third, add Financial and Job Security as a block, then report the likelihood-ratio test and VIFs. Keep the bootstrap dominance analysis out until these steps return output.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check the Engine Before the Road Trip &mdash; <em>Like a car that won't start. Before planning the big drive, you turn the key, listen, and check one part at a time until you hear what's wrong.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Use relative-importance scores to handle ipsativity</strong>: <span style="color:#64748b;">The life-criteria items are ranked against each other, so they always sum to the same total. Putting all of them in one model creates near-perfect collinearity, and that may be what crashes the VIF and dominance stages. Instead, recode Cause of Work as a centered log-ratio or as 'Cause of Work minus the mean of the other criteria' (Pre and change). Then model Financial/Security preference as a single contrast score. This avoids dropping items and gives a well-conditioned design matrix for the nested logits and a lighter bootstrap.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Compare Slices, Not Whole Pies &mdash; <em>Imagine everyone gets one pizza to split among their priorities. If someone takes a bigger 'helping the world' slice, their 'money' slice has to shrink. So instead of measuring each slice on its own, we ask: 'How big is your helping-the-world slice compared to your other slices?'</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Simple stratified check instead of full modelling</strong>: <span style="color:#64748b;">Skip the regression machinery for a robust, low-failure descriptive test. Split participants by whether Financial/Security importance rose, stayed flat, or fell. Within each group, cross-tabulate Cause-of-Work change (up/same/down) against full-time social-action plans. Then compute Mantel-Haenszel pooled ORs with exact CIs. If the Cause-of-Work association holds within every Financial/Security group, that is evidence it is not just a trade-off with financial priorities.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Sort Into Piles and Look &mdash; <em>Like sorting your class into three piles: kids who started caring more about pocket money, the same, or less. Then, inside each pile, you check whether kids who started caring more about a good cause are also the ones signing up to volunteer full-time.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Write up Steps 1–3; flag adjustment as open</strong>: <span style="color:#64748b;">Close the pipeline with what is already solid. This includes the clean 1,289 cohort, the within-phase ordinal associations, the within-person co-movement of Cause-of-Work priority and engagement, and the unadjusted OR ≈ 1.35. The report should state plainly that the net-of-financial/security test could not be completed because of repeated pipeline failures. It should frame all findings as observational associations, not workshop effects, and list the competing-priorities model as a specified but unexecuted analysis.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Report What We Know, Flag What We Don't &mdash; <em>Like handing in a group project with the finished chapters polished and a clear sticky note: 'This last experiment didn't run. Here's what we planned to do.'</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Minimal smoke test: Stage 0 plus one logit</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 4 produced no usable output: its results arrived as 'undefined', so there are no Ns, odds ratios or dominance ranks. The planned Demographics reality check would therefore rest on an untested premise, namely whether Cause of Work is a unique driver or merely the mirror image of falling financial and security priorities. Following the human choice to 'Debug and re-run Step 4 with staged checks', Step 5 is re-planned as a guarded, staged re-execution of the competing-priorities models, with explicit diagnostics for the likely silent-failure causes: rank-sum collinearity, quasi-separation in batch fixed effects, NaN propagation and a missing return object. The Demographics outcome validation moves to Step 6, where it can build on verified Model A and B estimates.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **No results came back from the analysis, so there are no findings to report yet.** The &quot;Analysis results&quot; field was empty (undefined). That means the pipeline either did not run or did not return output. I can't tell you the cohort size, any odds ratios, or the dominance rankings without inventing them, so I haven't given any numbers.
+
+**What the pipeline does, and what to look for once it runs:**
+- **Stage 0 (cohort check):** This is the gatekeeper. The matched Pre/Post cohort must come to exactly 1,289 participants. If it doesn't, everything stops and the report should show how many people were lost at each step: the Workshop_Level filter, the Pre/Post pairing, the removal of &quot;Not yet decided&quot; or blank career plans, and the demographics join.
+- **Stages A, B1, B2 and C:** Each stage only runs if the previous stage's checks passed. The checks are convergence, no &quot;separation&quot; (a predictor that perfectly predicts the outcome), and at least 10 outcome events per predictor. A odds ratio (OR) shows how the odds of choosing a fulltime social-action career change per 1-point rise in importance. An OR above 1 means higher odds. Stage B1 compares the Cause-of-Work change effect to the reference of 1.35. If it shrinks, B2 tests whether financial and job-security priorities explain part of it. Stage C ranks which factors matter most, and the bootstrap shows how stable Cause of Work's rank is across 500 resamples (at least 95% must converge).
+- **Ipsativity (ranking) caveat:** Because the life-criteria items are ranked against each other, raising one importance necessarily lowers others. The variance inflation factor (VIF) check may therefore force one item to be dropped. Any results must be read with that in mind.
+
+**Next step:** Please re-run the analysis, or share the output, and I'll turn it into a plain-language summary. Whatever the numbers show, they describe associations in observational data and do not show that the workshop caused any change.
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 6. PROJECT DATASET COLUMN REFERENCE BANK (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #475569;">6</span>
+          <span>6. Project Dataset Column Reference Bank (210 Columns)</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 12.5px; color: #64748b; margin: 0 0 12px 0;">
+          Columns detected in your uploaded dataset. You can cut and paste any of these column names into subsequent questions:
+        </p>
+        <div>
+          <span class="pill">Participant_Name</span><span class="pill">Participant_Id</span><span class="pill">Gender</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Current_Age</span><span class="pill">Age_At_Workshop</span><span class="pill">Workshop_Name</span><span class="pill">Workshop_Type</span><span class="pill">Workshop_Month_Year</span><span class="pill">Workshop_Month_Name</span><span class="pill">Workshop_Month_Number</span><span class="pill">Workshop_Financial_Year</span><span class="pill">Workshops_Attended_Count</span><span class="pill">Educational_Stream</span><span class="pill">Educational_Stream_Category</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Person_Years_Of_Social_Action</span><span class="pill">Education_Status</span><span class="pill">Native_State</span><span class="pill">Native_District</span><span class="pill">Native_Tehsil_Town</span><span class="pill">Raw_Native_State</span><span class="pill">Raw_Native_District</span><span class="pill">Raw_Native_Tehsil</span><span class="pill">State_Match_Status</span><span class="pill">District_Match_Status</span><span class="pill">Tehsil_Match_Method</span><span class="pill">Point_2_Workshop_Name</span><span class="pill">Point_2_Workshop_Invited</span><span class="pill">Point_2_Workshop_Attended</span><span class="pill">Point_3_Workshop_Name</span><span class="pill">Point_3_Workshop_Invited</span><span class="pill">Point_3_Workshop_Attended</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Career_Preference_Government_Service</span><span class="pill">Career_Preference_Private_Industry_Job</span><span class="pill">Career_Preference_Own_Business</span><span class="pill">Career_Preference_Social_Entrepreneurship_Or_Ngo</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Career_Preference_Academia</span><span class="pill">Career_Preference_Undecided</span><span class="pill">Career_Preference_Other</span><span class="pill">Life_Criteria_Geographical_Location</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Life_Criteria_Work_Satisfaction</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Life_Criteria_Career_Growth</span><span class="pill">Life_Criteria_Work_Life_Balance</span><span class="pill">Life_Criteria_Financial_Prosperity</span><span class="pill">Life_Criteria_Fame_And_Recognition</span><span class="pill">Life_Criteria_Job_Security</span><span class="pill">Insecurity_Social_Acceptability</span><span class="pill">Insecurity_Monetary_Compensation</span><span class="pill">Insecurity_Parental_Response</span><span class="pill">Insecurity_Suitable_Life_Partner</span><span class="pill">Insecurity_Underutilized_Talent_And_Skills</span><span class="pill">Insecurity_Less_Comfortable_Lifestyle</span><span class="pill">Insecurity_No_Visible_Impact</span><span class="pill">Insecurity_Professionally_Left_Out</span><span class="pill">Insecurity_Lack_Of_Life_Satisfaction</span><span class="pill">Insecurity_Future_Comfort_Reduction</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Mindset_Happiness_And_Self_Esteem</span><span class="pill">Mindset_Understands_Social_Issues_And_Severity</span><span class="pill">Mindset_Has_Life_Purpose</span><span class="pill">Mindset_Clear_Long_Term_Sector</span><span class="pill">Mindset_Knows_Personal_Values</span><span class="pill">Mindset_Has_Mentorship_Support_For_Future</span><span class="pill">Mindset_Takes_Stand_On_Social_Issues</span><span class="pill">Mindset_Courage_Against_Conventional_Careers</span><span class="pill">Mindset_Knowledge_Of_Social_Problem_Solving_Approaches</span><span class="pill">Mindset_Reads_Moral_And_Political_Philosophy</span><span class="pill">Mindset_Translates_Social_Intentions_To_Action</span><span class="pill">Mindset_Knows_Swa_Dharma</span><span class="pill">Financial_Attitude_Secure_About_Future</span><span class="pill">Mindset_Social_Change_Responsibility</span><span class="pill">Mindset_Has_Like_Minded_Peer_Network</span><span class="pill">Mindset_Found_Life_Purpose</span><span class="pill">Mindset_Aware_Of_Personal_Motivations_For_Social_Action</span><span class="pill">Mindset_Career_Social_Work_Integration</span><span class="pill">Mindset_Active_Meaning_Making</span><span class="pill">Mindset_Has_Larger_Social_Dream</span><span class="pill">Mindset_Belongs_To_Caring_Community</span><span class="pill">Mindset_Understands_Social_Problem_Solving_Vs_Work</span><span class="pill">Mindset_Has_Failure_Support_System</span><span class="pill">Mindset_Finds_Social_Problem_Solving_Exciting</span><span class="pill">Mindset_Visualizes_Self_As_Changemaker</span><span class="pill">Mindset_Social_Engagement_Crucial_For_Meaning</span><span class="pill">Mindset_Has_Inspiring_Social_Role_Models</span><span class="pill">Mindset_Social_Self_Efficacy_Confidence</span><span class="pill">Mindset_Understands_Happiness_Vs_Meaning</span><span class="pill">Mindset_Emotionally_Mature_Adult</span><span class="pill">Mindset_Acknowledges_Personal_Privilege</span><span class="pill">Mindset_Distinguishes_Needs_Vs_Wants</span><span class="pill">Mindset_Visualizes_Future_Youth_Inspiration</span><span class="pill">Mindset_Has_Guiding_Life_Philosophy</span><span class="pill">Mindset_Confident_In_Life_Experimentation</span><span class="pill">Mindset_Has_Reflection_Opportunities</span><span class="pill">Metric_Life_Satisfaction_Global</span><span class="pill">Mindset_Believes_Morals_Are_Absolute</span><span class="pill">Mindset_Comfortable_Expressing_Feelings</span><span class="pill">Mindset_Prosocial_Purpose_Boosts_Wellbeing</span><span class="pill">Mindset_Understands_Flourishing_Youth_Meaning</span><span class="pill">Mindset_Understands_Scientific_Purpose_Definition</span><span class="pill">Mindset_Excited_By_Life_Possibilities_In_20s</span><span class="pill">Mindset_Purpose_Finding_Is_Urgent_Priority</span><span class="pill">Mindset_Understands_Happy_Vs_Meaningful_Life</span><span class="pill">Mindset_Understands_Goal_Vs_Purpose</span><span class="pill">Financial_Attitude_Money_Equals_Happiness</span><span class="pill">Mindset_Applies_Categorical_Moral_Framework</span><span class="pill">Mindset_Excited_By_Purpose_Pursuit_Process</span><span class="pill">Financial_Attitude_Unbothered_By_Future_Earnings</span><span class="pill">Mindset_Privilege_Implies_Obligation</span><span class="pill">Mindset_Values_Work_Freedom_Over_Financial_Gain</span><span class="pill">Mindset_Understands_Purpose_Importance_And_Benefits</span><span class="pill">Mindset_Social_Contribution_Is_Deepest_Quest</span><span class="pill">Mindset_Knows_Impactful_Organisation_Functioning</span><span class="pill">Mindset_Inspired_By_Known_Changemakers</span><span class="pill">Mindset_Visualizes_Social_Sector_Contribution</span><span class="pill">Financial_Knows_Threshold_Vs_Aspirational_Income</span><span class="pill">Mindset_Alcohol_Safe_Within_Limits</span><span class="pill">Action_Identified_Books_To_Read</span><span class="pill">Action_Plan_Reduce_Carbon_Footprint</span><span class="pill">Action_Plan_Personal_Flourishing_6_Months</span><span class="pill">Action_Plan_Social_Contribution_6_Months</span><span class="pill">Action_Plan_Purpose_Journey</span><span class="pill">Mindset_Knows_How_To_Become_Flourishing_Youth</span><span class="pill">Mindset_Visualizes_Five_Career_Paths</span><span class="pill">Mindset_Spends_Day_In_Meaningful_Pursuits</span><span class="pill">Mindset_Committed_To_Social_Change</span><span class="pill">Mindset_Has_Mentor_For_Life_Matters</span><span class="pill">Mindset_Has_Guiding_Philosophy</span><span class="pill">Mindset_Can_Analyse_Social_Change_Intervention</span><span class="pill">Financial_Attitude_Anxiety_About_Aspirations</span><span class="pill">Mindset_Knows_Social_Problem_Solving_Building_Blocks</span><span class="pill">Mindset_Clarity_On_Purpose_Finding_Process</span><span class="pill">Mindset_Firm_On_Values_Against_Norms</span><span class="pill">Mindset_Understands_Social_Change_Approaches</span><span class="pill">Mindset_Understands_Purpose_Identification_Urgency</span><span class="pill">Mindset_Has_Values_For_Life_Decisions</span><span class="pill">Mindset_Has_Idea_About_Life_Direction</span><span class="pill">Mindset_Identified_Daily_Moral_Resolutions</span><span class="pill">Action_Plan_Purpose_Journey_1_Year</span><span class="pill">Mindset_Clear_Professional_Life_Sector</span><span class="pill">Action_Plan_Social_Change_Journey_1_Year</span><span class="pill">Mindset_Empowered_As_Active_Citizen_With_State</span><span class="pill">Mindset_Clear_Sense_Of_Purpose</span><span class="pill">Mindset_Visualizes_Five_Life_Possibilities</span><span class="pill">Mindset_Life_Beyond_Materialistic_Pleasures</span><span class="pill">Mindset_Anxiety_About_Finding_Purpose</span><span class="pill">Mindset_Sole_Credit_For_Own_Success</span><span class="pill">Mindset_Youth_In_Social_Sector_Is_Societal_Need</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Opposition</span><span class="pill">Mindset_Follows_Moral_Resolutions</span><span class="pill">Mindset_Distinguishes_Meaning_Vs_Pleasure_Seeking</span><span class="pill">Mindset_Understands_Social_Sector_Need_And_Role</span><span class="pill">Mindset_Courage_To_Live_Authentically</span><span class="pill">Mindset_Thought_Through_Life_Direction</span><span class="pill">Mindset_Life_Choice_Independent_Of_Peers</span><span class="pill">Financial_Knows_Needs_Vs_Aspirational_Income</span><span class="pill">Mindset_Visualizes_Social_Sector_Career_Despite_Norms</span><span class="pill">Mindset_Elevation_Motivates_Social_Action</span><span class="pill">Mindset_Self_Actualization_Linked_To_Society</span><span class="pill">Mindset_Unclear_Needs_Vs_Wants</span><span class="pill">Mindset_Poor_Understanding_Of_Socioeconomic_Issues</span><span class="pill">Mindset_Lacks_Reflection_Opportunities</span><span class="pill">Mindset_Believes_Morals_Are_Relative</span><span class="pill">Mindset_Doubts_Social_Purpose_Wellbeing_Impact</span><span class="pill">Mindset_Parental_Approval_Mandatory_For_Career</span><span class="pill">Mindset_Prefers_Safety_And_Security_Path</span><span class="pill">Mindset_Eco_Friendly_Lifestyle_Changes</span><span class="pill">Mindset_Responsibility_To_Give_Back_To_Society</span><span class="pill">Mindset_Own_Efforts_Over_Birth_Circumstances</span><span class="pill">Mindset_Maximize_Materialistic_Pleasures</span><span class="pill">Mindset_Privilege_Drives_Contribution</span><span class="pill">Mindset_Knows_Ways_To_Help_Those_In_Need</span><span class="pill">Mindset_Compassion_Motivates_Social_Action</span><span class="pill">Mindset_Applies_Value_Based_Decision_Criteria</span><span class="pill">Mindset_Righteous_Anger_Motivates_Social_Action</span><span class="pill">Mindset_Understands_Social_Sector_Unique_Roles</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Others</span><span class="pill">Mindset_Chance_Over_Effort_In_Life_Outcome</span><span class="pill">Mindset_Gratitude_Drives_Social_Contribution</span><span class="pill">Mindset_Moral_Test_For_Life_Decisions</span><span class="pill">Financial_Attitude_Confident_Future_Earnings</span><span class="pill">Mindset_Visualizes_Social_Sector_Career</span><span class="pill">Mindset_Parental_Agreement_Mandatory_For_Decisions</span><span class="pill">Mindset_Values_Harmony_With_Nature</span><span class="pill">Mindset_Inspired_To_Create_Social_Impact</span><span class="pill">Mindset_Excited_About_Life_Purpose_Discovery</span><span class="pill">Mindset_Committed_To_Social_Change_Movement</span><span class="pill">Mindset_Purpose_Is_Meaningful_Social_Difference</span><span class="pill">Mindset_Committed_To_Youth_Social_Change_Community</span><span class="pill">Mindset_Can_Enact_Active_Citizen_Duty</span><span class="pill">Mindset_Preoccupied_With_Safety_And_Security</span><span class="pill">Mindset_Bucket_List_Happiness_Approach</span><span class="pill">Mindset_Daily_Intentional_Purpose_Linked_Living</span><span class="pill">Mindset_Urgency_To_Act_On_Climate_Change</span><span class="pill">Mindset_Loneliness_While_Contemplating_Social_Change</span><span class="pill">Mindset_Income_Inequality_Is_Justified</span><span class="pill">Mindset_Steps_Toward_Independent_Responsible_Adulthood</span><span class="pill">Mindset_Considers_Needs_Before_Purchases</span><span class="pill">Mindset_Values_Growth_Mentors</span><span class="pill">Mindset_Actively_Cultivating_Mentor_Relationship</span><span class="pill">Financial_Expected_Income_Age_25</span><span class="pill">Financial_Expected_Income_Age_30</span><span class="pill">Financial_Planning_Sheet_Income</span><span class="pill">Financial_Planning_Sheet_Income_Halved</span><span class="pill">Financial_Years_To_Independence</span>
+        </div>
+      </div>
+    </details>
+
+    <!-- 7. RISKS, MODEL CONSTRAINTS & GOVERNANCE (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #64748b;">7</span>
+          <span>7. Risks, Model Constraints &amp; Governance</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="margin: 0; font-size: 13px; color: #334155; line-height: 1.65;">
+          1) Association, not causation: this is single-arm observational data with no control group, so we cannot say the workshop or a Cause-of-Work mindset caused anyone to choose social action. 2) Stated plans are not behaviour: Career_Plan_Social_Action_Engagement records intentions. 'Productive lifetime' outcomes (Current_Status_Of_Work, Person_Years_Of_Social_Action) have not been analysed yet, and Person_Years_Of_Social_Action is mostly null. 3) Incomplete evidence: Steps 2, 4 and 5 produced no recorded results. The independence of Cause of Work from financial and security priorities is untested, and the 1.35 odds ratio comes from a simple model without those controls. 4) Modest effect: Spearman is 0.16 and pseudo-R2 about 0.06-0.07, so Cause of Work explains only a small part of who chooses fulltime social action. 5) Ceiling and floor effects: about 39% of people were already at a ceiling at Pre, so they cannot show upward change. 6) Regression to the mean: people who start low can only go up, and baseline coefficients are expected to be negative in change models. 7) Selection: 175 'Not yet decided / confused' answers were excluded, mostly at Pre (154), and 1,289 of 2,177 participants form the paired cohort, which may bias results. Pre and Post marginal samples cover different people (Pre 2,001, Post 1,430). 8) Scale handling: Cause of Work is a rank (1 = most important), and the sample was inverted (9 - rank) so higher means more important. The 1-5 engagement scale was treated as interval in some models. 9) Batch effects: later batches show more switching (odds ratio 1.18 per batch), and recent batches have had less time to realise outcomes. 10) Rank items compete: ranking one criterion higher forces others lower, so Cause of Work can look important simply because another criterion fell. This is exactly what the unfinished Steps 4-5 were meant to untangle. 11) Self-report may be influenced by what participants think the workshop wants to hear, especially at Post. 12) Confidence of about 68% reflects consistent, robust direction across Steps 1 and 3 but missing evidence on independence and long-term outcomes.
+        </p>
+      </div>
+    </details>
+
+    <!-- Sign-off Footer -->
+    <div class="footer">
+      Generated by <strong>Answer Strategically</strong> &bull; Answer Consistency Engine &bull; Tailored for Easy to understand for College graduate volunteer
+       &bull; Includes 5 Post-Execution Clarifications
+    </div>
+  </div>
+</body>
+</html>

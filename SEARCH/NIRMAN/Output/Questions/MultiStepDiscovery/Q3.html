@@ -1,0 +1,1809 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Strategic Action Report — How do males &amp; females differ in terms of the internal change they undergo as part of the workshop process?</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      --primary: #2563eb;
+      --slate-900: #0f172a;
+      --slate-800: #1e293b;
+      --slate-700: #334155;
+      --slate-600: #475569;
+      --slate-500: #64748b;
+      --slate-200: #e2e8f0;
+      --slate-100: #f1f5f9;
+      --slate-50: #f8fafc;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f1f5f9;
+      color: #0f172a;
+      margin: 0;
+      padding: 32px 16px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 980px;
+      margin: 0 auto;
+      background: #ffffff;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      padding: 36px 40px;
+      box-shadow: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05);
+    }
+    .header {
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 22px;
+      margin-bottom: 24px;
+    }
+    .badge-bar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      background: #e0e7ff;
+      color: #3730a3;
+      border: 1px solid #c7d2fe;
+    }
+    .badge-audience { background: #f3e8ff; color: #6b21a8; border-color: #d8b4fe; }
+    .badge-success { background: #d1fae5; color: #065f46; border-color: #a7f3d0; }
+    .badge-consult { background: #e0f2fe; color: #0369a1; border-color: #bae6fd; }
+    .question-block {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-left: 4px solid #2563eb;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin: 14px 0 10px 0;
+    }
+    .question-label {
+      font-size: 10px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: #64748b;
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    h1.report-question {
+      font-size: 16px;
+      font-weight: 700;
+      margin: 0;
+      color: #0f172a;
+      line-height: 1.45;
+    }
+    .subtitle { color: #475569; font-size: 13px; margin-top: 4px; }
+    .audience-note {
+      background: #f8fafc;
+      border: 1px solid #cbd5e1;
+      padding: 12px 16px;
+      border-radius: 10px;
+      font-size: 12.5px;
+      color: #334155;
+      margin-bottom: 20px;
+      line-height: 1.5;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin: 20px 0 28px 0;
+    }
+    .kpi-card {
+      background: #f8fafc;
+      padding: 16px 18px;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+    }
+    .kpi-val { font-size: 24px; font-weight: 800; color: #0f172a; }
+    .kpi-lbl { font-size: 11px; color: #64748b; text-transform: uppercase; font-weight: 700; margin-top: 4px; letter-spacing: 0.04em; }
+    .verdict-box {
+      border-left: 5px solid #059669;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-left-width: 5px;
+      border-radius: 12px;
+      padding: 22px;
+      margin-bottom: 24px;
+    }
+    .verdict-title { font-size: 18px; font-weight: 800; color: #166534; margin: 0 0 10px 0; }
+    .verdict-text { font-size: 13.5px; color: #1e293b; line-height: 1.65; }
+    details.collapsible-section {
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      background: #ffffff;
+      margin-bottom: 20px;
+      overflow: hidden;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    details.collapsible-section summary {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 18px;
+      background: #f8fafc;
+      cursor: pointer;
+      user-select: none;
+      border-bottom: 1px solid transparent;
+      font-size: 15px;
+      font-weight: 800;
+      color: #0f172a;
+      transition: background 0.15s ease;
+    }
+    details.collapsible-section summary:hover {
+      background: #f1f5f9;
+    }
+    details.collapsible-section[open] summary {
+      background: #f1f5f9;
+      border-bottom: 1px solid #e2e8f0;
+    }
+    details.collapsible-section summary::-webkit-details-marker {
+      display: none;
+    }
+    .summary-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .summary-num {
+      width: 24px;
+      height: 24px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+    .summary-right {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 12px;
+      color: #64748b;
+      font-weight: 600;
+    }
+    .summary-chevron {
+      font-size: 10px;
+      color: #64748b;
+      transition: transform 0.2s ease;
+      display: inline-block;
+    }
+    details.collapsible-section[open] .summary-chevron {
+      transform: rotate(180deg);
+    }
+    .collapsible-body {
+      padding: 20px;
+      background: #ffffff;
+    }
+    .step-card {
+      background: #f8fafc;
+      border-radius: 12px;
+      border: 1px solid #e2e8f0;
+      padding: 18px 20px;
+      margin-bottom: 16px;
+    }
+    .step-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .step-title { font-size: 14.5px; font-weight: 700; color: #0f172a; }
+    .step-num { background: #4f46e5; color: #ffffff; padding: 2px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 10px; }
+    @media (max-width: 640px) { .grid-2 { grid-template-columns: 1fr; } }
+    .sub-box { background: #ffffff; border-radius: 8px; padding: 12px; border: 1px solid #e2e8f0; font-size: 12.5px; color: #334155; }
+    .sub-lbl { font-size: 10.5px; font-weight: 800; text-transform: uppercase; color: #475569; margin-bottom: 4px; letter-spacing: 0.04em; }
+    .choice-badge { display: inline-block; padding: 3px 8px; background: #e0e7ff; color: #3730a3; border-radius: 6px; font-size: 11px; font-weight: 700; border: 1px solid #c7d2fe; }
+    .replan-badge { display: inline-block; padding: 2px 8px; background: #fae8ff; color: #86198f; border-radius: 6px; font-size: 10px; font-weight: 800; margin-left: 6px; }
+    .rec-card { background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0; padding: 18px 20px; margin-bottom: 18px; }
+    .rec-title { font-size: 15px; font-weight: 800; color: #0f172a; display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+    .rec-easy { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #14532d; font-size: 13px; line-height: 1.6; }
+    .rec-tech { background: #eff6ff; border: 1px solid #93c5fd; border-radius: 8px; padding: 12px 14px; margin-bottom: 12px; color: #1e3a8a; font-size: 12.5px; line-height: 1.5; }
+    .prompt-box { background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 12px 14px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: #38bdf8; word-break: break-word; user-select: all; margin-top: 6px; }
+    .pill { display: inline-block; background: #e2e8f0; color: #1e293b; padding: 2px 8px; border-radius: 9999px; font-size: 11px; font-family: monospace; font-weight: 700; margin-right: 6px; margin-bottom: 4px; border: 1px solid #cbd5e1; }
+    .inquiry-card { background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .inquiry-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px; margin-bottom: 10px; }
+    .inquiry-query { font-size: 14px; font-weight: 700; color: #0f172a; margin: 4px 0 10px 0; }
+    .inquiry-response { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 14px; font-size: 13px; color: #1e293b; line-height: 1.6; margin-bottom: 10px; }
+    .chart-card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; margin-bottom: 16px; }
+    .chart-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="badge-bar">
+        <span class="badge">Strategic Master Dossier</span>
+        <span class="badge badge-audience">Tailored For: Easy to understand for College graduate volunteer</span>
+        <span class="badge badge-success">Confidence: 40%</span>
+        <span class="badge badge-consult">5 Post-Execution Inquiries Documented</span>
+      </div>
+      <div class="question-block">
+        <div class="question-label">
+          <span>🎯</span>
+          <span>Core Strategic Question</span>
+        </div>
+        <h1 class="report-question">How do males &amp; females differ in terms of the internal change they undergo as part of the workshop process?</h1>
+      </div>
+      <div class="subtitle">
+        Project: <strong>NIRMAN</strong> &middot; Generated on 10/28/2026 &middot; Multi-Step Progressive Analytics
+      </div>
+    </div>
+
+    <!-- Audience Note -->
+    <div class="audience-note">
+      <strong>Audience Comprehension Level:</strong> Easy to understand for College graduate volunteer<br/>
+      Clear, structured, professional explanations covering business metrics, proportions, and logic with practical context.
+    </div>
+
+    <!-- KPI Grid -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-val">40%</div>
+        <div class="kpi-lbl">Strategic Confidence</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">5 / 5</div>
+        <div class="kpi-lbl">Empirical Steps Completed</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">Multi-Step Discovery</div>
+        <div class="kpi-lbl">Framework Mode</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-val">210</div>
+        <div class="kpi-lbl">Dataset Columns Audited</div>
+      </div>
+      
+      <div class="kpi-card">
+        <div class="kpi-val">5</div>
+        <div class="kpi-lbl">Follow-up Clarifications</div>
+      </div>
+      
+      
+      <div class="kpi-card">
+        <div class="kpi-val">4</div>
+        <div class="kpi-lbl">Visual Charts Added</div>
+      </div>
+      
+    </div>
+
+    <!-- 1. STRATEGIC VERDICT & EASY-TO-UNDERSTAND TAKEAWAYS (PROMINENT AT TOP) -->
+    <div class="verdict-box">
+      <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; color: #047857; margin-bottom: 4px;">
+        1. Strategic Verdict &amp; Easy-to-Understand Takeaways
+      </div>
+      <div class="verdict-title">Men and women start the workshop at very similar levels (only NGO-career preference and income expectation clearly differ), but the supplied evidence contains no completed results on how much each gender CHANGES, so the core question remains open until Steps 2 to 5 are re-run and their outputs verified.</div>
+      <div class="verdict-text">
+        What the record supports: only Step 1 returned actual numbers (1,450 matched Pre/Post Point-1 participants: 777 women and 673 men, all with known Gender). Those numbers describe where men and women START the workshop, not how much they change. Steps 2 to 5 were designed to measure the change (paired Pre→Post tests within each gender, gender gaps in change, a Composite Transformation Score and a baseline-adjusted model), but their result fields are empty in the evidence supplied. This dossier therefore does not claim any finding about the size or direction of change by gender.
+
+At the starting line, men and women look very similar on most things. Of 23 measures compared, 21 showed differences too small to matter. Two gaps held up after a strict multiple-testing correction. (1) Women rank 'Working in an NGO' as a stronger career preference (average rank 3.05 vs 3.55; lower rank means stronger preference; small effect, d = -0.35). (2) Women expect a slightly lower monthly income at age 30 (median ₹95,000 vs ₹100,000; the mean is ₹147,720 vs ₹187,249, which is pulled up by a few very high answers; small effect, d = -0.20). A few other gaps looked interesting but did not survive the correction, so treat them as hints only. Men scored a little higher on courage against conventional careers and on citizenship/environment. Women ranked 'cause of work' as slightly more important. The share already planning a full-time social career before the workshop was similar (26.3% of women vs 23.9% of men, p = 0.31).
+
+The practical consequence is that any later gender difference in change must be read against these starting points. A group that starts lower has more room to rise, and that can look like a 'gender effect' when it is only catch-up. Steps 4 and 5 were built to handle this (adjusting for the starting score, age, stream and batch). Their outputs now need to be produced and checked. Until then, the honest answer is: men and women begin in a similar place, and whether they change differently is not yet established in this record. All of this is single-arm observational data (no comparison group), so it shows association, never proof that the workshop caused anything.
+      </div>
+    </div>
+
+    <!-- 5. STRATEGIC CLARITY & FOLLOW-UP CONSULTATION LOG (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #0284c7;">5</span>
+          <span>5. Strategic Clarity &amp; Follow-Up Consultation Log</span>
+          <span class="badge badge-consult" style="margin-left: 6px;">5 Inquiries</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Post-execution follow-up consultations answering specific questions, framing subsequent analytical queries, auditing column metadata, and clarifying empirical results.
+        </p>
+
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #5
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:50 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "In simple easy to understand words with intuition and analogy, what is the Takeaway, what is the question , what is the answer"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Gender and internal change in the workshop: Question, Answer, Takeaway</h2>
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">1. The question</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>"Do men and women go through different amounts or kinds of internal change in the workshop?"</strong>
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Think of the workshop as a <strong>hiking trail</strong> and "internal change" as <strong>how far each hiker climbs between the trailhead (Pre survey) and the summit (Post survey)</strong>. We want to know whether women and men climb different distances.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        To answer this fairly, we need to know three things:
+      </p>
+    
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Where each group <strong>started</strong>.</li><li style="margin-bottom: 5px;">How far each group <strong>climbed</strong>.</li><li style="margin-bottom: 5px;">Whether any difference in climbing is real or just a head start.</li>
+        </ol>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">2. The answer, as supported by the record</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The record is partly inconsistent, so the answer has a firm part and a provisional part.
+      </p>
+    
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">Firm part: the starting line (Step 1, real numbers)</h4>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">The sample is <strong>1,450 people with both a Pre and a Post survey</strong>: <strong>777 women and 673 men</strong>.</li><li style="margin-bottom: 5px;">Men and women <strong>start almost identically</strong>. Of 23 measures, 21 show no meaningful gap.</li><li style="margin-bottom: 5px;">Only two gaps are real:</li>
+        </ul>
+      
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Starting gap</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Women</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Men</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">What it means</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Rank of "Working in an NGO" (lower = stronger preference)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">3.05</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">3.55</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Women already lean more toward NGO work (small effect)</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Expected monthly income at age 30 (median)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">₹95,000</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">₹100,000</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Women expect slightly less (small effect)</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">Provisional part: how much each gender changed (Step 4 narrative)</h4>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The dossier's headline says no change results exist. However, the Step 4 write-up does report numbers, and they say:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Both genders changed a lot, in the same direction.</strong> For example:</li><li style="margin-bottom: 5px;">Meaning-vs-happiness rose from about 3.2 to 4.6 for women and to 4.5 for men.</li><li style="margin-bottom: 5px;">Insecurity fell.</li><li style="margin-bottom: 5px;">"Cause of work" became more important.</li><li style="margin-bottom: 5px;">Financial security and income expectations fell.</li><li style="margin-bottom: 5px;"><strong>Gender differences in change were small.</strong> Only 4 of 23 measures differed by gender after correction: meaning-vs-happiness, values, courage and money attitudes. Women improved slightly more on each, with tiny effect sizes of about 0.09–0.10.</li><li style="margin-bottom: 5px;"><strong>The two starting gaps did not grow or shrink significantly</strong> through the workshop (q = 0.08 and 0.21).</li><li style="margin-bottom: 5px;"><strong>Switching to "full-time social career":</strong> 43% of eligible women switched versus 37% of men. That is a borderline result (p = 0.04, not corrected for multiple tests), so treat it as a hint.</li>
+        </ul>
+      
+<h4 style="font-size: 13px; font-weight: 800; color: #1e3a8a; margin: 16px 0 6px 0; text-transform: uppercase; letter-spacing: 0.04em;">Why this part is only provisional</h4>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">The dossier's own verdict and confidence (<strong>40%</strong>) say the change results are <strong>not verified</strong>.</li><li style="margin-bottom: 5px;"><strong>Step 5</strong> was the one meant to separate a real gender effect from a head start (adjusting for starting score, age, stream and batch). It returned <strong>nothing</strong>.</li><li style="margin-bottom: 5px;">So we cannot tell whether women's small extra gains are a true gender difference or just catch-up.</li>
+        </ul>
+      
+
+        <blockquote style="border-left: 4px solid #3b82f6; background: #eff6ff; padding: 12px 16px; margin: 14px 0; border-radius: 0 8px 8px 0; font-size: 12px; color: #1e40af; line-height: 1.6;">
+          <strong>Analogy:</strong> If one hiker starts lower on the slope, they may seem to climb more simply because there was more room to climb. Step 5 would have leveled the starting points. That step is missing.
+        </blockquote>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">3. The takeaway</h3>
+
+        <ol style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Men and women begin in much the same place</strong> and <strong>both change substantially</strong> through the workshop.</li><li style="margin-bottom: 5px;"><strong>Any gender difference in change looks small</strong> (women slightly ahead on a few measures), but it is <strong>not confirmed</strong> because the baseline-adjusted analysis is missing.</li><li style="margin-bottom: 5px;"><strong>Don't claim "women transform more" or "men transform more."</strong> The honest statement is: <em>"Both genders show similar, large shifts. Women may show slightly bigger gains on a few measures, but this needs verification."</em></li>
+        </ol>
+      
+<hr style="border: none; border-top: 1px solid #cbd5e1; margin: 18px 0;" />
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">4. Cautions to keep in mind</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Observational, no comparison group.</strong> We see change over time, not proof the workshop caused it.</li><li style="margin-bottom: 5px;"><strong>Missing answers.</strong> Some measures were answered by far fewer people (citizenship only 346), and 707 Pre-only people dropped out, which may bias results.</li><li style="margin-bottom: 5px;"><strong>Small effects.</strong> Even "significant" gaps are modest.</li><li style="margin-bottom: 5px;"><strong>Binary gender only.</strong> The data has just FEMALE and MALE.</li><li style="margin-bottom: 5px;"><strong>Check the Step 4 numbers.</strong> They appear in the timeline but not in the dossier's summary. Very large across-the-board changes deserve a verification pass.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">5. What to do next</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Re-run and verify <strong>Step 5</strong> (the baseline-adjusted gender comparison).</li><li style="margin-bottom: 5px;">Confirm that any rebuilt numbers reproduce <strong>1,450 / 777 / 673</strong> before trusting them.</li><li style="margin-bottom: 5px;">Until then, describe the finding as <strong>"similar change, small possible female edge, unconfirmed."</strong></li>
+        </ul>
+      
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #4
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Strategic Visuals &amp; Charts
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:49 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "In simple easy to understand words with intuition and analogy, what is the Takeaway, what is the question , what is the answer. Add as many visuals as needed. Add different types of visuals"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Generated 2 visual chart(s) illustrating the strategic findings.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #3
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:41 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "&quot;What is the question , what is the answer, takeaway . Output in simple plan text format (no table) with simple shortest possible answer. Include exact column names as per schema&quot;"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Question</strong> How do men and women differ in the internal change they go through in the workshop? The data uses the <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Gender</code> column (FEMALE/MALE) and compares Pre vs Post answers in <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Workshop<em>Phase</code>, for matched <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Participant</em>Id</code>s at <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Workshop_Level</code> 0.1. That gives 1,450 pairs: 777 women and 673 men.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Answer</strong>
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Men and women change in broadly the same way. Every measure moved significantly in both genders.</li><li style="margin-bottom: 5px;">Only 4 of 23 measures showed a gender difference in change: <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">meaning<em>vs</em>happiness</code>, <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">values<em>and</em>moral<em>reasoning</code>, <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">courage</em>agency<em>autonomy</code> and <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">money</em>attitudes</code>. Women improved slightly more on each, and the gaps were tiny (about 0.09–0.10).</li><li style="margin-bottom: 5px;">Full-time social career switch (<code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Career<em>Plan</em>Social<em>Action</em>Engagement</code> → "Fulltime as a career"): 43% of eligible women (244 of 573) switched vs 37% of men (187 of 512). This is borderline (p = 0.04) and was not corrected for multiple tests.</li><li style="margin-bottom: 5px;">Starting points were also similar. Only two gaps held up: <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Career<em>Preference</em>Working<em>In</em>Ngo</code> (women rank it as a stronger preference) and <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Financial<em>Expected</em>Income<em>Age</em>30</code> (women expect a bit less).</li><li style="margin-bottom: 5px;">For those two measures, the change did not differ significantly by gender (q = 0.08 and 0.21).</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Takeaway</strong>
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">The workshop shows similar internal change for men and women, with at most a small edge for women.</li><li style="margin-bottom: 5px;">Treat this as provisional, with 40% confidence. The dossier's official verdict says the gender-change question is still open. Only Step 4 reports change numbers, and the Step 5 model that adjusts for starting score, age, stream and batch returned nothing. The small female edge could therefore just be catch-up from lower starting scores.</li><li style="margin-bottom: 5px;">The data is single-group observational, so it shows association, not proof that the workshop caused the change.</li>
+        </ul>
+      
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #2
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Strategic Visuals &amp; Charts
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:36 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "What is the question , what is the answer, takeaway . Output  in simple plan text format (no table) with simple shortest possible answer. Include  exact column names as per schema"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Generated 2 visual chart(s) illustrating the strategic findings.
+      </p>
+    
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+          <div class="inquiry-card">
+            <div class="inquiry-header">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="background: #4f46e5; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase;">
+                  Inquiry #1
+                </span>
+                <span style="background: #e0f2fe; color: #0369a1; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; border: 1px solid #bae6fd;">
+                  Help Me Understand
+                </span>
+              </div>
+              <span style="font-size: 11px; color: #64748b;">🕒 06:28 PM</span>
+            </div>
+
+            <div>
+              <strong style="font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em; display: block; margin-bottom: 2px;">
+                User Inquiry:
+              </strong>
+              <div class="inquiry-query">
+                "What is the question , what is the answer, takeaway . Output  in simple plan text format (no table) with simple shortest possible answer. Include  exact column names as per schema"
+              </div>
+            </div>
+
+            <div class="inquiry-response">
+              <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #059669; margin-bottom: 6px;">
+                Strategic Intelligence Response:
+              </div>
+              <div style="color: #1e293b; line-height: 1.6;">
+                
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        QUESTION How do men and women differ in the internal change they go through in the workshop? In the data, that is Post score minus Pre score, compared by <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Gender</code> (FEMALE / MALE). The rows are matched on <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Participant<em>Id</code>, using <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Workshop</em>Phase</code> (Pre vs Post) at <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Workshop_Level</code> = 0.1.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        ANSWER The dossier's official verdict is that this is not yet established (confidence 40%). Only Step 1 has verified numbers, and it shows where people start, not how much they change.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        What is verified (Step 1, 1,450 matched pairs: 777 women, 673 men):
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Men and women start almost the same on 21 of 23 measures.</li><li style="margin-bottom: 5px;"><code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Career<em>Preference</em>Working<em>In</em>Ngo</code>: women rank it as a stronger preference (3.05 vs 3.55, where lower rank means stronger).</li><li style="margin-bottom: 5px;"><code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Financial<em>Expected</em>Income<em>Age</em>30</code>: women expect a little less (median 95,000 vs 100,000).</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        What is not verified:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">The Step 4 write-up does report change results, but the dossier's summary and caveats treat Steps 2 to 5 as having empty results, so these figures conflict with the verdict and should be treated as provisional.</li><li style="margin-bottom: 5px;">According to that write-up, women and men changed in broadly similar ways. Only 4 of 23 measures differed by gender: meaning<em>vs</em>happiness, values<em>and</em>moral<em>reasoning, courage</em>agency<em>autonomy and money</em>attitudes. Women improved slightly more, with tiny effects (about 0.1).</li><li style="margin-bottom: 5px;">It also reports that more women switched to full-time social action: 43% vs 37% in <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Career<em>Plan</em>Social<em>Action</em>Engagement</code> (p = 0.04, unadjusted, so only suggestive).</li><li style="margin-bottom: 5px;">Step 5 (adjusting for starting score, age, stream and <code style="background: #e2e8f0; color: #0f172a; padding: 2px 5px; border-radius: 4px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 11px;">Workshop<em>Batch</em>Number</code>) has no results at all.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        TAKEAWAY
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Men and women begin in a similar place.</li><li style="margin-bottom: 5px;">Any gender difference in change looks small, and it is not confirmed.</li><li style="margin-bottom: 5px;">A small female "advantage" could just be catch-up or regression to the mean (extreme scores drifting back toward average), not a real gender effect.</li><li style="margin-bottom: 5px;">Do not tell anyone "women change more" until Steps 2 to 5 are re-run and checked against the 1,450 / 777 / 673 sample.</li><li style="margin-bottom: 5px;">This is a single group with no comparison group, so it shows association, not proof that the workshop caused anything.</li>
+        </ul>
+      
+              </div>
+            </div>
+
+            
+
+            
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 4. STRATEGIC VISUALIZATIONS & EMPIRICAL CHARTS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #d97706;">4</span>
+          <span>4. Strategic Visualizations &amp; Empirical Charts (4 Visualized)</span>
+          <span class="badge" style="background: #fef3c7; color: #92400e; border-color: #fde68a; margin-left: 6px;">4 Visuals</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Visual intelligence charts generated post-execution to illustrate empirical step metrics, distribution variances, and strategic performance.
+        </p>
+
+        
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Same Starting Line, Nearly Same Climb: 'Meaning vs Happiness' Score (1–5)</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              bar Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">Average 'meaning vs happiness' score before and after the workshop, for women and men. These figures come from the Step 4 narrative, which reported them but could not be independently verified. This is single-group observational data with no comparison group.</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Women: Before</span>
+                  <span style="font-weight: 800; color: #8b5cf6;">3.20</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 3.2%; background: #8b5cf6; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Starting point (n≈777 women overall)</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Women: After</span>
+                  <span style="font-weight: 800; color: #ec4899;">4.63</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 4.63%; background: #ec4899; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">+1.43 points</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Men: Before</span>
+                  <span style="font-weight: 800; color: #06b6d4;">3.20</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 3.2%; background: #06b6d4; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Starting point (n≈673 men overall)</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Men: After</span>
+                  <span style="font-weight: 800; color: #2563eb;">4.47</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 4.47%; background: #2563eb; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">+1.27 points</span>
+              </div>
+            
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> Think of two groups climbing the same staircase from the same first step. Both start at about 3.2 and end near the top. Women end slightly higher (4.63 vs 4.47), but the gap is small. The workshop is linked to a big inner shift for both genders, not mainly for one. Because there is no comparison group, we cannot say the workshop caused it.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">The Scorecard: How Different Are Men and Women, Really?</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              kpi Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">A summary of the evidence on gender differences in starting point and in change. The Step 1 baseline results are verified. The Step 4 change results are reported but unconfirmed, and Steps 2, 3 and 5 returned no output.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Starting gaps that held up</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #f59e0b; margin: 4px 0;">2 of 23</div>
+                  <div style="font-size: 11px; color: #475569;">NGO preference and expected income at 30</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #8b5cf6; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Gaps in change after correction</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin: 4px 0;">4 of 23</div>
+                  <div style="font-size: 11px; color: #475569;">Tiny effects (about 0.09–0.10), women slightly ahead</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Women's edge in switching to full-time</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #10b981; margin: 4px 0;">+6 pts</div>
+                  <div style="font-size: 11px; color: #475569;">43% vs 37%; borderline, not corrected for multiple tests</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #ef4444; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Confidence in the verdict</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #ef4444; margin: 4px 0;">40%</div>
+                  <div style="font-size: 11px; color: #475569;">Steps 2, 3 and 5 returned no output; re-run needed</div>
+                </div>
+              
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> The answer is 'mostly alike, with small edges for women'. Only 2 of 23 starting measures differ (NGO career preference and expected income). Only 4 of 23 changes differ, and each by a tiny amount. Full-time social action shows a borderline 6-point edge for women (43% vs 37%, CI about 0–12 points, uncorrected p≈0.04). Confidence is only 40%. The key checks, including baseline-adjusted models and drop-out checks, still need to be re-run and verified before anyone acts on this.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Full-Time Social Action: Starting Share vs Switch Rate, by Gender</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              bar Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">QUESTION: Do males and females differ in internal change through the workshop? ANSWER: Only slightly. Women and men both shift a lot, and the gender gap in change is small. Columns used: Gender, Workshop_Phase, Career_Plan_Social_Action_Engagement ('Fulltime as a career'). Bars show the Pre share planning full-time social action (Step 1) and the share of eligible Pre=non-fulltime participants who switched to full-time by Post (Step 4, unadjusted p=0.04, not verified by Steps 2, 3 and 5).</p>
+          
+          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 14px;">
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Female: switched to full-time</span>
+                  <span style="font-weight: 800; color: #ec4899;">43%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 43%; background: #ec4899; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">244 of 573 eligible; Career_Plan_Social_Action_Engagement Pre to Post</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Male: switched to full-time</span>
+                  <span style="font-weight: 800; color: #2563eb;">37%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 37%; background: #2563eb; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">187 of 512 eligible; gap CI about 0 to 12 pts</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Female: full-time at Pre</span>
+                  <span style="font-weight: 800; color: #f59e0b;">26.3%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 26.3%; background: #f59e0b; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Starting point, Gender = FEMALE</span>
+              </div>
+            
+              <div>
+                <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; color: #1e293b;">Male: full-time at Pre</span>
+                  <span style="font-weight: 800; color: #06b6d4;">23.9%</span>
+                </div>
+                <div style="height: 10px; background: #e2e8f0; border-radius: 9999px; overflow: hidden; border: 1px solid #cbd5e1;">
+                  <div style="height: 100%; width: 23.9%; background: #06b6d4; border-radius: 9999px;"></div>
+                </div>
+                <span style="font-size: 11px; color: #64748b; margin-top: 2px; display: block;">Starting point, Gender = MALE (p=0.31)</span>
+              </div>
+            
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> TAKEAWAY: Women switch to full-time social action a little more (43% vs 37%), but the gap is borderline and uncorrected for multiple tests. Treat it as suggestive, not proven.
+            </div>
+          
+        </div>
+      
+        <div class="chart-card">
+          <div class="chart-header">
+            <div style="font-size: 15px; font-weight: 800; color: #0f172a;">Gender and Internal Change: Evidence Scorecard</div>
+            <span style="font-size: 10.5px; font-weight: 800; text-transform: uppercase; background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; padding: 2px 8px; border-radius: 4px;">
+              kpi Chart
+            </span>
+          </div>
+          <p style="font-size: 12.5px; color: #475569; margin: 0 0 14px 0;">QUESTION: How much do males and females differ in internal change? ANSWER: Same starting point except Career_Preference_Working_In_Ngo and Financial_Expected_Income_Age_30. Change looks alike, with 4 of 23 measures differing by Gender, all small and in women's favor (meaning_vs_happiness, values_and_moral_reasoning, courage_agency_autonomy, money_attitudes). Steps 2, 3 and 5 returned no output, so the change results rest on Step 4 alone.</p>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #2563eb; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Matched pairs (Participant_Id)</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #2563eb; margin: 4px 0;">1,450</div>
+                  <div style="font-size: 11px; color: #475569;">777 FEMALE / 673 MALE</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #10b981; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Measures differing by Gender in change</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #10b981; margin: 4px 0;">4 of 23</div>
+                  <div style="font-size: 11px; color: #475569;">Small effects only, women slightly higher</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #8b5cf6; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Gender gap effect size (dz)</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #8b5cf6; margin: 4px 0;">~0.10</div>
+                  <div style="font-size: 11px; color: #475569;">Max across the 4 gaps; under 0.2 is tiny</div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #f59e0b; border-radius: 8px; padding: 12px 14px;">
+                  <div style="font-size: 10.5px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.04em;">Strategic confidence</div>
+                  <div style="font-size: 22px; font-weight: 800; color: #f59e0b; margin: 4px 0;">40%</div>
+                  <div style="font-size: 11px; color: #475569;">Steps 2, 3 and 5 outputs missing</div>
+                </div>
+              
+          </div>
+        
+          
+            <div style="padding: 10px 14px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; font-size: 12px; color: #14532d;">
+              <strong>💡 Strategic Takeaway:</strong> TAKEAWAY: Gender is a minor factor in how much people change. The core question stays open until the _pre/_post deltas are re-run and verified, so confidence is 40%.
+            </div>
+          
+        </div>
+      
+      </div>
+    </details>
+
+    <!-- 3. GUIDANCE & RECOMMENDATIONS ON NEXT STEPS (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #2563eb;">3</span>
+          <span>3. Guidance &amp; Recommendations on Next Steps (How to Proceed)</span>
+          <span class="badge" style="background: #dbeafe; color: #1e40af; border-color: #bfdbfe; margin-left: 6px;">6 Actions</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Tailored recommendations explaining what to do next. Includes both an easy-to-understand explanation and technical column names ready for cut-and-pasting into future questions.
+        </p>
+
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#1</span> Re-run the within-gender Pre→Post change analysis with a minimal, checkpointed script
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              We know where men and women start, but we have no usable results on how much they change. Re-run a smaller, simpler analysis that measures the change for women and for men separately, and print the numbers at each stage so nothing silently comes back empty.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Filter questionnaire to parseFloat(Workshop_Level)===0.1. Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to strings. Set 0 to NaN (not for Financial_Years_To_Independence). Split by Workshop_Phase, inner-merge on Participant_Id, and join Gender from demographics. Assert 1,450 pairs (777 F / 673 M). For each measure and gender, keep only people valid at both waves, compute delta = Post − Pre, then run a Wilcoxon signed-rank test, Cohen's dz and rank-biserial r. Apply BH-FDR at q=0.05 within each gender. Use plain JS Maps for pairing and return a JSON-safe object with a checkpoints array so output is never undefined. Report effective N per measure.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Participant_Id</span><span class="pill">Gender</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Metric_Life_Satisfaction_Global</span><span class="pill">Mindset_Found_Life_Purpose</span><span class="pill">Mindset_Visualizes_Self_As_Changemaker</span><span class="pill">Mindset_Social_Self_Efficacy_Confidence</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Career_Preference_Working_In_Ngo</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Using Questionnaire rows with Workshop_Level == 0.1, pair Pre and Post rows by Participant_Id (cast to string), join Gender from the Demographics table, and keep FEMALE and MALE only. For Metric_Life_Satisfaction_Global, Mindset_Found_Life_Purpose, Mindset_Visualizes_Self_As_Changemaker, Mindset_Social_Self_Efficacy_Confidence and Career_Preference_Working_In_Ngo, set 0 to NaN, keep only participants with valid values at both Pre and Post, and compute delta = Post − Pre separately for FEMALE and MALE. Report n, Pre mean, Post mean, mean delta, median delta, Cohen's dz, Wilcoxon signed-rank p-value and Benjamini-Hochberg q within each gender. Print effective N at each step and return a JSON object (never undefined).
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#2</span> Audit which items exist at both Pre and Post before building change scores
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              The cleaning log shows that many survey questions have a count of about 1,450 blanks (zeros), which is exactly the number of pairs. That suggests those questions were asked only before OR only after the workshop. A change cannot be measured for a question asked once. Check this first so the final answer does not rest on thin or empty data.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              For each scored column, compute the share of 0/NaN values separately for Workshop_Phase == 'Pre' and 'Post' within the 1,450 pairs. Flag items with more than 90% missing in either wave as 'single-wave'. Rebuild theme scores only from items valid in both waves (items lists only, not alt_wording_items), require at least 50% of items valid per wave, and report n_both per theme and gender. Run McNemar on discordant missingness. Note that action_plans are Post-only by design.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Workshop_Phase</span><span class="pill">Workshop_Level</span><span class="pill">Participant_Id</span><span class="pill">Mindset_Doubts_Social_Purpose_Wellbeing_Impact</span><span class="pill">Mindset_Self_Actualization_Linked_To_Society</span><span class="pill">Mindset_Poor_Understanding_Of_Socioeconomic_Issues</span><span class="pill">Mindset_Prefers_Safety_And_Security_Path</span><span class="pill">Mindset_Believes_Morals_Are_Relative</span><span class="pill">Financial_Knows_Needs_Vs_Aspirational_Income</span><span class="pill">Action_Plan_Purpose_Journey</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                In the Questionnaire table restricted to Workshop_Level == 0.1, for every column in the theme `items` lists, count how many values are 0 or null in Workshop_Phase == 'Pre' versus 'Post' (matched Participant_Id pairs only, cast to string). List the columns where more than 90% are missing in either phase, and report for each of the 11 theme scores how many participants have a valid score at both Pre and Post, split by Gender from the Demographics table.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#3</span> Compare gender gaps in change using baseline-adjusted models
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Once we have each person's change, compare women and men fairly. Because women and men start at slightly different places on some questions, we should adjust for where each person started. Otherwise a group that starts lower can look like it 'improved more' purely because it had more room to rise.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Outcome: delta (Post − Pre) per measure, or a Composite Transformation Score (mean of pooled-standardized deltas for meaning_vs_happiness, purpose_and_direction, values_and_moral_reasoning, courage_agency_autonomy, money_attitudes and the sign-reversed insecurity_index; ≥4 of 6 valid). Model M0: CTS ~ female. Model M1: + pre score + centered Age_At_Workshop (&gt;0) + Educational_Stream_Category + Education_Status + Workshop_Batch_Number dummies. Report the gender coefficient in SD units with bootstrap CI and a batch-clustered sensitivity check. Compare M0 vs M1: a shrinking coefficient indicates catch-up or regression to the mean, not a gender effect. Apply BH-FDR for multiple measures and report effective N.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Gender</span><span class="pill">Age_At_Workshop</span><span class="pill">Educational_Stream_Category</span><span class="pill">Education_Status</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Participant_Id</span><span class="pill">Workshop_Phase</span><span class="pill">Workshop_Level</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                For matched Point-1 Pre/Post pairs (Workshop_Level == 0.1), build a Composite Transformation Score as the mean of pooled-standardized Post−Pre deltas of meaning_vs_happiness, purpose_and_direction, values_and_moral_reasoning, courage_agency_autonomy, money_attitudes and the reverse-signed insecurity_index (require at least 4 of 6). Using Gender, Age_At_Workshop (&gt;0), Educational_Stream_Category, Education_Status and Workshop_Batch_Number from the Demographics table, fit an OLS model of the score on female alone, then adjusted for the Pre composite and those covariates. Report the female coefficient in SD units with a 95% bootstrap CI, R², effective N by gender, and explain in plain language whether the gap shrinks after adjusting for the starting point.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#4</span> Test whether the two confirmed baseline gaps narrow after the workshop
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              At the start, women favour working in an NGO more than men do, and expect slightly lower income at 30. Check whether these differences shrink, stay the same or grow by the end of the workshop.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Invert rank items (9 − rank) so higher = stronger preference. For Career_Preference_Working_In_Ngo compute Pre, Post and delta by Gender; compare Pre vs Post gap using Mann-Whitney on deltas and OLS delta ~ female + pre + Workshop_Batch_Number. For Financial_Expected_Income_Age_30 clip to 5,000–1,000,000, analyse log-income delta (report exp(mean)−1 as % change), medians (not means), and the share who lowered expectations by gender. Report effective N and note that income is free-typed.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Financial_Expected_Income_Age_30</span><span class="pill">Gender</span><span class="pill">Workshop_Phase</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Participant_Id</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Among matched Point-1 Pre/Post pairs (Workshop_Level == 0.1) with Gender known, compare men and women on Career_Preference_Working_In_Ngo (inverted as 9 − rank so higher means stronger preference) and Financial_Expected_Income_Age_30 (clipped to 5,000–1,000,000 INR). For each, report Pre median, Post median, median change, and the percentage of participants whose value improved or fell, by Gender. Test whether the change differs between genders using a Mann-Whitney test on the deltas, then an OLS check adjusting for the Pre value and Workshop_Batch_Number. Report effective N and plain-language conclusions.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#5</span> Compare switch-to-full-time rates by gender
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              Among people who were NOT planning a full-time social career before the workshop, check what share say 'Fulltime as a career' afterwards, separately for women and men. This is a simple, easy-to-explain measure of a big shift.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              is_fulltime = Career_Plan_Social_Action_Engagement == 'Fulltime as a career'. Restrict to is_fulltime_pre == 0 with non-null Post (null and 'Not yet decided / confused' handled explicitly). Compare switch rates with a two-proportion z-test and risk difference with Wald 95% CI; also compute reverse-switch (pre==1 → post==0) and a Pre→Post transition matrix by gender. At Pre, 26.25% of women (204/777) and 23.92% of men (161/673) were already full-time-minded.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Gender</span><span class="pill">Workshop_Phase</span><span class="pill">Workshop_Level</span><span class="pill">Participant_Id</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                For matched Point-1 Pre/Post pairs (Workshop_Level == 0.1), define is_fulltime as Career_Plan_Social_Action_Engagement == 'Fulltime as a career'. Among participants with is_fulltime == 0 at Pre and a non-null Post response, calculate the percentage who switch to full-time at Post, separately for FEMALE and MALE (Gender from the Demographics table). Report the counts, the difference in percentage points with a 95% CI, a two-proportion z-test p-value, the reverse-switch rate, and a Pre→Post transition table by gender, in plain language.
+              </div>
+            </div>
+          </div>
+        
+          <div class="rec-card">
+            <div class="rec-title">
+              <span style="color: #2563eb;">#6</span> Check whether different things drive change for women and men
+            </div>
+
+            <div class="rec-easy">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #047857; margin-bottom: 4px;">
+                💡 Easy to Understand Version:
+              </strong>
+              After the main comparison, look at what predicts a bigger positive change for women and for men separately. This shows whether the same starting traits matter for both groups. Treat it as a way to generate ideas, not as proof.
+            </div>
+
+            <div class="rec-tech">
+              <strong style="display:block; text-transform: uppercase; font-size: 11px; letter-spacing: 0.04em; color: #1d4ed8; margin-bottom: 4px;">
+                ⚙️ Clear Technical Info &amp; Methodology:
+              </strong>
+              Separate female-only and male-only gradient-boosting models (depth 3, learning rate 0.05, early stopping on a 20% validation fold) or an explainable alternative such as regularized regression, predicting CTS from Pre-phase theme scores and headline items plus Age_At_Workshop, Educational_Stream_Category, Education_Status and Workshop_Batch_Number. No Post columns, deltas or Point_2/Point_3/Person_Years fields (leakage). Report 5-fold CV R², Spearman rho, permutation importance and a top-10 driver comparison. Compare driver rankings across genders by Spearman correlation. If CV R² is near zero, say the drivers are not reliable.
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #475569; display: block; margin-bottom: 6px; letter-spacing: 0.04em;">
+                🏷️ Specific Column Names for Analysis:
+              </strong>
+              <div>
+                <span class="pill">Gender</span><span class="pill">Age_At_Workshop</span><span class="pill">Educational_Stream_Category</span><span class="pill">Education_Status</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Financial_Expected_Income_Age_30</span><span class="pill">Metric_Life_Satisfaction_Global</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px;">
+              <strong style="font-size: 11px; text-transform: uppercase; color: #1e40af; display: block; margin-bottom: 4px;">
+                📋 Ready-to-Use Future Question Prompt (Cut and Paste into Future Questions):
+              </strong>
+              <div class="prompt-box">
+                Build a Composite Transformation Score from matched Point-1 Pre/Post pairs (Workshop_Level == 0.1). Then, separately for FEMALE and MALE, predict it using ONLY Pre-phase theme scores and headline items (Life_Criteria_Cause_Of_Work, Career_Preference_Working_In_Ngo, Financial_Expected_Income_Age_30, Metric_Life_Satisfaction_Global, etc.) plus Age_At_Workshop (&gt;0), Educational_Stream_Category, Education_Status and Workshop_Batch_Number. Report 5-fold cross-validated R², the top-10 most important baseline drivers per gender with a plain-language explanation, the rank correlation of driver importance between genders, and the effective N. State clearly if the model is too weak to trust.
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 2. COMPLETE 5-STEP PROGRESSIVE EXPERIMENT TIMELINE & DECISIONS (COLLAPSIBLE BY DEFAULT, LAST IN SEQUENCE) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #4f46e5;">2</span>
+          <span>2. Complete 5-Step Progressive Experiment Timeline &amp; Decisions</span>
+          <span class="badge" style="background: #e0e7ff; color: #3730a3; border-color: #c7d2fe; margin-left: 6px;">5 Steps</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 13px; color: #64748b; margin: 0 0 16px 0;">
+          Shows the exact question asked in each step, the choices proposed by the AI, the steering path chosen, and the empirical results.
+        </p>
+
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #1</span> Building a Fair Pre/Post Sample and Comparing Starting Points by Gender
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">Load both CSVs and cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to string. Filter the questionnaire to Workshop_Level == 0.1 using parseFloat. Clean the data: set 0 to NaN in scored columns (except Financial_Years_To_Independence), set out-of-range values (&gt;8 on ranks, &gt;5 on agreement items) to NaN, and clip income to 5,000–1,000,000. Split rows into Pre and Post, add _pre/_post suffixes, and inner-merge on Participant_Id. Inner-merge Gender from Demographics. Reverse-code the listed items (6 − x) and compute the 15 theme scores using `items` only, excluding alt-wording and not-usable columns. Count participants by gender and by Workshop_Batch_Number. Compare Pre theme means between genders with Welch t-tests (or Mann-Whitney) and Cohen's d.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                How many male and female participants have a matched Pre and Post Point-1 questionnaire with known Gender? Do men and women differ in their Pre-workshop (starting) scores on the mindset themes and headline columns?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Paired within-gender change with FDR and missingness checks</strong>: <span style="color:#64748b;">Run within-gender Pre→Post tests on all 23 themes and headline items. Each item uses only respondents with valid (non-zero) values at both Pre and Post. Use Wilcoxon signed-rank as the primary test and a paired t-test as a cross-check. Report paired effect sizes (Cohen's dz and rank-biserial r) with bootstrap 95% CIs, and apply Benjamini-Hochberg FDR correction within each gender. Also report how many people are lost to the 'both waves valid' requirement for each theme, and check whether zero/missing rates shift from Pre to Post. A missing-rate shift would itself bias the change estimates. Flag citizenship_and_environment, money_attitudes, courage_agency_autonomy and the insecurity index as low-coverage. For the income expectation, analyse the change in log income or the median change, because the outliers seen in Step 1 would otherwise dominate. This is the most direct and defensible answer to the planned question.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Compare Each Person to Their Own 'Before' Self &mdash; <em>Like a coach timing each runner's sprint at the start of the season and again at the end. You only count runners who showed up for both races. You also note how many skipped one, in case the no-shows were mostly the slow ones.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Model gender × time interaction directly</strong>: <span style="color:#64748b;">Reshape the data to long format and fit a mixed-effects model per theme: outcome ~ time × gender + (1 | respondent). Use ordinal mixed models for rank and Likert items. Separate within-gender tests can mislead. For example, a change that is 'significant for women but not men' does not show that women changed more. The interaction term answers that question directly. Mixed models also use partial data from people who answered only one wave, which helps the low-coverage themes. Optionally adjust for baseline score to account for regression to the mean on themes where women started lower, such as courage/agency.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Put Women and Men in the Same Race &mdash; <em>Imagine two cake bakers. Saying 'her cake rose and his didn't really' isn't the same as proving hers rose more. You'd put both cakes in the same oven, side by side, and measure the difference directly.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Restrict to high-coverage themes; sensitivity-test the rest</strong>: <span style="color:#64748b;">Limit the primary change analysis to themes answered by at least about 1,200 people at both waves. This avoids drawing conclusions from small, possibly self-selected subsamples. Then run a sensitivity analysis on the low-coverage themes: citizenship (n = 346), money attitudes, courage/agency and insecurity. First compare the Pre profile of responders and non-responders on a theme to check whether missingness is random. Then re-estimate change under multiple imputation, treating zeros as missing at random conditional on the other themes. Report a theme's change only if it holds up under both approaches.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Trust the Crowd, Double-Check the Few &mdash; <em>Like picking a restaurant. You trust a rating backed by 1,000 reviews. But a rating from just a handful of reviewers might come from the owner's friends, so you dig a little deeper before believing it.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Focus on behavioural intent outcomes only</strong>: <span style="color:#64748b;">Narrow Step 2 to the outcomes closest to real-world behaviour: NGO work preference rank, cause-of-work importance, full-time social action plans, the ordinal social-action engagement score, and log-transformed expected income. Analyse within-gender change with McNemar tests for binary plans, Wilcoxon tests for ranks, and paired tests on log income. These are where the clearest baseline gender gaps sit. Checking whether those gaps widen, narrow or persist after the program gives a sharper and more decision-relevant story than screening all 23 themes. The trade-off is that broader mindset shifts are deferred to a later step.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Follow the Career Plans &mdash; <em>Like checking whether a cooking class changed what people actually plan to cook for dinner this week, not just whether they feel more excited about food.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Paired within-gender change with FDR and missingness checks</span>
+                  
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **Sample and data:** The questionnaire had 2,157 Pre rows and 1,452 Post rows at Point 1. These matched into 1,450 pairs, and all 1,450 survived the demographics join and gender filter. That gives 777 women and 673 men. Many items had large numbers of zeros, which were treated as missing. Some themes therefore rest on far fewer people: citizenship_and_environment has only 346, money_attitudes 963, courage_agency_autonomy 1,054, and the insecurity index 1,120. Compare those themes with caution, because the people who answered them may differ from the full group.
+
+**Findings:** Men and women look very similar at Pre. Most of the 23 comparisons show negligible differences. Cohen's d is an effect-size measure, and values under 0.2 mean the gap is tiny compared with the normal spread among individuals. Only two differences held up after a strict correction for running many tests (p &lt; 0.002):
+- **Working in an NGO:** Women ranked it as a stronger preference (mean 3.05 vs 3.55; lower rank = stronger preference). This is a small effect (d = −0.35).
+- **Expected income at age 30:** Women's median was 95,000 and men's 100,000. The means were 147,720 vs 187,249, but a few very high earners pull the means up, so the medians and rank-based test are more trustworthy. This is a small effect (d = −0.20), and the output labels the unit as monthly INR.
+
+Several other gaps are suggestive but not reliable once the number of tests is accounted for. Women scored lower on courage/agency/autonomy (3.11 vs 3.29, p = 0.004), values and moral reasoning (3.07 vs 3.18, p = 0.016) and citizenship and environment (3.55 vs 3.77, p = 0.034, though only 346 people answered it). Women also ranked &quot;cause of work&quot; as slightly more important (p = 0.011). On social action, women's ordinal engagement score was slightly higher (3.79 vs 3.68, p = 0.061), and 26.3% of women planned full-time social action versus 23.9% of men (p = 0.31). Neither difference is statistically clear. Life satisfaction, purpose, changemaker identity, insecurity and the other themes were essentially identical across genders. These are observational associations, not causal effects, and they describe group averages rather than individuals.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #2</span> Within-Gender Paired Pre→Post Change with Both-Waves-Valid Samples, FDR Control and Missingness Audit
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">1) Rebuild the Step 1 frame. Load both tables, cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to string, and filter parseFloat(Workshop_Level)===0.1. Split rows into Pre and Post, add _pre/_post suffixes, and inner-merge on Participant_Id. Join to demographics for Gender (FEMALE/MALE), then assert N=1,450 (777 F / 673 M).
+2) Clean the data. Set 0 to NaN in every scored column except Financial_Years_To_Independence. Apply the out-of-range rules (rank items &gt;8 → NaN; listed agreement items &gt;5 → NaN). Reverse-code the listed items (6−x). Invert rank items (9−x) so that higher always means a stronger preference or more importance for presentation, and state this explicitly. Exclude not_usable columns and alt_wording_items from theme scores.
+3) Compute theme scores. Calculate the same 23 measures as Step 1: theme means per wave, the headline items, and the insecurity_index as the mean of the 9 insecurity items after dropNa. For the ordinal engagement score, map 'Fulltime as a career'=5 through 'Monetary contribution'=1, and treat 'Not yet decided / confused' as NaN. Track is_fulltime separately.
+4) Apply the both-waves-valid rule and audit missingness, per measure and per gender:
+   - Report N_pairs_total, N_valid_pre, N_valid_post, N_both_valid, and % lost.
+   - Compare the missing rate at Pre vs Post with a McNemar test on the paired missing indicators.
+   - Compare Pre means of completers vs non-completers (Mann-Whitney) to detect selective attrition.
+   - Flag citizenship_and_environment, money_attitudes, courage_agency_autonomy and insecurity_index as LOW-COVERAGE, plus any measure with N_both_valid &lt;60% of the gender group.
+5) Run the paired tests within each gender:
+   - delta = post − pre. Report Pre mean, Post mean, mean delta, median delta, and % improved / unchanged / declined (|delta|&lt;0.01 counts as unchanged for theme means; exact equality for single items).
+   - Primary test: Wilcoxon signed-rank (zero differences dropped, normal approximation with tie and continuity correction). Effect size: matched-pairs rank-biserial r.
+   - Cross-check: paired t-test (t-distribution CDF implemented in JS). Effect size: Cohen's dz = mean(delta)/sd(delta).
+   - Bootstrap 95% percentile CIs (2,000 resamples, seeded PRNG) for the mean delta, dz and r.
+6) Handle income and binary outcomes:
+   - Financial_Expected_Income_Age_30: clip to 5,000–1,000,000 and analyse delta of log(income), reported as % change (exp(mean)−1). Also report the median delta and a Wilcoxon test on the raw values.
+   - is_fulltime: McNemar Pre vs Post, with switched_to_fulltime rates per gender (restricted to pre==0).
+7) Apply Benjamini-Hochberg FDR at q=0.05 separately within each gender across all tested measures.
+8) Rank measures within each gender by |dz|, giving rank-biserial r as a secondary key. Flag disagreements between the Wilcoxon and t-test results. Extract the top-5 and bottom-5 measures per gender.
+9) Produce a descriptive side-by-side comparison of dz with CIs by gender. Use it only to nominate themes for Step 3, with no formal interaction test yet. Report all results as observational, single-arm associations rather than causal workshop effects.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Among the 1,450 matched Point-1 pairs (Workshop_Level 0.1), restricted for each measure to participants with valid non-zero values at both Pre and Post: which of the 23 theme scores and headline items change significantly from Pre to Post within women (n≤777) and within men (n≤673) after Benjamini-Hochberg FDR correction? How large is each change (dz, rank-biserial r, bootstrap 95% CI)? And does the rate of zero/missing responses shift between Pre and Post in a way that could bias these estimates?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Re-run Step 2 with output validation checks</strong>: <span style="color:#64748b;">Re-execute the within-gender paired analysis before moving on. Add hard assertions so the pipeline fails loudly instead of returning 'undefined'. The checks should confirm: (a) the results table is non-empty with 23 measures × 2 genders = 46 rows; (b) per-measure both-waves-valid n is reported for each gender; (c) Wilcoxon p, BH-FDR q, delta, Cohen's dz, rank-biserial r and bootstrap 95% CIs are all non-null; (d) a missingness table exists with wave-specific item non-response per measure and an attrition flag column. This is the safest path because Step 3's gender-difference test depends on knowing whether, and how much, each gender changed. It also needs the both-waves-valid samples and attrition flags to decide which measures are trustworthy.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Redo It, With Alarms On &mdash; <em>It's like your camera handing you a blank photo. You take the picture again, but this time you switch on a setting that beeps if the shot comes out empty, so you never get fooled by a blank print again.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Merge Steps 2 and 3 into one pipeline</strong>: <span style="color:#64748b;">Build a single validated pipeline. Stage A computes the within-gender paired statistics (Wilcoxon, dz, FDR, missingness flags). Stage B immediately fits the between-gender models on the same both-waves-valid dataset. Stage B has two parts: a Mann-Whitney test on change scores, and an ANCOVA of Post ~ Pre + gender + batch with HC3 robust SEs, run per measure and FDR-corrected across the 23 measures. This saves a round-trip and guarantees both stages use identical samples. The trade-off is that a failure in one stage can hide problems in the other, so per-stage row-count checks are essential.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Do Both Jobs in One Go &mdash; <em>It's like cooking the pasta and the sauce at the same time to save time. You still taste each one separately before serving, because if one goes wrong, you don't want it to spoil the whole plate unnoticed.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Smoke-test on 11 theme scores first</strong>: <span style="color:#64748b;">Debug incrementally by running the Step 2 analysis only on the 11 multi-item theme scores, which are more stable and less prone to missing data than single items. Confirm the output is non-empty and sensible: n per gender, delta direction and plausible effect sizes. Then add the 12 single items, including the reverse-coded rank items, which are the most likely source of coding errors. This isolates where the pipeline breaks and gives early interpretable results on the headline constructs.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Bake One Cookie First &mdash; <em>It's like baking a single test cookie to make sure the oven works before putting in the whole tray. If the test cookie burns, you know the problem is the oven and not your recipe.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Run missingness audit first, then change tests</strong>: <span style="color:#64748b;">Prioritise the attrition and missingness audit as a standalone deliverable before any effect testing. For each measure, compare item non-response at Pre vs Post (McNemar), by gender and batch. Also compare baseline scores of respondents missing vs present at Post (Mann-Whitney, standardized difference). Measures with substantial differential missingness get flagged or handled with inverse-probability weighting in later steps. This guards against Step 3 gender differences that simply reflect who answered.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check Who Skipped Class First &mdash; <em>Imagine a teacher says the class scored better on the second test. Before celebrating, you check who actually showed up. If the struggling students stayed home that day, the 'improvement' might just mean different people took the test.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Re-run Step 2 with output validation checks</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 1 established a matched Point-1 sample of 1,450 pairs (777 women, 673 men) with near-identical starting points. It also exposed heavy zero-as-missing attrition in several themes: citizenship_and_environment N=346, money_attitudes 963, courage_agency_autonomy 1,054, insecurity index 1,120. Change estimates are therefore only defensible if each item uses respondents valid at both waves and if Pre→Post missingness shifts are audited. Following the steering choice, Step 2 now pairs a Wilcoxon signed-rank test (primary) with a paired t-test (cross-check). It reports dz and rank-biserial r with bootstrap 95% CIs, applies Benjamini-Hochberg correction within each gender, flags low-coverage themes, and analyses income change on the log scale or as a median change, so the outliers seen in Step 1 cannot dominate.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                I can't report any findings yet, because the analysis results I received were empty (&quot;undefined&quot;). The analysis either didn't run or its output wasn't passed to me. I don't want to invent numbers such as the 1,450 pairs, the 777 women and 673 men, or any effect sizes, so please re-run the pipeline or share the output tables.
+
+When results are available, here is how to read them. Each of the 23 measures (11 theme scores and 12 single items) is compared Pre vs Post, separately for women and men, using only people with valid answers at both time points. The **Wilcoxon test** is the main test. It asks whether the typical person's change is reliably away from zero, and it is robust to skewed data. **Delta** is Post minus Pre. For the rank-1-to-8 career items, a negative delta means a *stronger* preference, because lower numbers mean higher rank. **Cohen's dz** is the average change measured in units of how much individual changes vary. Roughly 0.2 is small, 0.5 is medium and 0.8 is large. **Rank-biserial r** runs from −1 to +1 and shows how consistently people moved in one direction. The **q-value** is the p-value adjusted for running 23 tests at once. A measure counts as significant only if q &lt; 0.05, which guards against false positives. The **bootstrap confidence intervals** show how much each estimate might shift with different samples. If an interval includes zero, be cautious.
+
+The **missingness check** tests whether people were more likely to skip a question at one time point than the other, or whether those who dropped out differed from those who stayed. If so, the measured change may reflect who answered rather than real change, and such measures get an attrition flag. Even when everything looks clean, this is single-arm observational data with no comparison group. The results show association and change over time, not proof that the workshop caused the change.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #3</span> Validated Re-Run: Within-Gender Paired Pre→Post Change on 23 Measures, with Hard Output Assertions, BH-FDR, Bootstrap CIs and a Missingness/Attrition Audit
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">**1) Load and cast (follow the ONE SHOT pattern)**
+- Locate the files with filenames.find on 'prod_nirman_questionnaire' and 'prod_nirman_demographics'.
+- Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to String in both frames.
+- Filter Workshop_Level with Math.abs(parseFloat(x) - 0.1) &lt; 1e-6.
+
+**2) Clean**
+- Set 0 to NaN in all scored columns.
+- Apply out_of_range_to_nan: values &gt;8 on the listed rank items and &gt;5 on the listed agreement items.
+- Clip Financial_Expected_Income_Age_30 to 5,000–1,000,000 (monthly INR).
+- Map Career_Plan_Social_Action_Engagement to an ordinal 1–5; 'Not yet decided / confused' becomes NaN.
+- Reverse-code (6−x) the listed reverse items before building theme scores.
+- Never use not_usable or alt_wording items inside theme scores.
+
+**3) Pairing**
+- Split rows by Workshop_Phase, add _pre/_post suffixes, and inner-merge on Participant_Id.
+- Join demographics (string key) and keep Gender in {FEMALE, MALE}.
+- ASSERT n_pairs == 1450, n_female == 777 and n_male == 673. Reproducing Step 1 exactly is required.
+
+**4) The 23 measures**
+- **11 theme scores:** purpose_and_direction, meaning_vs_happiness, social_commitment_and_changemaker_identity, social_knowledge_and_competence, values_and_moral_reasoning, courage_agency_autonomy, support_community_mentorship, wellbeing_self, money_attitudes, citizenship_and_environment, and insecurity_index (mean of the 9 insecurity items).
+  - A theme score is the mean of valid items, computed only if at least 2/3 of the theme's items are valid at that wave.
+  - Also report a complete-case sensitivity n.
+- **12 headline items:** Career_Plan ordinal, Metric_Life_Satisfaction_Global, Financial_Expected_Income_Age_30, Life_Criteria_Cause_Of_Work, Life_Criteria_Financial_Security, Career_Preference_Social_Entrepreneurship_Or_Ngo, Career_Preference_Working_In_Ngo, Insecurity_Monetary_Compensation, Insecurity_Parental_Response, Mindset_Found_Life_Purpose, Mindset_Visualizes_Self_As_Changemaker and Mindset_Social_Self_Efficacy_Confidence.
+- Tag the direction of each measure. For rank items, a negative delta means a stronger preference or importance. For insecurity measures, a negative delta means less insecurity.
+
+**5) Per measure × gender, on both-waves-valid rows (delta = post − pre)**
+- Report n_both, mean_pre, mean_post, mean_delta and median_delta.
+- **Cohen's dz** = mean(d) / sd(d), with a guard so that sd = 0 gives dz = 0 and a flag.
+- **Wilcoxon signed-rank test**, implemented by hand:
+  - Drop zero differences (Wilcoxon convention) and report n_nonzero.
+  - Use average ranks for ties.
+  - Use a normal approximation with tie-corrected variance and continuity correction.
+  - Compute the normal CDF with an Abramowitz-Stegun erf approximation.
+- **Rank-biserial r** = (W+ − W−) / (W+ + W−).
+- **Seeded bootstrap** (mulberry32, seed 42, B = 2000 participant resamples) giving percentile 95% CIs for mean_delta, dz and median_delta.
+- **Benjamini-Hochberg q** across all 46 tests. Also report within-gender BH as a sensitivity check.
+
+**6) Missingness and attrition audit**
+
+*Within-pair (per measure × gender):*
+- Report n_valid_pre, n_valid_post, n_both, pre_nonresponse_rate, post_nonresponse_rate and retention = n_both / 1450-subset.
+- Run an exact or approximate McNemar test on discordant validity (valid-Pre/missing-Post vs missing-Pre/valid-Post).
+- Compute the SMD of the Pre score between both-valid participants and Pre-valid-only participants.
+
+*Pre-only attrition:*
+- Compare the ~707 Pre-only Point-1 participants against the 1,450 paired participants, by gender: SMD on Pre scores and a gender-proportion difference.
+
+*Flag:*
+- attrition_flag = TRUE if McNemar q &lt; 0.05, OR |SMD| ≥ 0.2, OR retention &lt; 0.70.
+- trust_tier is 'trustworthy', 'caution' or 'unreliable'. Theme scores with n_both &lt; 400 in either gender, such as citizenship_and_environment, are capped at 'caution'.
+
+**7) Hard assertions (throw new Error on failure, wrapping each measure in try/catch that rethrows with context)**
+- (a) results.length === 46, with exactly 23 unique measures × {FEMALE, MALE}.
+- (b) n_both is an integer ≥ 30 for every row.
+- (c) p, q, mean_delta, dz, r and all CI bounds are finite numbers, not null, undefined or NaN.
+- (d) The missingness table has 46 rows with the columns n_valid_pre, n_valid_post, pre_nonresponse_rate, post_nonresponse_rate, mcnemar_p and attrition_flag (boolean).
+- (e) The returned object has a top-level validation block, {all_checks_passed: true, checks: [...]}, with console.log of each check.
+
+**8) Gated preview, only if all checks pass**
+- Per measure, report the descriptive female-minus-male difference in mean_delta and median_delta, with bootstrap CIs.
+- Clearly label it 'non-inferential preview; formal gender-gap tests and ANCOVA deferred to Step 4'.
+- Round all displayed numbers to 2 decimals.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Among the 1,450 matched Point-1 pairs (Workshop_Level 0.1; 777 FEMALE, 673 MALE), for each of the 23 measures from Step 1 (11 theme scores and 12 headline items), restricted per measure to participants with valid non-zero values at both Pre and Post:
+(1) Does the score change significantly from Pre to Post within women and within men separately (Wilcoxon signed-rank, BH-FDR q&lt;0.05 across the 46 tests)?
+(2) How large is each change (mean and median delta, Cohen's dz, matched-pairs rank-biserial r, bootstrap 95% CIs)?
+(3) Does wave-specific non-response or Pre-only attrition differ by gender in a way that could bias these change estimates?
+The pipeline must pass all output assertions before any result is reported.
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Staged smoke-test pipeline, then minimal core analysis</strong>: <span style="color:#64748b;">Before adding any new analysis, rebuild the pipeline as small checkpoints. Each checkpoint always returns a JSON-serializable dict, and the whole run is wrapped in try/except so it returns the traceback instead of 'undefined'. The checkpoints are: (1) file load and row counts, expected 2,157 Pre and 1,452 Post; (2) ID pairing, expected 1,450 pairs with 777 female and 673 male; (3) construction of the 23 measures, reporting non-null counts per measure and wave; (4) a single pilot test, for example the Wilcoxon test and Cohen's dz for one theme score by gender. Only when all four pass, scale up to the 46 tests with BH-FDR. Defer the bootstrap CIs and the attrition audit to a follow-up. This isolates the failure point and secures the Step 2/3 core results that Step 4's gender comparison depends on.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Fix the Pipe Before Pouring More Water &mdash; <em>Like a dead string of fairy lights: instead of buying a bigger string, you check each bulb one by one until you find the broken one. Or like a cook who tastes the soup after every ingredient instead of only at the end.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Jump to Step 4 with a lean, self-contained script</strong>: <span style="color:#64748b;">Move to the planned career-choice question, but with a deliberately small pipeline that builds its own pairing and does not reuse the failing Step 3 code. Focus on the headline outcome: switching to 'Fulltime as a career'. Within each gender, build a Pre→Post transition table and run McNemar's test. Compare switch rates between women and men with a risk difference and Newcombe CI. Then fit a logistic regression of Post fulltime intent on gender, adjusted for baseline intent. Other career and life-criteria items get only descriptive transition tables. The output is a compact table plus explicit row-count assertions. This makes progress on the core business question while keeping the failure surface small.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Go Straight for the Big Question &mdash; <em>Like skipping the full car inspection and checking only the one tire you're worried about, using a brand-new tire gauge instead of the old broken toolbox.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Stripped-down Step 3: tests only, no extras</strong>: <span style="color:#64748b;">Re-run the within-gender paired analysis with the heavy components removed: no bootstrap resampling (a likely cause of timeouts or memory failure), no attrition audit and no item-nonresponse modeling. Compute only the per-measure n, mean Δ, Cohen's dz, Wilcoxon p and BH q for the 46 gender×measure tests, and return a flat table. Attrition and missingness become a separate later step. This is faster than choice 1 but less diagnostic if it fails again.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Pack Light and Try Again &mdash; <em>Like a car that won't start with a heavy trailer attached: you unhitch the trailer and turn the key again. Or like an overstuffed suitcase that won't close, so you take out the extras and try zipping it again.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Merge Steps 3 and 4 into one ANCOVA model</strong>: <span style="color:#64748b;">Replace the separate within-gender tests and the later gender comparison with a single model per outcome. Fit Post score ~ gender + baseline score (ANCOVA, or ordinal or logistic regression for rank and categorical items). The gender coefficient directly estimates whether shifts differ between women and men, adjusting for different starting points (relevant given the Step 1 baseline comparison). Apply BH-FDR across outcomes. This answers Step 4's question more efficiently, but it adds model complexity before a basic run has succeeded.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> One Model, Two Answers &mdash; <em>Like a coach comparing two runners. Instead of timing each runner's improvement separately and then comparing, the coach looks at their final times while allowing for the fact that one started faster.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Staged smoke-test pipeline, then minimal core analysis</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 2 returned 'undefined', so no within-gender Pre→Post change estimates exist yet, and the original Step 3 (gender gap in change with ANCOVA) cannot be run or interpreted safely. Following the human decision, Step 3 becomes a validated re-execution of the within-gender paired analysis on the 1,450 Point-1 pairs (777 women, 673 men) established in Step 1. Hard assertions make the pipeline fail loudly on empty or null output. The step also adds a missingness and attrition audit, which matters because Step 1 found that several themes rest on sharply reduced samples (citizenship n=346, money_attitudes n=963, courage n=1,054, insecurity index n=1,120). The baseline-adjusted gender-gap ANCOVA moves to Step 4. This step persists a validated per-participant delta table and trust flags for Step 4 to use, plus a gated, non-inferential preview of raw gender gaps in delta.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                **No results can be reported yet.** The analysis output came back as &quot;undefined.&quot; The pipeline either did not run or returned nothing, so I have no pair counts, test statistics, effect sizes, or attrition figures to explain. Any numbers I gave would be invented, which would be especially misleading in a study that depends on checking assumptions. I can't confirm that the 1,450 matched pairs (777 female, 673 male) were found, that the 23 measures and 46 tests were built, or that any of the required assertions passed. The pipeline is supposed to return only the failed assertions if any check fails, and it did not return that either.
+
+**What the analysis will tell you once it runs.**
+- **Paired change by gender:** For each of the 23 measures (11 theme scores and 12 headline items), it compares each person's Post score with their own Pre score, separately for women and men. The average change (post minus pre) shows how much scores moved. Cohen's dz expresses that move relative to how much individuals vary, and the Wilcoxon test checks whether the shift is larger than chance. The Benjamini-Hochberg correction keeps the 46 tests from producing false &quot;hits&quot; by luck. For rank items, a negative change means a *stronger* preference, because 1 is the top rank. For insecurity items, a higher number means more insecure. This is a single group with no comparison group, so these results show association and change over time, not that the workshop caused the change.
+- **Attrition check:** It counts who completed the Pre survey but not the Post survey, and tests whether women and men dropped out at different rates. It also compares the baseline scores of those who left with those who stayed. If leavers started out noticeably different, and differently by gender, the measured changes for each gender could be biased.
+- **Item non-response:** It checks whether missing or invalid answers within the matched pairs differ by gender or by baseline score. This matters because each measure only uses people with valid answers at both time points.
+
+To proceed, please re-run the pipeline, or share the error or log if one exists. The most likely causes are a failed data load, a failed pairing assertion, or a mismatch in the expected 1,450 matched pairs. Once real output is available, I can summarize it in plain language.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #4</span> Staged Smoke-Test Pipeline: Secure the Within-Gender Pre→Post Core, Then a Minimal Gender-Gap-in-Change and Switch-to-Fulltime Comparison
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">**Overall structure**
+- Plain JavaScript; Danfo.js is used only for an optional preview. Pairing uses JS Maps instead of a Danfo merge, which removes a likely failure point.
+- The whole run is wrapped in try/catch. On error it returns {ok:false, failed_checkpoint, error: e.message, stack: e.stack, checkpoints_so_far}.
+- The script ends with an explicit top-level `return` of the result object. All numbers pass through a sanitizer that turns NaN or Infinity into null, so the object is JSON-safe.
+- Each checkpoint pushes {name, expected, actual, pass} into a `checkpoints` array.
+
+**CP1 – Load**
+- Locate files with `Object.keys(data)` and `.includes('prod_nirman_questionnaire')` / `.includes('prod_nirman_demographics')`.
+- Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to trimmed strings.
+- Filter to Point 1 with `Math.abs(parseFloat(Workshop_Level) - 0.1) &lt; 1e-6`.
+- Assert Pre = 2,157 and Post = 1,452 rows. Also report the column count and the first 5 column names.
+
+**CP2 – Pairing**
+- Build Map(id → row) for Pre and for Post, and report any duplicate IDs. Inner-join the two maps.
+- Join to demographics via Map(String(Participant_Id) → Gender) and keep only FEMALE or MALE.
+- Assert 1,450 pairs, 777 FEMALE and 673 MALE.
+- If any assertion fails, stop and return diagnostics: set sizes and sample unmatched IDs.
+
+**CP3 – Measure construction**
+- Set 0 to NaN in every scored column. Apply the out-of-range rules: rank items &gt;8 and the listed agreement items &gt;5 become NaN.
+- Theme scores (11): purpose_and_direction, meaning_vs_happiness, social_commitment_and_changemaker_identity, social_knowledge_and_competence, values_and_moral_reasoning, courage_agency_autonomy, support_community_mentorship, wellbeing_self, money_attitudes and citizenship_and_environment.
+  - Use `items` only, never alt_wording items. Reverse-code the listed items as 6 − x.
+  - A theme score is the mean of valid items, requiring at least 50% of its items to be valid.
+- Insecurity index: the mean of the 9 insecurity items after dropNa. This is the 11th theme score.
+- Headline items (12):
+  - The Career_Plan ordinal (1–5; 'Not yet decided / confused' and nulls become NaN).
+  - Metric_Life_Satisfaction_Global.
+  - Financial_Expected_Income_Age_30, clipped to 5,000–1,000,000.
+  - Life_Criteria_Cause_Of_Work and Life_Criteria_Financial_Security.
+  - Career_Preference_Social_Entrepreneurship_Or_Ngo and Career_Preference_Working_In_Ngo.
+  - Insecurity_Monetary_Compensation and Insecurity_Parental_Response.
+  - Mindset_Found_Life_Purpose, Mindset_Visualizes_Self_As_Changemaker and Mindset_Social_Self_Efficacy_Confidence.
+- Invert the rank items as 9 − rank, so that a positive delta means higher importance or preference.
+- Report valid-N per measure × wave × gender, and the both-waves-valid N. Compare these Ns against the Step 1 Pre Ns (e.g., citizenship 346, money 963, courage 1,054, insecurity 1,120) and flag any deviation above 5%.
+
+**CP4 – Pilot test**
+- For purpose_and_direction by gender, compute the paired delta and the Wilcoxon signed-rank test (drop zero differences; normal approximation with tie correction; two-sided p via an erf approximation). Also compute dz (mean Δ / SD Δ), rank-biserial r, and sign-test counts (up, down, tie).
+- Assert that n &gt; 0, p is in [0,1], dz is finite, and the direction of the sign test agrees with the direction of the mean delta.
+
+**Stage 5 – Within-gender core (runs only if CP1–CP4 all pass)**
+- Run all 23 measures × 2 genders = 46 Wilcoxon tests, with Benjamini-Hochberg FDR applied across the 46.
+- For each test, report n, Pre/Post means and medians, mean and median Δ, dz, r and q.
+
+**Stage 6 – Minimal between-gender comparison**
+- Mann-Whitney U on deltas for the 23 measures (normal approximation, tie-corrected), with BH-FDR across the 23. Report the female − male difference in median Δ and the rank-biserial effect size.
+- Baseline adjustment for any measure with q &lt; 0.10, plus Working_In_Ngo and Income_30: closed-form OLS of Δ ~ is_female + pre_score + batch_number. Report the gender coefficient, its SE, its t statistic, and n.
+- Switch to full-time: compute is_fulltime_pre and is_fulltime_post (1 if the response equals 'Fulltime as a career'). Restrict to pre == 0 with a non-null post. Compare switch rates by gender with a two-proportion z-test, and report the risk difference with a Wald 95% CI.
+- Also report the reverse-switch rate (pre == 1 → post == 0) and a 5×5 Pre→Post engagement transition matrix by gender, with an 'undecided' row and column.
+- Income at 30: report the median Δ and the % of participants who lowered their expectation, by gender.
+
+**Deferred**
+- Bootstrap CIs, the Pre-only attrition audit and the 9-item insecurity charts.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                Using a checkpointed pipeline that always returns a JSON-serializable object (never undefined), can we reproduce the Step 1 sample: 2,157 Pre and 1,452 Post Point-1 rows, 1,450 matched pairs, 777 FEMALE and 673 MALE? If all four checkpoints pass, the analysis addresses three questions:
+(a) Which of the 23 measures (11 theme scores + 12 headline items) change significantly from Pre to Post within women and within men (Wilcoxon signed-rank, BH-FDR q&lt;0.05 across the 46 tests, effect sizes Cohen's dz and rank-biserial r)?
+(b) Do women and men differ in the size of their change on those 23 measures (Mann-Whitney U on deltas, BH-FDR across the 23 tests), with particular attention to the two Step 1 baseline gaps: Career_Preference_Working_In_Ngo and Financial_Expected_Income_Age_30?
+(c) Among participants not planning full-time at Pre, does the rate of switching to 'Fulltime as a career' differ by gender?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Baseline-adjusted composite transformation model with gender interactions</strong>: <span style="color:#64748b;">Build a single 'strong transformation' outcome from high-coverage core measures. Use meaning-vs-happiness, purpose, values/moral reasoning, courage/agency, money attitudes and reverse-scored insecurity. Standardize each pre→post change and average them. Analyze it as a continuous score, with a secondary binary flag for the top tertile. Exclude low-coverage items such as citizenship (346 pairs) and changemaker visualization (455 pairs) to avoid list-wise deletion. Fit an ANCOVA-style regression with these predictors: the baseline composite (which controls regression to the mean), gender, age, education stream, a batch random effect, and gender × baseline-feature interactions. This answers 'does gender still predict transformation' with interpretable coefficients. Then run a gradient-boosted model with SHAP, split by gender, as a robustness check on which starting traits matter. Keep the Step 4 checkpoint assertions, given the earlier failed runs.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Keep moving forward on the main track (Baseline-adjusted composite transformation model with gender interactions) &mdash; <em>Like sticking with the main recipe that everyone enjoyed so far, without changing too many spices.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Model switch-to-fulltime as the behavioral outcome</strong>: <span style="color:#64748b;">Use the actual career switch as the outcome instead of attitude change (1,085 eligible: 573 women, 512 men). The attitude scores show ceiling effects (women at 4.63/5), while the switch is a concrete behavior with a borderline gender gap. Fit a logistic regression with these predictors: gender, baseline NGO rank, baseline income expectation, baseline composite mindset, age, stream, and batch fixed or random effects. Add gender × NGO-rank and gender × income-expectation interactions. This tests whether women's 6-point switching advantage survives adjustment, or is explained by their stronger baseline NGO preference and lower income expectations.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Keep moving forward on the main track (Model switch-to-fulltime as the behavioral outcome) &mdash; <em>Like sticking with the main recipe that everyone enjoyed so far, without changing too many spices.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Correct for ceiling effects before modeling transformation</strong>: <span style="color:#64748b;">Many participants started near the top of the 1–5 scales, and post-scores approach the ceiling, so raw change scores penalize people who began high. Recompute each person's change as the proportion of possible improvement achieved: (post − pre) / (max − pre). Also flag participants who started within 0.5 points of the ceiling and analyze them separately. Then fit the gender-adjusted model on this corrected outcome. This prevents 'drivers' from simply reflecting low baseline scores.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Keep moving forward on the main track (Correct for ceiling effects before modeling transformation) &mdash; <em>Like sticking with the main recipe that everyone enjoyed so far, without changing too many spices.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Separate per-gender ML models with SHAP explanations</strong>: <span style="color:#64748b;">Define strong transformation as a binary outcome: top quartile of the composite change. Train separate gradient-boosted classifiers for women and men on baseline features (mindset items, career ranks, income expectation, age, stream, batch). Use cross-validation stratified by batch, and report AUC with confidence intervals. Compare SHAP importance rankings and dependence plots across genders. This is more exploratory and flexible about nonlinear drivers, but it is less suited to a formal test of whether gender predicts transformation, and it is at higher risk of overfitting in subgroups of roughly 700.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Keep moving forward on the main track (Separate per-gender ML models with SHAP explanations) &mdash; <em>Like sticking with the main recipe that everyone enjoyed so far, without changing too many spices.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Baseline-adjusted composite transformation model with gender interactions</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Steps 2 and 3 both returned 'undefined', so no within-gender Pre→Post results exist yet. Step 4's original hypothesis (that Step 3 mindset changes translate into career shifts) has no foundation. Following the chosen steering, Step 4 becomes a staged, fail-loud JavaScript pipeline. Four hard checkpoints (load, pairing, measure construction, single pilot test) must pass before the core 46-test within-gender paired analysis runs. Only then does a minimal between-gender comparison of change run, covering the Step 1 baseline gaps and the switch-to-fulltime rate. Bootstrap CIs, the attrition audit and the 9-item insecurity charts are deferred.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                All four checkpoints passed, so the analysis ran on the full matched sample. There were 2,157 Pre rows, 1,452 Post rows and 1,450 matched Pre/Post pairs, split into 777 women and 673 men. Within each gender, every one of the 23 measures changed significantly from Pre to Post, even after correcting for running many tests. The changes were large for the main themes. On the 1–5 agreement scale, women's meaning-vs-happiness score rose from about 3.20 to 4.63 (men 3.20 to 4.47), and purpose-and-direction rose by about 1.11 for women and 1.03 for men. Insecurity fell by about 0.4–0.5 points on its 1–10 scale. Participants also ranked &quot;cause of work&quot; as more important (rank numbers dropped by about 1.2) and ranked NGO and social-enterprise careers as stronger preferences. For these ranked items, lower numbers mean stronger preference. Two results point the other way. Financial security became a lower priority, with rank numbers rising by about 0.5. Expected income at age 30 also dropped, with the median falling from about 100,000 to 60,000–70,000 INR, which may mean expectations became more modest. Sample sizes differ by measure: some items, such as citizenship (346 pairs) and &quot;visualizes self as changemaker&quot; (455 pairs), were answered by far fewer people.
+
+Women and men changed in broadly similar ways. Only 4 of the 23 changes differed by gender after correction: meaning-vs-happiness, values and moral reasoning, courage/agency, and money attitudes. In each, women improved slightly more, and the effect sizes were small (about 0.09–0.10 on a scale where 0 means no difference and 1 means complete separation). The two baseline gaps from Step 1 held up before the workshop. Women started more inclined toward working in an NGO (average rank 3.05 vs 3.55 for men, where lower is stronger) and expected lower incomes at 30 (average about 147,720 vs 187,249 INR). However, neither gap's *change* differed significantly between genders (q = 0.08 and 0.21). For switching to full-time social action, 43% of eligible women (244 of 573) switched, against 37% of men (187 of 512). The 6-point difference has a 95% confidence interval from about 0 to 12 points, and the odds ratio is 1.29 (1.01–1.65). The p-value is 0.04, which is borderline, and this single test wasn't adjusted for multiple comparisons, so treat it as suggestive rather than firm. Finally, this is single-arm observational data with no comparison group. The results show association and change over time, not that the workshop caused them.
+              </div>
+            </div>
+          </div>
+        
+          <div class="step-card">
+            <div class="step-header">
+              <div class="step-title">
+                <span class="step-num">Step #5</span> Baseline-Adjusted Composite Transformation: Does Gender Still Predict Internal Change Once Starting Point, Age, Stream and Batch Are Controlled, and Do the Baseline Drivers Differ by Gender?
+              </div>
+              <span style="font-size: 11px; font-family: monospace; color: #64748b; background: #ffffff; padding: 2px 6px; border-radius: 4px; border: 1px solid #e2e8f0;">STAGE 0 – CHECKPOINTS: Reuse the Step 4 loader. Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to strings. Filter with parseFloat(Workshop_Level)===0.1, then pair Pre and Post with an inner merge on Participant_Id and join demographics with Gender in {FEMALE, MALE}. Hard-assert 2157/1452/1450/777/673. Wrap every stage in try/catch, and always return a JSON object containing a checkpoints[] array and a failedStage field (never undefined).
+
+STAGE 1 – CLEAN AND SCORE: Set 0 to NaN in all scored items. Apply the out-of-range rules (values &gt;5 on the listed agreement items set to NaN). Reverse-code the listed items with 6−x. Build each theme score as the mean of the theme's valid items (alt_wording items excluded). The insecurity_index is the mean of the 9 insecurity items, with nulls dropped.
+
+STAGE 2 – CTS: For each of the 6 components, compute delta = post − pre, using only participants valid at both waves. Multiply the insecurity delta by −1 so that a reduction counts as positive change. Z-score each delta using the POOLED (both-gender) mean and SD so that gender gaps are preserved. CTS is the mean of available z-deltas for participants with at least 4 of 6 valid components. Build a baseline composite (CTS_pre) the same way from z-scored Pre theme scores. Report the following:
+- the N-flow table: pairs → ≥4 components → Age_At_Workshop&gt;0 → final N, by gender;
+- the inter-component correlation matrix of the deltas and a Cronbach α.
+
+Sensitivity composites: (a) complete-case on all 6 components; (b) a high-coverage 3-component version (meaning, purpose, values), which needs no listwise deletion.
+
+STAGE 3 – ANCOVA (OLS via normal equations in plain JS, solved with Cholesky/QR):
+- Model M0: CTS ~ female.
+- Model M1: M0 + CTS_pre + Age (centered) + Educational_Stream_Category dummies (reference 'Arts/Commerce/Science/Pharmacy') + Education_Status dummies + batch dummies (reference batch 7). The batch dummies stand in for a random effect. Also report the batch ICC from a one-way ANOVA and a James-Stein-shrunken batch-mean table as an approximation of a random intercept.
+- Model M2: M1 + female × {CTS_pre, Pre courage_agency_autonomy, Pre values_and_moral_reasoning, Pre Career_Preference_Working_In_Ngo (inverted 9−x), log of Pre Financial_Expected_Income_Age_30 clipped to 5,000–1,000,000}. These five pre-specified interactions are motivated by the Step 1 and Step 4 gaps.
+
+Inference: standardize numeric predictors. Use 2,000 participant-level bootstrap CIs, plus a wild-cluster bootstrap by batch (11 clusters, Rademacher weights) for the female coefficient. Apply BH-FDR across the 5 interaction terms. Report R², ΔR² (M0→M1→M2), and simple slopes of CTS_pre for each gender.
+
+The secondary binary outcome is top-tertile CTS (cut-off computed on the pooled sample). Fit a class-weighted logistic regression by IRLS with the M1 and M2 predictors, and report the adjusted odds ratio for female with a bootstrap CI.
+
+STAGE 4 – ROBUSTNESS (gender-split GBM):
+- Hand-rolled gradient boosting with squared-error regression trees: depth 3, learning rate 0.05, at most 300 rounds with early stopping on a 20% validation fold, minimum leaf size 20, row subsampling 0.8.
+- Features: the 11 Pre theme scores, the 12 Pre headline items, Age, stream and Education_Status one-hots, and batch. Strictly no Post columns, deltas, or Point_2/Point_3/Person_Years fields.
+- Fit female-only and male-only models separately. Report 5-fold CV R² and Spearman ρ, and the top-tertile AUC derived from predicted CTS.
+- Compute Monte-Carlo Shapley values using Štrumbelj–Kononenko sampling with 200 permutations on 300 sampled rows per gender, set a fixed seed, and report mean |SHAP| with sign direction.
+- Cross-check with permutation importance (10 repeats).
+- Compare driver rankings across genders using a Spearman rank correlation of mean |SHAP| over the shared features, plus top-10 overlap counts.</span>
+            </div>
+
+            <div style="margin-bottom: 12px;">
+              <strong style="font-size: 11px; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em;">Sub-Question Investigated:</strong>
+              <div style="font-size: 13.5px; font-weight: 700; color: #0f172a; margin-top: 3px;">
+                The sample is the 1,450 matched Point-1 pairs (Workshop_Level 0.1; 777 FEMALE, 673 MALE), with the Step 4 checkpoints re-asserted: 2,157 Pre rows, 1,452 Post rows, 1,450 pairs, 777/673. Build a Composite Transformation Score (CTS) as the mean of pooled-standardized Pre→Post deltas for six components: meaning_vs_happiness, purpose_and_direction, values_and_moral_reasoning, courage_agency_autonomy, money_attitudes, and the reverse-signed insecurity_index. Require at least 4 of the 6 components to be valid. The step answers five questions. (1) After adjusting for the baseline composite, Age_At_Workshop (&gt;0), Educational_Stream_Category, Education_Status and Workshop_Batch_Number, is the gender coefficient on CTS different from zero, and how large is it in SD units? (2) Does the raw female advantage seen in Step 4 shrink once baseline is controlled, which would point to catch-up or regression to the mean rather than a gender effect? (3) Do any of five pre-specified gender × baseline interactions survive BH-FDR? (4) Is gender associated with a binary top-tertile 'strong transformer' flag after the same adjustment? (5) In separate female-only and male-only gradient-boosted models, do the top-10 baseline drivers of CTS differ by gender?
+              </div>
+            </div>
+
+            <div class="grid-2">
+              <div class="sub-box">
+                <div class="sub-lbl">Proposed Forward Choices (With Simple Intuitive Explanations)</div>
+                <div style="color: #334155; line-height: 1.5;">
+                  
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Staged re-run of Step 5 with hard assertions</strong>: <span style="color:#64748b;">Re-run the Step 5 analysis using the staged smoke-test design that worked in Step 4. Each stage must print an explicit, non-empty output and pass an assertion before the next stage runs. Stage 0: re-verify the checkpoint counts. Stage 1: build the CTS composite and report its N, mean, SD and missingness by gender. Stage 2: ANCOVA of CTS on Gender, then add baseline composite, age, stream and batch, reporting the gender coefficient in both models (Q1/Q2). Stage 3: logistic model for membership in the top CTS tercile, reported as an odds ratio and a percentage-point difference (Q4). Stage 4: five Gender×baseline interactions with BH-FDR (Q3). Stage 5: gender-specific gradient-boosted or random-forest models with 5-fold CV R² and permutation importance (Q5), run last because they are the heaviest and most failure-prone step. If a later stage fails, the confirmed results from earlier stages are kept.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Rebuild It Brick by Brick &mdash; <em>Like testing each string of fairy lights before you hang them. If one string stays dark, you know exactly which one to fix, and the strings that work still light up the room.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Minimal ANCOVA only: baseline-adjusted gender gap</strong>: <span style="color:#64748b;">Drop the interactions, tercile logistic model and tree models for now. Run only the core question: does gender still predict CTS after controlling for baseline score, age, stream and batch? Report the unadjusted and adjusted gender coefficients with robust (HC3) standard errors, the baseline slope (a negative slope suggests catch-up or regression to the mean) and the partial R². This is the smallest analysis that answers the headline question, and it is almost certain to complete.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Answer the One Big Question First &mdash; <em>Like cooking only the main dish tonight and saving the side dishes for tomorrow, so dinner is definitely on the table.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Audit and fix CTS composite construction first</strong>: <span style="color:#64748b;">The composite score itself is a likely cause of the failure. Problems in z-scoring, item reversal, or rows with missing items can produce empty or all-NaN outputs that propagate as &quot;undefined&quot;. Before modelling, explicitly define the CTS: list its component measures, standardise each change score against the Pre SD, set a minimum-items rule (for example, at least 80% of items present), and check internal consistency (Cronbach's α or a one-factor loading check). Then compare the CTS distribution by gender and confirm it is non-degenerate. Modelling resumes only once the outcome is validated.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Check the Measuring Tape &mdash; <em>Like making sure your ruler isn't snapped or smudged before you measure who grew the most this year.</em>
+                              </div>
+                            
+                          </div>
+                        
+                          <div style="margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f1f5f9;">
+                            &bull; <strong>Per-measure residualized change instead of composite</strong>: <span style="color:#64748b;">Skip the composite and model each of the 23 measures separately using residualized change: regress Post on Pre, age, stream, batch and Gender for each measure. This handles regression to the mean within each measure, shows which specific domains carry any gender gap, and avoids a single fragile composite. Apply BH-FDR across the 23 gender coefficients. The trade-off is less of a single headline number, but the results are more granular and more robust.</span>
+                            
+                              <div style="margin-top: 4px; font-size: 11.5px; color: #92400e; background: #fef3c7; padding: 4px 8px; border-radius: 4px; border: 1px solid #fde68a;">
+                                <strong>💡 In Plain Words:</strong> Look at Each Skill Separately &mdash; <em>Like reading each subject on a report card (maths, art, sport) instead of looking only at the overall average grade.</em>
+                              </div>
+                            
+                          </div>
+                        
+                </div>
+              </div>
+
+              <div class="sub-box">
+                <div class="sub-lbl">Choice Made &amp; Trajectory Taken</div>
+                <div style="margin-top: 4px;">
+                  <span class="choice-badge">&rarr; Staged re-run of Step 5 with hard assertions</span>
+                  <span class="replan-badge">&#x2728; Dynamically Re-Planned</span><div style="font-size: 11.5px; color: #86198f; margin-top: 6px;">Rationale: Step 4 showed that all 23 measures improved within both genders. Women gained slightly more on only four themes (meaning-vs-happiness, values/moral reasoning, courage/agency, money attitudes; r ≈ 0.09–0.10). Step 1 showed women started lower on courage/agency and values, so the small female advantage may be catch-up or regression to the mean rather than a true gender effect. Following the steering choice, Step 5 drops the originally planned top-tercile classifier on all themes and the TF.js cross-check. In their place it uses a pre-specified six-component standardized composite of high-coverage core measures (excluding citizenship n=346 and changemaker visualization n=455), analysed with a baseline-adjusted ANCOVA with gender interactions and batch effects. A gender-split gradient-boosted model with Monte-Carlo Shapley values serves as the robustness check, and the Step 4 checkpoint assertions are kept so the earlier 'undefined' failures cannot recur.</div>
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-top: 14px; padding: 12px; background: #ffffff; border-radius: 8px; border: 1px solid #e2e8f0;">
+              <div class="sub-lbl" style="color: #047857;">Empirical Results &amp; Answers</div>
+              <div style="font-size: 13px; color: #1e293b; line-height: 1.6; margin-top: 4px;">
+                I can't report any findings yet because the analysis results came through as &quot;undefined.&quot; No tables, checkpoint counts, model coefficients or importance rankings reached me, and I won't invent numbers. That includes whether the checkpoints (2,157 Pre rows, 1,452 Post rows, 1,450 matched pairs, Gender split FEMALE 777 / MALE 673) passed. The analysis most likely failed to run or its output wasn't passed along, so it needs to be re-run, or the output re-sent, before anything can be interpreted.
+
+Once results are available, here is how I would explain them:
+
+- **Data checks:** First I would confirm the row counts match the expected values. If any differ, I would state the observed value with a warning, and every later number would carry its effective sample size.
+- **Q1 and Q2:** These ask whether women show a larger overall improvement (CTS) than men after accounting for where each person started. If the gender gap shrinks a lot once baseline scores are included, and the baseline coefficient is negative, that points to people who started lower catching up (or regression to the mean) rather than a true gender effect.
+- **Q3:** This checks whether gender matters differently depending on someone's starting profile. Because five tests are run, I would report only the ones that survive the false-discovery correction.
+- **Q4:** This asks how much more or less likely women are to land in the top third of improvers. I would report that as an odds ratio and as a plain percentage-point difference.
+- **Q5:** The tree models show which starting traits best predict improvement for women and for men separately, and how much those lists overlap. Cross-validated R² says how much of the variation in improvement is predictable. A low value means improvement is mostly driven by factors we don't measure.
+
+Because this is single-arm observational data, all findings are associations. They are not causal effects of the workshop or of gender.
+              </div>
+            </div>
+          </div>
+        
+      </div>
+    </details>
+
+    <!-- 6. PROJECT DATASET COLUMN REFERENCE BANK (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #475569;">6</span>
+          <span>6. Project Dataset Column Reference Bank (210 Columns)</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="font-size: 12.5px; color: #64748b; margin: 0 0 12px 0;">
+          Columns detected in your uploaded dataset. You can cut and paste any of these column names into subsequent questions:
+        </p>
+        <div>
+          <span class="pill">Participant_Name</span><span class="pill">Participant_Id</span><span class="pill">Gender</span><span class="pill">Workshop_Batch_Number</span><span class="pill">Current_Age</span><span class="pill">Age_At_Workshop</span><span class="pill">Workshop_Name</span><span class="pill">Workshop_Type</span><span class="pill">Workshop_Month_Year</span><span class="pill">Workshop_Month_Name</span><span class="pill">Workshop_Month_Number</span><span class="pill">Workshop_Financial_Year</span><span class="pill">Workshops_Attended_Count</span><span class="pill">Educational_Stream</span><span class="pill">Educational_Stream_Category</span><span class="pill">Current_Status_Of_Work</span><span class="pill">Person_Years_Of_Social_Action</span><span class="pill">Education_Status</span><span class="pill">Native_State</span><span class="pill">Native_District</span><span class="pill">Native_Tehsil_Town</span><span class="pill">Raw_Native_State</span><span class="pill">Raw_Native_District</span><span class="pill">Raw_Native_Tehsil</span><span class="pill">State_Match_Status</span><span class="pill">District_Match_Status</span><span class="pill">Tehsil_Match_Method</span><span class="pill">Point_2_Workshop_Name</span><span class="pill">Point_2_Workshop_Invited</span><span class="pill">Point_2_Workshop_Attended</span><span class="pill">Point_3_Workshop_Name</span><span class="pill">Point_3_Workshop_Invited</span><span class="pill">Point_3_Workshop_Attended</span><span class="pill">Workshop_Level</span><span class="pill">Workshop_Phase</span><span class="pill">Career_Preference_Government_Service</span><span class="pill">Career_Preference_Private_Industry_Job</span><span class="pill">Career_Preference_Own_Business</span><span class="pill">Career_Preference_Social_Entrepreneurship_Or_Ngo</span><span class="pill">Career_Preference_Working_In_Ngo</span><span class="pill">Career_Preference_Academia</span><span class="pill">Career_Preference_Undecided</span><span class="pill">Career_Preference_Other</span><span class="pill">Life_Criteria_Geographical_Location</span><span class="pill">Life_Criteria_Financial_Security</span><span class="pill">Life_Criteria_Work_Satisfaction</span><span class="pill">Life_Criteria_Cause_Of_Work</span><span class="pill">Life_Criteria_Career_Growth</span><span class="pill">Life_Criteria_Work_Life_Balance</span><span class="pill">Life_Criteria_Financial_Prosperity</span><span class="pill">Life_Criteria_Fame_And_Recognition</span><span class="pill">Life_Criteria_Job_Security</span><span class="pill">Insecurity_Social_Acceptability</span><span class="pill">Insecurity_Monetary_Compensation</span><span class="pill">Insecurity_Parental_Response</span><span class="pill">Insecurity_Suitable_Life_Partner</span><span class="pill">Insecurity_Underutilized_Talent_And_Skills</span><span class="pill">Insecurity_Less_Comfortable_Lifestyle</span><span class="pill">Insecurity_No_Visible_Impact</span><span class="pill">Insecurity_Professionally_Left_Out</span><span class="pill">Insecurity_Lack_Of_Life_Satisfaction</span><span class="pill">Insecurity_Future_Comfort_Reduction</span><span class="pill">Career_Plan_Social_Action_Engagement</span><span class="pill">Mindset_Happiness_And_Self_Esteem</span><span class="pill">Mindset_Understands_Social_Issues_And_Severity</span><span class="pill">Mindset_Has_Life_Purpose</span><span class="pill">Mindset_Clear_Long_Term_Sector</span><span class="pill">Mindset_Knows_Personal_Values</span><span class="pill">Mindset_Has_Mentorship_Support_For_Future</span><span class="pill">Mindset_Takes_Stand_On_Social_Issues</span><span class="pill">Mindset_Courage_Against_Conventional_Careers</span><span class="pill">Mindset_Knowledge_Of_Social_Problem_Solving_Approaches</span><span class="pill">Mindset_Reads_Moral_And_Political_Philosophy</span><span class="pill">Mindset_Translates_Social_Intentions_To_Action</span><span class="pill">Mindset_Knows_Swa_Dharma</span><span class="pill">Financial_Attitude_Secure_About_Future</span><span class="pill">Mindset_Social_Change_Responsibility</span><span class="pill">Mindset_Has_Like_Minded_Peer_Network</span><span class="pill">Mindset_Found_Life_Purpose</span><span class="pill">Mindset_Aware_Of_Personal_Motivations_For_Social_Action</span><span class="pill">Mindset_Career_Social_Work_Integration</span><span class="pill">Mindset_Active_Meaning_Making</span><span class="pill">Mindset_Has_Larger_Social_Dream</span><span class="pill">Mindset_Belongs_To_Caring_Community</span><span class="pill">Mindset_Understands_Social_Problem_Solving_Vs_Work</span><span class="pill">Mindset_Has_Failure_Support_System</span><span class="pill">Mindset_Finds_Social_Problem_Solving_Exciting</span><span class="pill">Mindset_Visualizes_Self_As_Changemaker</span><span class="pill">Mindset_Social_Engagement_Crucial_For_Meaning</span><span class="pill">Mindset_Has_Inspiring_Social_Role_Models</span><span class="pill">Mindset_Social_Self_Efficacy_Confidence</span><span class="pill">Mindset_Understands_Happiness_Vs_Meaning</span><span class="pill">Mindset_Emotionally_Mature_Adult</span><span class="pill">Mindset_Acknowledges_Personal_Privilege</span><span class="pill">Mindset_Distinguishes_Needs_Vs_Wants</span><span class="pill">Mindset_Visualizes_Future_Youth_Inspiration</span><span class="pill">Mindset_Has_Guiding_Life_Philosophy</span><span class="pill">Mindset_Confident_In_Life_Experimentation</span><span class="pill">Mindset_Has_Reflection_Opportunities</span><span class="pill">Metric_Life_Satisfaction_Global</span><span class="pill">Mindset_Believes_Morals_Are_Absolute</span><span class="pill">Mindset_Comfortable_Expressing_Feelings</span><span class="pill">Mindset_Prosocial_Purpose_Boosts_Wellbeing</span><span class="pill">Mindset_Understands_Flourishing_Youth_Meaning</span><span class="pill">Mindset_Understands_Scientific_Purpose_Definition</span><span class="pill">Mindset_Excited_By_Life_Possibilities_In_20s</span><span class="pill">Mindset_Purpose_Finding_Is_Urgent_Priority</span><span class="pill">Mindset_Understands_Happy_Vs_Meaningful_Life</span><span class="pill">Mindset_Understands_Goal_Vs_Purpose</span><span class="pill">Financial_Attitude_Money_Equals_Happiness</span><span class="pill">Mindset_Applies_Categorical_Moral_Framework</span><span class="pill">Mindset_Excited_By_Purpose_Pursuit_Process</span><span class="pill">Financial_Attitude_Unbothered_By_Future_Earnings</span><span class="pill">Mindset_Privilege_Implies_Obligation</span><span class="pill">Mindset_Values_Work_Freedom_Over_Financial_Gain</span><span class="pill">Mindset_Understands_Purpose_Importance_And_Benefits</span><span class="pill">Mindset_Social_Contribution_Is_Deepest_Quest</span><span class="pill">Mindset_Knows_Impactful_Organisation_Functioning</span><span class="pill">Mindset_Inspired_By_Known_Changemakers</span><span class="pill">Mindset_Visualizes_Social_Sector_Contribution</span><span class="pill">Financial_Knows_Threshold_Vs_Aspirational_Income</span><span class="pill">Mindset_Alcohol_Safe_Within_Limits</span><span class="pill">Action_Identified_Books_To_Read</span><span class="pill">Action_Plan_Reduce_Carbon_Footprint</span><span class="pill">Action_Plan_Personal_Flourishing_6_Months</span><span class="pill">Action_Plan_Social_Contribution_6_Months</span><span class="pill">Action_Plan_Purpose_Journey</span><span class="pill">Mindset_Knows_How_To_Become_Flourishing_Youth</span><span class="pill">Mindset_Visualizes_Five_Career_Paths</span><span class="pill">Mindset_Spends_Day_In_Meaningful_Pursuits</span><span class="pill">Mindset_Committed_To_Social_Change</span><span class="pill">Mindset_Has_Mentor_For_Life_Matters</span><span class="pill">Mindset_Has_Guiding_Philosophy</span><span class="pill">Mindset_Can_Analyse_Social_Change_Intervention</span><span class="pill">Financial_Attitude_Anxiety_About_Aspirations</span><span class="pill">Mindset_Knows_Social_Problem_Solving_Building_Blocks</span><span class="pill">Mindset_Clarity_On_Purpose_Finding_Process</span><span class="pill">Mindset_Firm_On_Values_Against_Norms</span><span class="pill">Mindset_Understands_Social_Change_Approaches</span><span class="pill">Mindset_Understands_Purpose_Identification_Urgency</span><span class="pill">Mindset_Has_Values_For_Life_Decisions</span><span class="pill">Mindset_Has_Idea_About_Life_Direction</span><span class="pill">Mindset_Identified_Daily_Moral_Resolutions</span><span class="pill">Action_Plan_Purpose_Journey_1_Year</span><span class="pill">Mindset_Clear_Professional_Life_Sector</span><span class="pill">Action_Plan_Social_Change_Journey_1_Year</span><span class="pill">Mindset_Empowered_As_Active_Citizen_With_State</span><span class="pill">Mindset_Clear_Sense_Of_Purpose</span><span class="pill">Mindset_Visualizes_Five_Life_Possibilities</span><span class="pill">Mindset_Life_Beyond_Materialistic_Pleasures</span><span class="pill">Mindset_Anxiety_About_Finding_Purpose</span><span class="pill">Mindset_Sole_Credit_For_Own_Success</span><span class="pill">Mindset_Youth_In_Social_Sector_Is_Societal_Need</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Opposition</span><span class="pill">Mindset_Follows_Moral_Resolutions</span><span class="pill">Mindset_Distinguishes_Meaning_Vs_Pleasure_Seeking</span><span class="pill">Mindset_Understands_Social_Sector_Need_And_Role</span><span class="pill">Mindset_Courage_To_Live_Authentically</span><span class="pill">Mindset_Thought_Through_Life_Direction</span><span class="pill">Mindset_Life_Choice_Independent_Of_Peers</span><span class="pill">Financial_Knows_Needs_Vs_Aspirational_Income</span><span class="pill">Mindset_Visualizes_Social_Sector_Career_Despite_Norms</span><span class="pill">Mindset_Elevation_Motivates_Social_Action</span><span class="pill">Mindset_Self_Actualization_Linked_To_Society</span><span class="pill">Mindset_Unclear_Needs_Vs_Wants</span><span class="pill">Mindset_Poor_Understanding_Of_Socioeconomic_Issues</span><span class="pill">Mindset_Lacks_Reflection_Opportunities</span><span class="pill">Mindset_Believes_Morals_Are_Relative</span><span class="pill">Mindset_Doubts_Social_Purpose_Wellbeing_Impact</span><span class="pill">Mindset_Parental_Approval_Mandatory_For_Career</span><span class="pill">Mindset_Prefers_Safety_And_Security_Path</span><span class="pill">Mindset_Eco_Friendly_Lifestyle_Changes</span><span class="pill">Mindset_Responsibility_To_Give_Back_To_Society</span><span class="pill">Mindset_Own_Efforts_Over_Birth_Circumstances</span><span class="pill">Mindset_Maximize_Materialistic_Pleasures</span><span class="pill">Mindset_Privilege_Drives_Contribution</span><span class="pill">Mindset_Knows_Ways_To_Help_Those_In_Need</span><span class="pill">Mindset_Compassion_Motivates_Social_Action</span><span class="pill">Mindset_Applies_Value_Based_Decision_Criteria</span><span class="pill">Mindset_Righteous_Anger_Motivates_Social_Action</span><span class="pill">Mindset_Understands_Social_Sector_Unique_Roles</span><span class="pill">Mindset_Firm_Stand_On_Values_Despite_Others</span><span class="pill">Mindset_Chance_Over_Effort_In_Life_Outcome</span><span class="pill">Mindset_Gratitude_Drives_Social_Contribution</span><span class="pill">Mindset_Moral_Test_For_Life_Decisions</span><span class="pill">Financial_Attitude_Confident_Future_Earnings</span><span class="pill">Mindset_Visualizes_Social_Sector_Career</span><span class="pill">Mindset_Parental_Agreement_Mandatory_For_Decisions</span><span class="pill">Mindset_Values_Harmony_With_Nature</span><span class="pill">Mindset_Inspired_To_Create_Social_Impact</span><span class="pill">Mindset_Excited_About_Life_Purpose_Discovery</span><span class="pill">Mindset_Committed_To_Social_Change_Movement</span><span class="pill">Mindset_Purpose_Is_Meaningful_Social_Difference</span><span class="pill">Mindset_Committed_To_Youth_Social_Change_Community</span><span class="pill">Mindset_Can_Enact_Active_Citizen_Duty</span><span class="pill">Mindset_Preoccupied_With_Safety_And_Security</span><span class="pill">Mindset_Bucket_List_Happiness_Approach</span><span class="pill">Mindset_Daily_Intentional_Purpose_Linked_Living</span><span class="pill">Mindset_Urgency_To_Act_On_Climate_Change</span><span class="pill">Mindset_Loneliness_While_Contemplating_Social_Change</span><span class="pill">Mindset_Income_Inequality_Is_Justified</span><span class="pill">Mindset_Steps_Toward_Independent_Responsible_Adulthood</span><span class="pill">Mindset_Considers_Needs_Before_Purchases</span><span class="pill">Mindset_Values_Growth_Mentors</span><span class="pill">Mindset_Actively_Cultivating_Mentor_Relationship</span><span class="pill">Financial_Expected_Income_Age_25</span><span class="pill">Financial_Expected_Income_Age_30</span><span class="pill">Financial_Planning_Sheet_Income</span><span class="pill">Financial_Planning_Sheet_Income_Halved</span><span class="pill">Financial_Years_To_Independence</span>
+        </div>
+      </div>
+    </details>
+
+    <!-- 7. RISKS, MODEL CONSTRAINTS & GOVERNANCE (COLLAPSIBLE BY DEFAULT) -->
+    <details class="collapsible-section">
+      <summary>
+        <div class="summary-left">
+          <span class="summary-num" style="background: #64748b;">7</span>
+          <span>7. Risks, Model Constraints &amp; Governance</span>
+        </div>
+        <div class="summary-right">
+          <span>Click to Expand</span>
+          <span class="summary-chevron">▼</span>
+        </div>
+      </summary>
+      <div class="collapsible-body">
+        <p style="margin: 0; font-size: 13px; color: #334155; line-height: 1.65;">
+          1) Evidence gap: only Step 1 returned numbers. Steps 2 to 5 have empty results, so no conclusion about gender differences in CHANGE is supported, and this dossier's confidence is low for that reason. The reference in Step 5 to a 'raw female advantage seen in Step 4' is unsupported by any figure in the record. 2) Step 1 compares Pre scores only; a baseline gap is not a change gap. 3) Single-arm observational data: no comparison group, so nothing here shows the workshop caused any change. Regression to the mean and catch-up are plausible alternative explanations. 4) Multiple testing: about 23 measures were tested. Only two gaps passed Bonferroni (alpha 0.00217). Others, such as courage (p = 0.004), are hints, not findings. 5) Sample shrinkage: 2,157 Pre rows fall to 1,450 pairs, and 707 Pre-only people may differ systematically (selective attrition). Theme coverage is low for citizenship_and_environment (n=346), money_attitudes (n=963), courage_agency_autonomy (n=1,054) and the insecurity index (n=1,120); effective N varies by measure. 6) Many items show ~1,450 zero/blank answers, which suggests they were asked in only one wave. Such items cannot support change scores and the 'zero means not answered' rule drops them. 7) Income is free-typed and heavily skewed (clipped at 5,000–1,000,000; 22 values clipped high). Use medians; means are inflated by outliers. 8) Rank scales run the opposite way (lower = stronger preference). The sign of the gender difference reverses if this is forgotten. 9) Effect sizes are small (largest d ≈ 0.35). A statistically significant gap can still be practically modest. 10) Several pipeline attempts evidently failed to return results, so any rebuilt numbers must reproduce the Step 1 sample (1,450 / 777 / 673) before they are trusted. 11) Gender is binary (FEMALE/MALE) in this dataset; findings do not cover other identities.
+        </p>
+      </div>
+    </details>
+
+    <!-- Sign-off Footer -->
+    <div class="footer">
+      Generated by <strong>Answer Strategically</strong> &bull; Answer Consistency Engine &bull; Tailored for Easy to understand for College graduate volunteer
+       &bull; Includes 5 Post-Execution Clarifications
+    </div>
+  </div>
+</body>
+</html>
