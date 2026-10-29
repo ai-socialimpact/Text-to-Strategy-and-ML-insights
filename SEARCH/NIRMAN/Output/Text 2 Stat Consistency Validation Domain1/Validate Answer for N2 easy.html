@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Easy to Understand Report - NIRMAN</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --primary-light: #eff6ff;
+      --emerald: #059669;
+      --emerald-dark: #064e3b;
+      --emerald-light: #ecfdf5;
+      --indigo: #4f46e5;
+      --indigo-light: #eef2ff;
+      --amber: #d97706;
+      --amber-light: #fffbeb;
+      --gray-900: #0f172a;
+      --gray-800: #1e293b;
+      --gray-700: #334155;
+      --gray-600: #475569;
+      --gray-500: #64748b;
+      --gray-200: #e2e8f0;
+      --gray-100: #f1f5f9;
+      --gray-50: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--gray-800);
+      background: #f8fafc;
+      padding: 32px 16px;
+    }
+    .container {
+      max-width: 920px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 20px;
+      padding: 44px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+    }
+    .print-btn {
+      float: right;
+      padding: 10px 18px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 6px rgba(37,99,235,0.25);
+      transition: all 0.2s;
+    }
+    .print-btn:hover { background: var(--primary-dark); }
+    .header {
+      border-bottom: 2px solid var(--gray-200);
+      padding-bottom: 24px;
+      margin-bottom: 32px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      background: var(--emerald-light);
+      color: var(--emerald-dark);
+      border: 1px solid #a7f3d0;
+      margin-bottom: 12px;
+    }
+    h1 {
+      font-size: 28px;
+      color: var(--gray-900);
+      font-weight: 900;
+      letter-spacing: -0.025em;
+      margin-bottom: 6px;
+      line-height: 1.25;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: var(--gray-500);
+    }
+    .section {
+      margin-bottom: 36px;
+    }
+    .section-title {
+      font-size: 16px;
+      font-weight: 900;
+      color: var(--gray-900);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding-bottom: 8px;
+      border-bottom: 2px solid var(--gray-100);
+    }
+    .number-tag {
+      width: 26px;
+      height: 26px;
+      background: var(--primary);
+      color: white;
+      border-radius: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 800;
+      flex-shrink: 0;
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 14px;
+      padding: 22px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    }
+    .card-purple {
+      background: #faf5ff;
+      border: 1.5px solid #d8b4fe;
+    }
+    .card-emerald {
+      background: #f0fdf4;
+      border: 1.5px solid #86efac;
+    }
+    .card-indigo {
+      background: #eef2ff;
+      border: 1.5px solid #a5b4fc;
+    }
+    .card-amber {
+      background: #fffbeb;
+      border: 1.5px solid #fde68a;
+    }
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 14px;
+      margin: 16px 0;
+    }
+    .kpi-card {
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-top: 4px solid var(--primary);
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+    }
+    .kpi-value {
+      font-size: 24px;
+      font-weight: 900;
+      color: var(--gray-900);
+      line-height: 1.2;
+      margin-bottom: 4px;
+    }
+    .kpi-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--gray-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .visuals-container {
+      display: grid;
+      grid-template-columns: 1fr 1.6fr;
+      gap: 20px;
+      background: white;
+      border: 1px solid var(--gray-200);
+      border-radius: 14px;
+      padding: 24px;
+      align-items: center;
+    }
+    @media (max-width: 720px) {
+      .visuals-container { grid-template-columns: 1fr; }
+      .container { padding: 24px 16px; }
+    }
+    .gauge-wrapper {
+      text-align: center;
+    }
+    .bar-chart-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+    .bar-label {
+      width: 130px;
+      font-weight: 700;
+      color: var(--gray-700);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .bar-track {
+      flex: 1;
+      height: 18px;
+      background: var(--gray-100);
+      border-radius: 6px;
+      overflow: hidden;
+      position: relative;
+    }
+    .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #3b82f6, #10b981);
+      border-radius: 6px;
+    }
+    .bar-value {
+      width: 90px;
+      font-weight: 700;
+      text-align: right;
+      color: var(--emerald-dark);
+      font-size: 11px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin: 12px 0;
+    }
+    th {
+      background: var(--gray-100);
+      padding: 10px 14px;
+      text-align: left;
+      font-weight: 800;
+      border-bottom: 2px solid var(--gray-200);
+      color: var(--gray-700);
+      text-transform: uppercase;
+      font-size: 10px;
+      letter-spacing: 0.05em;
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--gray-200);
+      color: var(--gray-800);
+      vertical-align: top;
+    }
+    tr:nth-child(even) td { background: #fafafa; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .tag-emerald { background: var(--emerald-light); color: var(--emerald-dark); }
+    .tag-blue { background: var(--primary-light); color: var(--primary); }
+    .tag-purple { background: #f3e8ff; color: #6b21a8; }
+    @media print {
+      body { background: white; padding: 0; }
+      .container { border: none; box-shadow: none; padding: 0; max-width: 100%; }
+      .print-btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <button class="print-btn" onclick="window.print()">
+      🖨️ Print / Save as PDF
+    </button>
+
+    <!-- HEADER -->
+    <div class="header">
+      <div class="badge">
+        ✓ Verified Executive Intelligence Report
+      </div>
+      <h1>Easy-to-Understand Decision Report</h1>
+      <p class="subtitle">
+        Project: <strong>NIRMAN</strong> &bull; Generated: Thursday, October 29, 2026 at 6:01 PM &bull; Cross-Validated across 5 Independent Analytical Perspectives
+      </p>
+    </div>
+
+    <!-- 1. USER QUERY -->
+    <div class="section">
+      <div class="section-title">
+        <span class="number-tag">1</span>
+        <span>1. What You Asked (User Query)</span>
+      </div>
+      <div class="card" style="background: var(--gray-50);">
+        <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: var(--gray-500); display: block; margin-bottom: 6px;">
+          Original Question Asked by User:
+        </span>
+        <p style="font-size: 16px; font-weight: 700; color: var(--gray-900); font-style: italic;">
+          "Cohort: from prod_nirman_demographics (Participant_Id cast to string), select participants with Number(Workshop_Batch_Number) === 14, Gender === 'FEMALE' and Educational_Stream_Category === 'Medical' (this category excludes Pharmacy; do not mix it with Educational_Stream 'Medical / Public Health'). Build a Set of unique string Participant_Id values. The expected cohort size is N = 52. If the cohort is empty, return an error object containing the stage counts. If N ≠ 52, log a warning and continue with the actual N.
+
+Questionnaire rows: from prod_nirman_questionnaire, cast Participant_Id, Workshop_Name and Workshop_Phase to string. Keep rows where all of the following hold:
+- parseFloat(Workshop_Level) === 0.1 (Point 1)
+- the Participant_Id is in the cohort Set
+- Workshop_Phase.trim() is 'Pre' or 'Post'
+
+(a) Coverage, counting unique participants:
+- PreSet = cohort IDs with at least one Point-1 Pre row; PostSet = cohort IDs with at least one Point-1 Post row.
+- Report |PreSet| and |PostSet|.
+- Report Both = PreSet ∩ PostSet, Pre-only = PreSet − PostSet, Post-only = PostSet − PreSet, and Neither = cohort − (PreSet ∪ PostSet).
+- The four groups must sum to the cohort N. Also report attrition as the Pre-only count and as a percentage of PreSet.
+
+(b) Duplicate audit, per phase:
+- Report raw row count and unique ID count.
+- Report the number of participants with more than one row.
+- De-duplicate by keeping the first row encountered per Participant_Id, and report rows dropped (raw rows − unique IDs).
+
+(c) Answer-quality audit, per phase, on the de-duplicated rows. Classify each raw Metric_Life_Satisfaction_Global value into exactly one mutually exclusive bucket, checked in this order:
+1. NaN/null/undefined/blank string
+2. non-numeric (Number(v) is NaN after trimming)
+3. 0 = not answered
+4. above 5
+5. valid = an integer in 1–5
+6. other (negative or non-integer), reported separately so that bucket totals equal the de-duplicated row count
+
+(d) Phase statistics, per phase, on valid values only:
+- valid N, mean, median
+- frequency counts for scores 1, 2, 3, 4 and 5
+- agree% = count(score ≥ 4) / valid N × 100
+
+(e) Paired analysis:
+- Build Map(ID → valid Pre score) and Map(ID → valid Post score), then inner-join on ID. This is equivalent to an inner merge with _pre/_post suffixes within Workshop_Level 0.1.
+- Paired N = IDs with valid scores in both phases.
+- Report paired Pre mean, paired Post mean, delta = Post − Pre per participant, mean delta and median delta.
+- Report count and % (of paired N) improved (delta > 0), same (delta = 0) and declined (delta < 0).
+- Optionally, if paired N ≥ 10, run a Wilcoxon signed-rank test on non-zero deltas (normal approximation), labelled descriptive only, not causal.
+
+Output: round all numeric outputs to 2 decimals. Wrap the logic in try/catch, console.log the stage counts (cohort N, filtered rows per phase, de-duplicated N, valid N, paired N), and always return a populated summary object."
+        </p>
+      </div>
+    </div>
+
+    <!-- 2. REFINED QUERY -->
+    <div class="section">
+      <div class="section-title">
+        <span class="number-tag">2</span>
+        <span>2. Grounded &amp; Clarified Query (Refined Query)</span>
+      </div>
+      <div class="card card-purple">
+        <span style="font-size: 10px; font-weight: 800; text-transform: uppercase; color: #6b21a8; display: block; margin-bottom: 6px;">
+          Disambiguated &amp; Entity-Mapped Query:
+        </span>
+        <p style="font-size: 14px; font-weight: 700; color: #3b0764; margin-bottom: 10px;">
+          "Cohort: from prod_nirman_demographics (Participant_Id cast to string), select participants with Number(Workshop_Batch_Number) === 14, Gender === 'FEMALE' and Educational_Stream_Category === 'Medical' (this category excludes Pharmacy; do not mix it with Educational_Stream 'Medical / Public Health'). Build a Set of unique string Participant_Id values. The expected cohort size is N = 52. If the cohort is empty, return an error object containing the stage counts. If N ≠ 52, log a warning and continue with the actual N.
+
+Questionnaire rows: from prod_nirman_questionnaire, cast Participant_Id, Workshop_Name and Workshop_Phase to string. Keep rows where all of the following hold:
+- parseFloat(Workshop_Level) === 0.1 (Point 1)
+- the Participant_Id is in the cohort Set
+- Workshop_Phase.trim() is 'Pre' or 'Post'
+
+(a) Coverage, counting unique participants:
+- PreSet = cohort IDs with at least one Point-1 Pre row; PostSet = cohort IDs with at least one Point-1 Post row.
+- Report |PreSet| and |PostSet|.
+- Report Both = PreSet ∩ PostSet, Pre-only = PreSet − PostSet, Post-only = PostSet − PreSet, and Neither = cohort − (PreSet ∪ PostSet).
+- The four groups must sum to the cohort N. Also report attrition as the Pre-only count and as a percentage of PreSet.
+
+(b) Duplicate audit, per phase:
+- Report raw row count and unique ID count.
+- Report the number of participants with more than one row.
+- De-duplicate by keeping the first row encountered per Participant_Id, and report rows dropped (raw rows − unique IDs).
+
+(c) Answer-quality audit, per phase, on the de-duplicated rows. Classify each raw Metric_Life_Satisfaction_Global value into exactly one mutually exclusive bucket, checked in this order:
+1. NaN/null/undefined/blank string
+2. non-numeric (Number(v) is NaN after trimming)
+3. 0 = not answered
+4. above 5
+5. valid = an integer in 1–5
+6. other (negative or non-integer), reported separately so that bucket totals equal the de-duplicated row count
+
+(d) Phase statistics, per phase, on valid values only:
+- valid N, mean, median
+- frequency counts for scores 1, 2, 3, 4 and 5
+- agree% = count(score ≥ 4) / valid N × 100
+
+(e) Paired analysis:
+- Build Map(ID → valid Pre score) and Map(ID → valid Post score), then inner-join on ID. This is equivalent to an inner merge with _pre/_post suffixes within Workshop_Level 0.1.
+- Paired N = IDs with valid scores in both phases.
+- Report paired Pre mean, paired Post mean, delta = Post − Pre per participant, mean delta and median delta.
+- Report count and % (of paired N) improved (delta > 0), same (delta = 0) and declined (delta < 0).
+- Optionally, if paired N ≥ 10, run a Wilcoxon signed-rank test on non-zero deltas (normal approximation), labelled descriptive only, not causal.
+
+Output: round all numeric outputs to 2 decimals. Wrap the logic in try/catch, console.log the stage counts (cohort N, filtered rows per phase, de-duplicated N, valid N, paired N), and always return a populated summary object."
+        </p>
+        <div style="font-size: 12px; color: #581c87; margin-top: 8px; padding-top: 8px; border-top: 1px dashed #d8b4fe;">
+                <strong>Interpreter Context &amp; Disambiguation:</strong> Disambiguated and verified across 5 analytical methodologies.
+               </div>
+        
+      </div>
+    </div>
+
+    <!-- 3. ANSWER TO USER QUESTION (SUMMARY, DATA, DETAILS) -->
+    <div class="section">
+      <div class="section-title">
+        <span class="number-tag">3</span>
+        <span>3. Answer to Your Question (Summary &bull; Data &bull; Details)</span>
+      </div>
+      
+      <!-- 3A: Plain-English Executive Summary -->
+      <div class="card card-emerald" style="margin-bottom: 16px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: var(--emerald-dark); letter-spacing: 0.05em;">
+            Plain-English Executive Summary (TL;DR)
+          </span>
+          <span class="tag tag-emerald">
+            5/5 Methods Converged (100%)
+          </span>
+        </div>
+        <p style="font-size: 15px; font-weight: 700; color: #064e3b; line-height: 1.6;">
+          Cohort N = 52 (Batch 14, FEMALE, Educational_Stream_Category 'Medical'; stage counts 148 → 81 → 52). All 52 have both Pre and Post Point-1 rows: Both = 52, Pre-only/Post-only/Neither = 0, attrition 0 (0%). There are no duplicates (52 raw rows = 52 unique IDs per phase, 0 dropped). The only quality issue is one Pre value of 0 (not answered). Valid N is 51 Pre and 52 Post. Pre mean is 3.02 (median 3, agree 37.25%) and Post mean is 3.96 (median 4, agree 69.23%). Paired N = 51, with paired Pre mean 3.02, paired Post mean 3.94, mean delta +0.92 and median delta +1. Improved 33 (64.71%), same 13 (25.49%), declined 5 (9.8%). Wilcoxon on 38 non-zero deltas: W+ = 657, W− = 84, |z| = 4.25, p < 0.001. Descriptive only, not causal.
+        </p>
+      </div>
+
+      <!-- 3B: Key Data Findings & KPI Stat Cards -->
+      <div class="kpi-grid">
+        <div class="kpi-card" style="border-top-color: #059669;">
+          <div class="kpi-value">100%</div>
+          <div class="kpi-label">Agreement Confidence</div>
+        </div>
+        <div class="kpi-card" style="border-top-color: #2563eb;">
+          <div class="kpi-value">5 of 5</div>
+          <div class="kpi-label">Methods Converged</div>
+        </div>
+        <div class="kpi-card" style="border-top-color: #7c3aed;">
+          <div class="kpi-value">Exceptional</div>
+          <div class="kpi-label">Statistical Stability</div>
+        </div>
+        <div class="kpi-card" style="border-top-color: #d97706;">
+                <div class="kpi-value">52</div>
+                <div class="kpi-label">Key Core Metric</div>
+               </div>
+      </div>
+
+      <!-- 3C: Comprehensive Details & Synthesized Explanation -->
+      <div class="card">
+        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--gray-600); display: block; margin-bottom: 10px;">
+          In-Depth Details &amp; Synthesis:
+        </span>
+        <div style="font-size: 13px; color: var(--gray-700); line-height: 1.7;">
+          
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Cohort N = 52 (Batch 14, FEMALE, Educational<em>Stream</em>Category 'Medical'; stage counts 148 → 81 → 52). All 52 have both Pre and Post Point-1 rows: Both = 52, Pre-only/Post-only/Neither = 0, attrition 0 (0%). There are no duplicates (52 raw rows = 52 unique IDs per phase, 0 dropped). The only quality issue is one Pre value of 0 (not answered). Valid N is 51 Pre and 52 Post. Pre mean is 3.02 (median 3, agree 37.25%) and Post mean is 3.96 (median 4, agree 69.23%). Paired N = 51, with paired Pre mean 3.02, paired Post mean 3.94, mean delta +0.92 and median delta +1. Improved 33 (64.71%), same 13 (25.49%), declined 5 (9.8%). Wilcoxon on 38 non-zero deltas: W+ = 657, W− = 84, |z| = 4.25, p &lt; 0.001. Descriptive only, not causal.
+      </p>
+    
+        </div>
+        
+      </div>
+    </div>
+
+    <!-- 4. ANSWER CONTEXTUALIZED BY SCHEMA -->
+    <div class="section">
+      <div class="section-title">
+        <span class="number-tag">4</span>
+        <span>4. Answer Contextualized by Schema &amp; Domain Model</span>
+      </div>
+      <div class="card card-indigo">
+        <span style="font-size: 11px; font-weight: 900; text-transform: uppercase; color: #3730a3; display: block; margin-bottom: 6px;">
+          How the Project Schema Explains &amp; Validates This Answer:
+        </span>
+        <p style="font-size: 13px; color: #1e1b4b; line-height: 1.6; margin-bottom: 12px;">
+          The question asks whether, in one NIRMAN sub-cohort, self-reported life satisfaction rose from the Pre to the Post survey at the first (Point-1) workshop. The cohort is Batch 14, FEMALE participants whose Educational_Stream_Category is 'Medical' (Pharmacy excluded). Demographics (objective facts) defines the cohort. The Questionnaire (subjective psychometrics) supplies the outcome, Metric_Life_Satisfaction_Global, an agreement_1_to_5 item in the wellbeing_self theme (1 = strongly disagree, 5 = strongly agree; agree >= 4). The cohort funnel is 148 Batch-14 rows, then 81 female, then 52 'Medical', which matches the expected N = 52. All 52 have exactly one Pre and one Post Point-1 row, so there is no attrition and no duplication. One Pre answer is 0, which the schema defines as 'not answered', so it is excluded. That leaves valid N of 51 Pre, 52 Post and 51 pairs. Mean life satisfaction moved from 3.02 to 3.96, and the share agreeing (score >= 4) moved from 37.25% to 69.23%. Among the 51 pairs the mean delta is +0.92 (median +1). 33 participants improved, 13 stayed the same and 5 declined. The Wilcoxon signed-rank test on the 38 non-zero deltas gives W+ = 657, W− = 84 and |z| = 4.25. This is single-arm observational data, so it shows association and change, not that the workshop caused the change.
+        </p>
+
+        
+          <div style="margin-top: 12px; overflow-x: auto;">
+            <table>
+              <thead>
+                <tr>
+                  <th style="background: #e0e7ff; color: #312e81;">Schema Entity / Table</th>
+                  <th style="background: #e0e7ff; color: #312e81;">Role in Answer</th>
+                  <th style="background: #e0e7ff; color: #312e81;">Relevance &amp; Meaning</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td style="font-weight: 700; color: #312e81;">prod_nirman_demographics</td>
+                    <td>Defines the cohort. It has one row per Participant_Id (2,890 rows) and covers batches 1–17. The filter is Number(Workshop_Batch_Number) === 14, Gender === 'FEMALE' and Educational_Stream_Category === 'Medical'. All three columns are in the 'usable' zero-missing tier, so the 148 → 81 → 52 funnel is not distorted by nulls. The 'Medical' category excludes Pharmacy and must not be mixed with Educational_Stream 'Medical / Public Health', which is a different spelling in a partially usable column. Only the set of IDs is taken from this table, and no demographic attributes are merged into the questionnaire frame.</td>
+                    <td style="color: #4338ca; font-size: 11px;">Relevant Columns: Participant_Id, Workshop_Batch_Number, Gender, Educational_Stream_Category</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; color: #312e81;">prod_nirman_questionnaire</td>
+                    <td>Supplies the outcome. The grain is one row per (Participant_Id, Workshop_Level, Workshop_Phase). The schema therefore allows at most one Pre and one Post row per participant at Workshop_Level 0.1 (Point 1). This explains the zero duplicates and why keep-first, keep-last and single-row-only de-duplication are identical. The table covers batches 7–17, so Batch 14 is present. Metric_Life_Satisfaction_Global is on the agreement_1_to_5 scale and appears in the 'above 5 → NaN' rule. Zero means 'not answered' and is cleaned to NaN. The item is zero-missing, but it can still hold a coded 0, as it does for one Pre response.</td>
+                    <td style="color: #4338ca; font-size: 11px;">Relevant Columns: Participant_Id, Workshop_Phase, Workshop_Level, Workshop_Batch_Number, Workshop_Name, Metric_Life_Satisfaction_Global</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; color: #312e81;">Join / pairing logic (Participant_Id, string key)</td>
+                    <td>The relationship is one-to-many (demographics 1 → questionnaire many). Participant_Id is cast to string in both tables. Here the join is used as a Set membership filter. The Pre/Post pairing is an inner merge on Participant_Id within Workshop_Level 0.1, with delta = post − pre. Joining normally shrinks and skews N, and here the effective N is reported at every stage: cohort 52, Pre 52, Post 52, valid Pre 51, valid Post 52, paired 51. No cohort member was lost in the join, because all 52 appear in the questionnaire.</td>
+                    <td style="color: #4338ca; font-size: 11px;">Relevant Columns: Participant_Id, Workshop_Level, Workshop_Phase</td>
+                  </tr>
+                  <tr>
+                    <td style="font-weight: 700; color: #312e81;">Scale and cleaning semantics (questionnaire YAML)</td>
+                    <td>Sets the bucket logic in part (c). The valid value is an integer 1–5, 0 is 'not answered', and values above 5 are out of range. Agree% uses the schema definition of agree (>= 4). The scale is not reverse-coded, so higher always means greater satisfaction. Metric_Life_Satisfaction_Global is the wording 'All things considered I am satisfied with my life'.</td>
+                    <td style="color: #4338ca; font-size: 11px;">Relevant Columns: Metric_Life_Satisfaction_Global</td>
+                  </tr>
+              </tbody>
+            </table>
+          </div>
+
+        
+          <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #a5b4fc;">
+            <span style="font-size: 11px; font-weight: 800; color: #3730a3; text-transform: uppercase; display: block; margin-bottom: 6px;">
+              Domain Business Insights from Schema:
+            </span>
+            <ul style="margin-left: 18px; font-size: 12px; color: #312e81; line-height: 1.6;">
+              <li>Report the result as: 'In Batch 14 female Medical-stream participants (N = 52; 51 valid pairs), Metric_Life_Satisfaction_Global was higher at Post than at Pre (mean 3.02 → 3.96; agree 37.25% → 69.23%; 64.71% improved, 25.49% unchanged, 9.8% declined), descriptive only, not causal.' State the effective N at every stage.</li><li>Keep the Post-mean caveat visible. The unpaired Post mean is 3.96 and the paired Post mean is 3.94. Use paired figures for change claims and unpaired phase figures only for distribution description.</li><li>Lead with medians, the top-2-box shift and the improved/same/declined counts when presenting to programme staff. They are more faithful to the ordinal 1–5 scale than a mean delta, and they show the ceiling effect.</li><li>To check that the shift is specific to this group, run the same pipeline for other cohorts (male participants, other streams, other batches) and compare effect sizes. Do not conclude that Medical-stream women respond uniquely without such comparisons.</li><li>To go beyond association, add outside comparison information (for example later-level follow-up at Workshop_Level 0.2 or 0.3, or non-attendees). Link to Current_Status_Of_Work only with Pre-phase predictors, to respect the leakage and censoring rules in the schema.</li><li>Extend the same cohort audit (coverage, duplicates, answer-quality buckets) to other wellbeing_self items such as Mindset_Happiness_And_Self_Esteem. Also repeat it for the headline career outcome Career_Plan_Social_Action_Engagement (is_fulltime / switched_to_fulltime) to see whether wellbeing change tracks career-intent change.</li><li>Standardise on one effect-size definition (matched-pairs rank-biserial or z/√n) and one p-value display format (p < 0.001) in reports. Keep the explicit 'descriptive only, not causal' label on every inferential output.</li><li>Do not name TARGET_COL as an assumption when the question names the item. Use the stated column, Metric_Life_Satisfaction_Global, and keep the TARGET_COL parameter only for reuse with other agreement_1_to_5 items.</li>
+            </ul>
+          </div>
+      </div>
+    </div>
+
+    <!-- 5. VISUALS TO MAKE IT EASY TO UNDERSTAND -->
+    <div class="section">
+      <div class="section-title">
+        <span class="number-tag">5</span>
+        <span>5. Visuals to Make It Easy to Understand</span>
+      </div>
+      
+      <div class="visuals-container">
+        <!-- SVG Radial Gauge -->
+        <div class="gauge-wrapper">
+          <svg width="150" height="150" viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="45" fill="none" stroke="#e2e8f0" stroke-width="12" />
+            <circle
+              cx="60"
+              cy="60"
+              r="45"
+              fill="none"
+              stroke="#059669"
+              stroke-width="12"
+              stroke-dasharray="282.7433388230814"
+              stroke-dashoffset="0"
+              stroke-linecap="round"
+              transform="rotate(-90 60 60)"
+            />
+            <text x="60" y="58" text-anchor="middle" font-size="22" font-weight="900" fill="#0f172a">100%</text>
+            <text x="60" y="74" text-anchor="middle" font-size="9" font-weight="700" fill="#059669" text-transform="uppercase">Reliability</text>
+          </svg>
+          <div style="font-size: 12px; font-weight: 800; color: #064e3b; margin-top: 6px;">
+            Exceptional Agreement
+          </div>
+          <div style="font-size: 11px; color: #64748b;">
+            5 of 5 Methods Aligned
+          </div>
+        </div>
+
+        <!-- Horizontal Comparative Bar Chart across the 5 Methods -->
+        <div>
+          <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--gray-600); display: block; margin-bottom: 12px;">
+            Cross-Method Convergence Comparison:
+          </span>
+          
+              <div class="bar-chart-row">
+                <div class="bar-label" title="Direct Set/Map Parametric Baseline (Mean Aggregation)">#1 Direct Set/Map Parametric Baseline (Mean Aggregation)</div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: 100%;"></div>
+                </div>
+                <div class="bar-value">
+                  ✓ Aligned
+                </div>
+              </div>
+              <div class="bar-chart-row">
+                <div class="bar-label" title="Robust Non-Parametric Distribution (Median, IQR, Sign Test, Hodges-Lehmann)">#2 Robust Non-Parametric Distribution (Median, IQR, Sign Test, Hodges-Lehmann)</div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: 100%;"></div>
+                </div>
+                <div class="bar-value">
+                  ✓ Aligned
+                </div>
+              </div>
+              <div class="bar-chart-row">
+                <div class="bar-label" title="Danfo.js DataFrame Inner-Merge with Frequency-Weighted Mean Reconciliation">#3 Danfo.js DataFrame Inner-Merge with Frequency-Weighted Mean Reconciliation</div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: 100%;"></div>
+                </div>
+                <div class="bar-value">
+                  ✓ Aligned
+                </div>
+              </div>
+              <div class="bar-chart-row">
+                <div class="bar-label" title="Outlier-Trimmed & De-duplication Sensitivity Analysis">#4 Outlier-Trimmed & De-duplication Sensitivity Analysis</div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: 100%;"></div>
+                </div>
+                <div class="bar-value">
+                  ✓ Aligned
+                </div>
+              </div>
+              <div class="bar-chart-row">
+                <div class="bar-label" title="Rank-Order Cumulative Distribution, Transition Matrix & Bootstrap CI">#5 Rank-Order Cumulative Distribution, Transition Matrix & Bootstrap CI</div>
+                <div class="bar-track">
+                  <div class="bar-fill" style="width: 100%;"></div>
+                </div>
+                <div class="bar-value">
+                  ✓ Aligned
+                </div>
+              </div>
+        </div>
+        
+        <div style="grid-column: 1 / -1; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--gray-200);">
+          <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--gray-600); display: block; margin-bottom: 12px;">
+            Custom Explainer Visuals &amp; Visual Analytics:
+          </span>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px;">
+            
+              <div class="card" style="padding: 16px;">
+                <h5 style="font-size: 12px; font-weight: 800; color: var(--gray-900); margin-bottom: 4px;">Score Distribution: Pre vs Post (% of Valid Responses)</h5>
+                <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 10px;">Share of valid responses at each score (1–5) for Pre (n=51) and Post (n=52). Responses shift from low-to-mid scores (mostly 2) toward higher scores (mostly 4–5). Post-workshop agree% (scores 4–5) is 69.23% versus 37.25% Pre.</p>
+                
+              </div>
+              <div class="card" style="padding: 16px;">
+                <h5 style="font-size: 12px; font-weight: 800; color: var(--gray-900); margin-bottom: 4px;">Paired Change per Participant (Post − Pre, n = 51)</h5>
+                <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 10px;">Of 51 participants with valid Pre and Post scores, about two-thirds improved, a quarter stayed the same, and a small share declined. Mean delta is +0.92 and median delta is +1. Wilcoxon on 38 non-zero deltas: |z| = 4.25, p < 0.001. This is descriptive only, not causal.</p>
+                
+              </div>
+              <div class="card" style="padding: 16px;">
+                <h5 style="font-size: 12px; font-weight: 800; color: var(--gray-900); margin-bottom: 4px;">Final Answer: Life Satisfaction 'Agree' Rate Rose After the Workshop (Pre vs Post, Batch 14 Female Medical Cohort)</h5>
+                <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 10px;">Final conclusion at a glance. Of the 52 participants, the share who agree (score 4 or 5) that they are satisfied with life jumped from 37.25% before the workshop to 69.23% after. Average scores rose from 3.02 to 3.96 (paired: 3.02 to 3.94), a mean gain of +0.92 points per person. This is the headline result that all 5 independent methods reproduced. The pattern is descriptive only; it shows association, not proof that the workshop caused the change. Significance: the improvement is large (about 32 percentage points) and consistent across methods, and nearly all participants have both Pre and Post data (51 of 52 paired), so the comparison is like for like.</p>
+                
+              </div>
+              <div class="card" style="padding: 16px;">
+                <h5 style="font-size: 12px; font-weight: 800; color: var(--gray-900); margin-bottom: 4px;">How Each Participant Changed: Improved, Same or Declined (Paired N = 51)</h5>
+                <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 10px;">Splits the 51 participants with valid Pre and Post scores by direction of change. About two in three improved, a quarter stayed the same, and only about one in ten declined. This shows the gain is broad-based and not driven by a few people. All 5 runs agree on these counts (33 / 13 / 5), and the transition matrix in Run 5 and the sign test in Run 2 confirm them. Descriptive only, not causal.</p>
+                
+              </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6 & 7. TABLES TO PRESENT ANSWERS & MULTI-LINE / TABULAR FORMAT -->
+    <div class="section">
+      <div class="section-title">
+        <span class="number-tag">6</span>
+        <span>6. Tables to Present Answers (Formatted Structured View)</span>
+      </div>
+
+      
+        <div class="card" style="margin-bottom: 18px;">
+          <h4 style="font-size: 14px; font-weight: 800; color: var(--gray-900); margin-bottom: 4px;">
+            5-Method Analytical Convergence Comparison Table
+          </h4>
+          <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 12px;">Direct side-by-side comparison of specific calculations and outcomes across all 5 independent data science runs.</p>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr><th>Test #</th><th>Methodology Name</th><th>Category / Approach</th><th>Calculated Finding</th><th>Convergence Status</th></tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>Run #1</td><td>Direct Set/Map Parametric Baseline (Mean Aggregation)</td><td>Parametric Aggregation</td><td>N=52; full coverage; no duplicates; 1 Pre zero; valid 51/52; paired N=51; mean delta +0.92; 33/13/5 improved/same/declined; Wilcoxon z=4.25, W+=657, W−=84.</td><td><span class="tag tag-emerald">✓ Aligned with Consensus</span></td>
+                  </tr>
+                  <tr>
+                    <td>Run #2</td><td>Robust Non-Parametric Distribution (Median, IQR, Sign Test, Hodges-Lehmann)</td><td>Robust Non-Parametric</td><td>Same core numbers as the baseline. Extras: sign test 33/38 (p<0.001), Hodges-Lehmann +1, rank-biserial r=0.77, delta IQR 0–2, Pre mode 2, Post mode 4.</td><td><span class="tag tag-emerald">✓ Aligned with Consensus</span></td>
+                  </tr>
+                  <tr>
+                    <td>Run #3</td><td>Danfo.js DataFrame Inner-Merge with Frequency-Weighted Mean Reconciliation</td><td>Weighted Estimation</td><td>Same core numbers. Danfo merge gave 51 rows, equal to the native Map join. Weighted means, agree% and mean delta all reconcile (matches=true).</td><td><span class="tag tag-emerald">✓ Aligned with Consensus</span></td>
+                  </tr>
+                  <tr>
+                    <td>Run #4</td><td>Outlier-Trimmed & De-duplication Sensitivity Analysis</td><td>Outlier-Filtered</td><td>Same core numbers. 5% trimmed mean of deltas 0.96 (vs 0.92); keep-last and single-row-only variants give mean delta 0.92, difference 0, sign unchanged.</td><td><span class="tag tag-emerald">✓ Aligned with Consensus</span></td>
+                  </tr>
+                  <tr>
+                    <td>Run #5</td><td>Rank-Order Cumulative Distribution, Transition Matrix & Bootstrap CI</td><td>Rank-Order Distribution</td><td>Same core numbers. Transition matrix diagonal 13 = same, upper 33 = improved, lower 5 = declined. Top-2-box shift +31.37 pp (paired). Bootstrap 95% CI for mean delta 0.61–1.24. Wilcoxon z = −4.25, |r| = 0.69.</td><td><span class="tag tag-emerald">✓ Aligned with Consensus</span></td>
+                  </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card" style="margin-bottom: 18px;">
+          <h4 style="font-size: 14px; font-weight: 800; color: var(--gray-900); margin-bottom: 4px;">
+            Consensus Metrics & Multi-Run Findings Breakdown
+          </h4>
+          <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 12px;">Detailed breakdown of consensus findings, agreement metrics, and specific run outputs.</p>
+          <div style="overflow-x: auto;">
+            <table>
+              <thead>
+                <tr><th>Analytical Dimension</th><th>Consensus / Finding</th><th>Validation Detail</th><th>Reliability Status</th></tr>
+              </thead>
+              <tbody>
+                
+                  <tr>
+                    <td>Consensus Verdict</td><td>All 5 runs converge on the same answer. Every count, mean, median, frequency table, paired result and Wilcoxon statistic is identical across methods. Life-satisfaction scores are higher at Post than at Pre in this cohort, and the conclusion is labelled descriptive only, not causal.</td><td>5 of 5 methods converged</td><td><span class="tag tag-emerald">✓ Certified Strong</span></td>
+                  </tr>
+                  <tr>
+                    <td>Consensus Agreement Score</td><td>100%</td><td>Exceptional Agreement Level</td><td><span class="tag tag-emerald">✓ Multi-Run Aligned</span></td>
+                  </tr>
+                  <tr>
+                    <td>Method #1: Direct Set/Map Parametric Baseline (Mean Aggregation)</td><td>N=52; full coverage; no duplicates; 1 Pre zero; valid 51/52; paired N=51; mean delta +0.92; 33/13/5 improved/same/declined; Wilcoxon z=4.25, W+=657, W−=84.</td><td>Parametric Aggregation</td><td><span class="tag tag-emerald">✓ Aligned</span></td>
+                  </tr>
+                  <tr>
+                    <td>Method #2: Robust Non-Parametric Distribution (Median, IQR, Sign Test, Hodges-Lehmann)</td><td>Same core numbers as the baseline. Extras: sign test 33/38 (p<0.001), Hodges-Lehmann +1, rank-biserial r=0.77, delta IQR 0–2, Pre mode 2, Post mode 4.</td><td>Robust Non-Parametric</td><td><span class="tag tag-emerald">✓ Aligned</span></td>
+                  </tr>
+                  <tr>
+                    <td>Method #3: Danfo.js DataFrame Inner-Merge with Frequency-Weighted Mean Reconciliation</td><td>Same core numbers. Danfo merge gave 51 rows, equal to the native Map join. Weighted means, agree% and mean delta all reconcile (matches=true).</td><td>Weighted Estimation</td><td><span class="tag tag-emerald">✓ Aligned</span></td>
+                  </tr>
+                  <tr>
+                    <td>Method #4: Outlier-Trimmed & De-duplication Sensitivity Analysis</td><td>Same core numbers. 5% trimmed mean of deltas 0.96 (vs 0.92); keep-last and single-row-only variants give mean delta 0.92, difference 0, sign unchanged.</td><td>Outlier-Filtered</td><td><span class="tag tag-emerald">✓ Aligned</span></td>
+                  </tr>
+                  <tr>
+                    <td>Method #5: Rank-Order Cumulative Distribution, Transition Matrix & Bootstrap CI</td><td>Same core numbers. Transition matrix diagonal 13 = same, upper 33 = improved, lower 5 = declined. Top-2-box shift +31.37 pp (paired). Bootstrap 95% CI for mean delta 0.61–1.24. Wilcoxon z = −4.25, |r| = 0.69.</td><td>Rank-Order Distribution</td><td><span class="tag tag-emerald">✓ Aligned</span></td>
+                  </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+    </div>
+
+    <!-- 8. ACTIONABLE EXECUTIVE NEXT STEPS -->
+    <div class="section" style="margin-bottom: 0;">
+      <div class="section-title">
+        <span class="number-tag">7</span>
+        <span>7. Decision-Ready Action Steps</span>
+      </div>
+      <div class="card card-emerald">
+        <p style="font-size: 13px; color: #064e3b; line-height: 1.6; margin-bottom: 10px;">
+          This result has passed multi-agent cross-validation across 5 mathematical and statistical implementations. It is verified against query ambiguity and numerical outliers.
+        </p>
+        <ul style="margin-left: 20px; font-size: 12px; color: #14532d; line-height: 1.7;">
+          <li>Use these figures directly in donor presentations, strategic roadmaps, and stakeholder updates.</li>
+          <li>Keep this document as verifiable audit evidence of multi-method data validation.</li>
+        </ul>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
