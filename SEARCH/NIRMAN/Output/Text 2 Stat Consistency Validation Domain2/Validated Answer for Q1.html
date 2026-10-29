@@ -1,0 +1,1814 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Answer Consistency Report - Using Point-1 workshop data (prod_nirman_questionnaire, Workshop_Level == 0.1 compared with parseFloat), build matched Pre/Post pairs. Split rows by Workshop_Phase (Pre / Post), add the suffixes _pre / _post, and inner-merge on Participant_Id (cast to string). Then left-join Gender from prod_nirman_demographics on Participant_Id (string). Keep only rows where Gender is FEMALE or MALE, and report the effective N of matched pairs per gender.
+
+(a) Switch into full-time, per Gender:
+- Define is_fulltime = 1 if Career_Plan_Social_Action_Engagement == Fulltime as a career, else 0. Drop pairs where either the Pre or Post value is null.
+- Denominator: participants with is_fulltime_pre == 0.
+- Numerator: those among them with is_fulltime_post == 1.
+- Report numerator, denominator and switch rate (%) for FEMALE and MALE, plus the difference in rate (FEMALE − MALE).
+- Optionally add a two-proportion z-test or chi-square test.
+
+(b) Average change in life satisfaction, per Gender:
+- Clean Metric_Life_Satisfaction_Global first: set 0 to NaN and values above 5 to NaN.
+- Compute Metric_Life_Satisfaction_Global_delta = _post − _pre. Drop pairs where either value is missing.
+- Report n, mean Pre, mean Post, mean delta, SD of delta and median delta for FEMALE and MALE, plus the difference in mean delta (FEMALE − MALE).
+- Optionally add Welchs unpaired t-test.
+
+Round to 2 decimals. Present results as associations in single-arm observational data, not workshop effects.</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #eff6ff;
+      --emerald: #059669;
+      --emerald-light: #ecfdf5;
+      --amber: #d97706;
+      --amber-light: #fffbeb;
+      --gray-900: #0f172a;
+      --gray-700: #334155;
+      --gray-600: #475569;
+      --gray-500: #64748b;
+      --gray-200: #e2e8f0;
+      --gray-100: #f1f5f9;
+      --gray-50: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--gray-700);
+      background: #f8fafc;
+      padding: 40px 20px;
+    }
+    .report-container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 16px;
+      padding: 48px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    .header-banner {
+      border-bottom: 2px solid var(--gray-200);
+      padding-bottom: 28px;
+      margin-bottom: 32px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-exceptional { background: var(--emerald-light); color: var(--emerald); border: 1px solid #a7f3d0; }
+    .badge-primary { background: var(--primary-light); color: var(--primary); border: 1px solid #bfdbfe; }
+    h1 { font-size: 26px; color: var(--gray-900); margin: 12px 0 6px 0; font-weight: 800; }
+    .meta-text { font-size: 13px; color: var(--gray-500); }
+    .question-box {
+      background: var(--gray-50);
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 24px 0;
+      font-size: 15px;
+      color: var(--gray-900);
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .stat-box {
+      background: var(--primary-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .stat-number { font-size: 40px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .stat-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--gray-600); margin-top: 6px; }
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--gray-900);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 36px 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .section-desc { font-size: 13px; color: var(--gray-500); margin-bottom: 20px; }
+    .run-card {
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 16px;
+      background: var(--gray-50);
+    }
+    .run-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .run-title { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+    .code-block {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 14px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+    th { background: var(--gray-100); text-align: left; padding: 10px 12px; font-weight: 700; border-bottom: 2px solid var(--gray-200); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    .aligned-tag { color: var(--emerald); font-weight: 700; }
+    .nuance-tag { color: var(--amber); font-weight: 700; }
+    .chart-box {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    /* Collapsible Sections (Details / Summary) */
+    details.collapsible-section {
+      transition: all 0.2s ease-in-out;
+    }
+    details.collapsible-section summary {
+      cursor: pointer;
+      user-select: none;
+      outline: none;
+      list-style: none;
+    }
+    details.collapsible-section summary::-webkit-details-marker {
+      display: none;
+    }
+    details.collapsible-section summary::marker {
+      display: none;
+    }
+    details.collapsible-section[open] .collapse-chevron {
+      transform: rotate(180deg);
+    }
+    details.collapsible-section:not([open]) summary {
+      border-bottom: none !important;
+    }
+    @media print {
+      body { background: #ffffff; padding: 0; }
+      .report-container { border: none; box-shadow: none; padding: 0; max-width: 100%; }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+      details.collapsible-section { display: block !important; border: 1px solid var(--gray-200) !important; }
+      details.collapsible-section summary { display: none !important; }
+      details.collapsible-section > * { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-container">
+    <!-- Header -->
+    <div class="header-banner">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <span class="badge badge-exceptional">
+            Exceptional Agreement Dossier
+          </span>
+          <h1>Answer Consistency Professional Dossier</h1>
+          <p class="meta-text">Project: NIRMAN &bull; Generated: Thursday, October 29, 2026 at 5:00:51 PM &bull; Multi-Method Analytical Cross-Validation</p>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 32px; font-weight: 800; color: var(--emerald); line-height: 1;">
+            100%
+          </div>
+          <div style="font-size: 11px; text-transform: uppercase; color: var(--gray-500); font-weight: 700; margin-top: 4px;">
+            5 / 5 Methods Converged
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. USER QUERY -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #eff6ff; color: #1e40af; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">1</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">1. User Query</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Original Business Prompt</span>
+      </div>
+      <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--gray-500); margin-bottom: 8px;">
+          Question Submitted by Human User:
+        </div>
+        <blockquote style="font-size: 15px; font-weight: 600; color: var(--gray-900); background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px 18px; margin: 0; font-style: italic;">
+          "Do women and men change differently?
+Question: Compare females and males on (a) the share who switched into full-time among those not full-time at Pre, and (b) the average change in life satisfaction	. "
+        </blockquote>
+        <div style="font-size: 11px; color: var(--gray-500); margin-top: 8px;">
+          Target Project: <strong>NIRMAN</strong> &bull; Raw unmanipulated prompt authoring
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. REFINED USER QUERY -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #f3e8ff; color: #7e22ce; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">2</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">2. Refined User Query</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Domain Disambiguated &amp; Schema Mapped</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; border-color: #d8b4fe;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b21a8;">
+            Disambiguated by Query Interpreter Agent:
+          </span>
+          <span style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
+            ✓ Confirmed by Human Expert
+          </span>
+        </div>
+        <div style="font-size: 14px; font-weight: 700; color: #3b0764; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 14px 18px; font-family: monospace;">
+          "Using Point-1 workshop data (prod_nirman_questionnaire, Workshop_Level == 0.1 compared with parseFloat), build matched Pre/Post pairs. Split rows by Workshop_Phase ('Pre' / 'Post'), add the suffixes _pre / _post, and inner-merge on Participant_Id (cast to string). Then left-join Gender from prod_nirman_demographics on Participant_Id (string). Keep only rows where Gender is 'FEMALE' or 'MALE', and report the effective N of matched pairs per gender.
+
+(a) Switch into full-time, per Gender:
+- Define is_fulltime = 1 if Career_Plan_Social_Action_Engagement == 'Fulltime as a career', else 0. Drop pairs where either the Pre or Post value is null.
+- Denominator: participants with is_fulltime_pre == 0.
+- Numerator: those among them with is_fulltime_post == 1.
+- Report numerator, denominator and switch rate (%) for FEMALE and MALE, plus the difference in rate (FEMALE − MALE).
+- Optionally add a two-proportion z-test or chi-square test.
+
+(b) Average change in life satisfaction, per Gender:
+- Clean Metric_Life_Satisfaction_Global first: set 0 to NaN and values above 5 to NaN.
+- Compute Metric_Life_Satisfaction_Global_delta = _post − _pre. Drop pairs where either value is missing.
+- Report n, mean Pre, mean Post, mean delta, SD of delta and median delta for FEMALE and MALE, plus the difference in mean delta (FEMALE − MALE).
+- Optionally add Welch's unpaired t-test.
+
+Round to 2 decimals. Present results as associations in single-arm observational data, not workshop effects."
+        </div>
+        <div style="font-size: 11px; color: #065f46; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px 12px; margin-top: 10px;">
+          <strong>Human Expert Confirmation:</strong> The Refined User Query was verified, inspected, and explicitly approved by the Human Expert prior to triggering the 5 independent analytical runs.
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. VERY SHORT SUMMARY (EXECUTIVE TL;DR) -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #fef3c7; color: #b45309; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">3</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">3. Very Short Summary (Executive TL;DR)</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Fast-Reading Synopsis for Leadership</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; background: #fffbeb; border-color: #fde68a;">
+        <p style="font-size: 15px; font-weight: 600; color: #1e293b; line-height: 1.6; margin-bottom: 14px;">
+          Across 5 independent analytical runs testing diverse data science methodologies, the system recorded an agreement score of 100% (5 of 5 runs matching). The dominant finding concludes: "Matched Point-1 pairs: N=1,450 (777 FEMALE, 673 MALE).
+
+(a) Switch into full-time among those not full-time at Pre:
+- FEMALE: 244/573 = 42.58%
+- MALE: 187/512 = 36.52%
+- Difference (F − M): +6.06 pp. This is borderline (p≈0.04–0.06, 95% CI roughly 0.25 to 11.87 pp).
+
+(b) Life-satisfaction change (n=703 F, 604 M):
+- FEMALE: mean Pre 2.86, Post 3.98, delta 1.12 (SD 1.43, median 1)
+- MALE: mean Pre 2.95, Post 3.95, delta 1.00 (SD 1.29, median 1)
+- Difference in mean delta (F − M): +0.12 (Welch t=1.53, p=0.13, not significant)
+
+These are associations in single-arm observational data, not workshop effects.". This cross-method convergence confirms that the result is statistically robust and exceptionally consistent against distribution variations and outlier biases.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 14px; border-top: 1px solid #fef08a;">
+          <div style="background: #ffffff; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400e; margin-bottom: 4px;">
+              Core Answer
+            </div>
+            <div style="font-size: 14px; font-weight: 800; color: #1e3a8a; line-height: 1.5;">
+              Matched Point-1 pairs: N=1,450 (777 FEMALE, 673 MALE).
+
+(a) Switch into full-time among those not full-time at Pre:
+- FEMALE: 244/573 = 42.58%
+- MALE: 187/512 = 36.52%
+- Difference (F − M): +6.06 pp. This is borderline (p≈0.04–0.06, 95% CI roughly 0.25 to 11.87 pp).
+
+(b) Life-satisfaction change (n=703 F, 604 M):
+- FEMALE: mean Pre 2.86, Post 3.98, delta 1.12 (SD 1.43, median 1)
+- MALE: mean Pre 2.95, Post 3.95, delta 1.00 (SD 1.29, median 1)
+- Difference in mean delta (F − M): +0.12 (Welch t=1.53, p=0.13, not significant)
+
+These are associations in single-arm observational data, not workshop effects.
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400e; margin-bottom: 4px;">
+              Convergence Ratio
+            </div>
+            <div style="font-size: 14px; font-weight: 800; color: #065f46; line-height: 1.5;">
+              5 / 5 Independent Methods Aligned (100% Agreement)
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400e; margin-bottom: 4px;">
+              Stability Verdict
+            </div>
+            <div style="font-size: 14px; font-weight: 800; color: #4338ca; line-height: 1.5;">
+              Exceptional Invariance (All runs converge to invariant conclusion)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. CONSENSUS CONCLUSION -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #d1fae5; color: #047857; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">4</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">4. Consensus Conclusion</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Cross-Validated Dominant Finding</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; border: 2px solid #a7f3d0;">
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 18px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #166534;">
+              Validated Core Answer:
+            </span>
+            <span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">
+              Exceptional Confidence
+            </span>
+          </div>
+          
+          <div style="margin-top: 8px;">
+            <p style="font-size: 14px; color: #1e293b; line-height: 1.6; margin: 10px 0;">
+(a) Switch into full-time among those not full-time at Pre:</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 14px 0;">
+          
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">FEMALE</div>
+              <div style="font-size: 14px; font-weight: 800; color: #064e3b; margin-top: 4px;">244/573 = 42.58%</div>
+            </div>
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">MALE</div>
+              <div style="font-size: 14px; font-weight: 800; color: #064e3b; margin-top: 4px;">187/512 = 36.52%</div>
+            </div>
+        </div>
+        <ul style="margin: 10px 0 10px 22px; font-size: 13px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Difference (F − M): +6.06 pp. This is borderline (p≈0.04–0.06, 95% CI roughly 0.25 to 11.87 pp).</li>
+        </ul><p style="font-size: 14px; color: #1e293b; line-height: 1.6; margin: 10px 0;">(b) Life-satisfaction change (n=703 F, 604 M):</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 14px 0;">
+          
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">FEMALE</div>
+              <div style="font-size: 14px; font-weight: 800; color: #064e3b; margin-top: 4px;">mean Pre 2.86, Post 3.98, delta 1.12 (SD 1.43, median 1)</div>
+            </div>
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">MALE</div>
+              <div style="font-size: 14px; font-weight: 800; color: #064e3b; margin-top: 4px;">mean Pre 2.95, Post 3.95, delta 1.00 (SD 1.29, median 1)</div>
+            </div>
+        </div>
+        <ul style="margin: 10px 0 10px 22px; font-size: 13px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Difference in mean delta (F − M): +0.12 (Welch t=1.53, p=0.13, not significant)</li>
+        </ul><p style="font-size: 14px; color: #1e293b; line-height: 1.6; margin: 10px 0;">These are associations in single-arm observational data, not workshop effects.</p>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <strong style="font-size: 12px; text-transform: uppercase; color: var(--gray-700); display: block; margin-bottom: 6px;">
+            Detailed Consensus Verdict &amp; Analytical Evaluation:
+          </strong>
+          <div style="font-size: 13px; color: var(--gray-700); line-height: 1.6; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">All 5 independent analyses landed on the same numbers: 1,450 matched pairs, the same switch counts and rates, and the same life-satisfaction averages.</li><li style="margin-bottom: 5px;">Switching to full-time: women 42.58% vs men 36.52%, a gap of about 6 points. It is borderline, because the statistical tests sit right on the line (p between 0.04 and 0.06).</li><li style="margin-bottom: 5px;">Life satisfaction: both groups rose by about 1 point on the 5-point scale. Women gained 0.12 more, which is too small to tell apart from chance (p≈0.10–0.13).</li><li style="margin-bottom: 5px;">Bottom line: high confidence in the numbers, moderate-to-low confidence that the gender gap in switching is real, and no evidence of a gender gap in life satisfaction.</li><li style="margin-bottom: 5px;">These are patterns in one group of self-selected participants, with no comparison group. They do not show that the workshop caused anything.</li>
+        </ul>
+      
+          </div>
+        </div>
+
+        <!-- 5-Run Visual Alignment Strip -->
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px;">
+            <span>Method Alignment Across 5 Independent Pipelines:</span>
+            <span style="font-weight: 700; color: #047857;">5 / 5 Methods Aligned</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #1</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Direct Proportion & Mean Aggregation with Two-Proportion Z-Test and Welch's t-Test</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #2</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Robust Non-Parametric: Wilson Intervals, Fisher Exact Test, Medians/IQR and Mann-Whitney U</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #3</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Batch-Stratified Volume-Weighted Estimation (Cochran-Mantel-Haenszel & Inverse-Variance Pooling)</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #4</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Outlier-Trimmed Means with Bootstrap Resampling Confidence Intervals</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #5</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Rank-Order Ordinal Transition Matrix & Cumulative Share Analysis</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. EASY TO READ CONCLUSION -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #ccfbf1; color: #0f766e; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">5</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">5. Easy to Read Conclusion</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Plain-Language Translation &amp; Practical Business Takeaways</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; border-color: #99f6e4;">
+        <div style="margin-bottom: 14px;">
+          <h4 style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #0f766e; margin-bottom: 6px;">
+            What This Means in Plain English:
+          </h4>
+          <div style="font-size: 13px; color: #1e293b; line-height: 1.6; background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 8px; padding: 12px 16px;">
+            Imagine we asked the same people the same questions before and after a workshop, and then compared women and men.
+
+- Question 1: Did people start planning to work full-time in social action? Among those who weren't planning that at first, about 43 out of every 100 women said yes afterward, versus about 37 out of every 100 men. Women are a bit ahead, but the gap is small enough that it could be a fluke. Think of it as a maybe, not a sure thing.
+- Question 2: Did people feel happier with their lives? Yes, on a 1-to-5 scale both groups went up by about 1 point. Women went up by 1.12 and men by 1.00. That 0.12 difference is tiny and not meaningful, so women and men improved about equally.
+- How sure are we about the numbers? Very sure. Five different ways of crunching the data gave the same results.
+- Big caution: we only looked at people who took part, and we had no comparison group of people who skipped the workshop. So we can say these changes happened alongside the workshop, but not that the workshop caused them.
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <h4 style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #166534; margin-bottom: 6px;">
+            Practical Business &amp; Mission Takeaways:
+          </h4>
+          <div style="font-size: 13px; color: #14532d; line-height: 1.6; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px;">
+            - Headline 1, career plans: among people not planning full-time social action at the start, 42.6% of women vs 36.5% of men later said they would (+6.1 points).
+- How firm? Only borderline. Treat it as a hint worth watching, not a proven difference.
+- Headline 2, life satisfaction: both women and men rose by roughly 1 point (women +1.12, men +1.00). The 0.12 gap is effectively zero for decision-making.
+- Action: report the switch gap as suggestive and the life-satisfaction gap as no meaningful difference.
+- Guardrail: say these are patterns in self-selected participants with no comparison group. Do not claim the workshop caused them.
+          </div>
+        </div>
+
+        <div style="padding-top: 10px; border-top: 1px solid var(--gray-200);">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--gray-500); margin-bottom: 6px;">
+            Actionable Recommendations for Project Leads:
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; font-size: 12px; color: var(--gray-700);">
+            <div style="background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 12px;">
+              <strong>1. Stakeholder Reporting:</strong> Cite the verified consensus metric (Matched Point-1 pairs: N=1,450 (777 FEMALE, 673 MALE).
+
+(a) Switch into full-time among those not full-time at Pre:
+- FEMALE: 244/573 = 42.58%
+- MALE: 187/512 = 36.52%
+- Difference (F − M): +6.06 pp. This is borderline (p≈0.04–0.06, 95% CI roughly 0.25 to 11.87 pp).
+
+(b) Life-satisfaction change (n=703 F, 604 M):
+- FEMALE: mean Pre 2.86, Post 3.98, delta 1.12 (SD 1.43, median 1)
+- MALE: mean Pre 2.95, Post 3.95, delta 1.00 (SD 1.29, median 1)
+- Difference in mean delta (F − M): +0.12 (Welch t=1.53, p=0.13, not significant)
+
+These are associations in single-arm observational data, not workshop effects.) with executive confidence.
+            </div>
+            <div style="background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 12px;">
+              <strong>2. Decision Making:</strong> Proceed without requiring manual reconciliation audits across disparate reporting silos.
+            </div>
+            <div style="background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 12px;">
+              <strong>3. Audit Trail:</strong> Retain this multi-run dossier as verifiable documentation for compliance and donors.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. MULTI-METHOD CONVERGENCE & VISUAL METRICS -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #e0e7ff; color: #4338ca; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">6</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">6. Multi-Method Convergence &amp; Visual Metrics</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Statistical Alignment Distribution</span>
+      </div>
+      <div class="chart-box">
+        <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--gray-600); margin-bottom: 12px;">
+          Visual Method Alignment Matrix (5/5 Aligned)
+        </h4>
+        <svg width="100%" height="160" viewBox="0 0 700 160">
+          
+              <text x="10" y="34" font-size="11" font-weight="600" fill="#334155">Run 1: Direct Proportion & Me</text>
+              <rect x="220" y="20" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="33" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="62" font-size="11" font-weight="600" fill="#334155">Run 2: Robust Non-Parametric:</text>
+              <rect x="220" y="48" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="61" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="90" font-size="11" font-weight="600" fill="#334155">Run 3: Batch-Stratified Volum</text>
+              <rect x="220" y="76" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="89" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="118" font-size="11" font-weight="600" fill="#334155">Run 4: Outlier-Trimmed Means </text>
+              <rect x="220" y="104" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="117" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="146" font-size="11" font-weight="600" fill="#334155">Run 5: Rank-Order Ordinal Tra</text>
+              <rect x="220" y="132" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="145" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+        </svg>
+      </div>
+      
+      <div class="section-title">
+        <span>Custom Visual Analytics &amp; Deep-Dive Charts</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 20px 0;">
+        
+          <div class="card" style="margin-bottom: 0;">
+            <h4 style="font-size: 14px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px;">Switch into Full-Time: FEMALE vs MALE (among those not full-time at Pre)</h4>
+            <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 12px;">Share of participants not full-time at Pre who reported 'Fulltime as a career' at Post. All 5 runs give identical rates. The 6.06 pp gap is borderline (p≈0.04–0.06), so it is an association in single-arm data, not a workshop effect.</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">FEMALE switch rate (244 / 573)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">42.58%</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 42.58%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Wilson 95% CI 38.60–46.67%</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">MALE switch rate (187 / 512)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">36.52%</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 36.52%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Wilson 95% CI 32.47–40.78%</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Gap FEMALE − MALE (percentage points)</span>
+                    <span style="font-weight: 700; color: var(--amber);">+6.06 pp</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 10%; height: 100%; background: #d97706; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Borderline: z-test p=0.04, Fisher p=0.05, CMH p=0.06. CI about 0.25 to 11.87 pp. Batch-adjusted gap 5.68 pp.</div>
+                </div>
+              
+            </div>
+          </div>
+        
+          <div class="card" style="margin-bottom: 0;">
+            <h4 style="font-size: 14px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px;">Life Satisfaction (1–5): Pre, Post and Change by Gender</h4>
+            <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 12px;">Mean life satisfaction before and after the workshop for each gender, with the mean change. Both groups rise by about 1 point. The FEMALE−MALE difference in change (0.12) is not statistically significant (Welch p=0.13).</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">FEMALE – Mean Pre (n=703)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">2.86</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 10%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Baseline</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">FEMALE – Mean Post (n=703)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">3.98</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 10%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">SD of delta 1.43</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">FEMALE – Mean Delta</span>
+                    <span style="font-weight: 700; color: var(--emerald);">+1.12</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 10%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Median delta 1</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">MALE – Mean Pre (n=604)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">2.95</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 10%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Baseline</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">MALE – Mean Post (n=604)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">3.95</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 10%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">SD of delta 1.29</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">MALE – Mean Delta</span>
+                    <span style="font-weight: 700; color: var(--emerald);">+1.00</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 10%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Median delta 1</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Difference in mean delta (F − M)</span>
+                    <span style="font-weight: 700; color: var(--amber);">+0.12 (p=0.13)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 10%; height: 100%; background: #d97706; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Not significant. Mann-Whitney p=0.10, batch-pooled CI −0.03 to 0.26, Cohen's d=0.08.</div>
+                </div>
+              
+            </div>
+          </div>
+        
+      </div>
+    
+    </div>
+
+    <!-- 7. HOW EACH OF THE 5 RUNS ANALYZED THE DATA -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #e0f2fe; color: #0284c7; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">7</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">7. How Each of the 5 Runs Analyzed the Data (Explained Simply)</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Everyday Explanation of Each Methodology</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #1</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Direct Proportion & Mean Aggregation with Two-Proportion Z-Test and Welch's t-Test</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              Sets the reference answer exactly as specified: raw numerator/denominator switch rates and arithmetic means/SD of the life-satisfaction delta per gender, with standard parametric tests. The other four runs are checked against this baseline.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> N=1,450 (777 F/673 M). Switch rate F 42.58% (244/573) vs M 36.52% (187/512), diff 6.06 pp, z=2.04, p=0.04, CI 0.25–11.87. LS delta F 1.12 vs M 1.00, diff 0.12, Welch t=1.53, p=0.13, d=0.08.
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #2</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Robust Non-Parametric: Wilson Intervals, Fisher Exact Test, Medians/IQR and Mann-Whitney U</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              Life-satisfaction deltas on a 1–5 scale are discrete and often skewed or heavy-tailed. Switch counts may be small per gender. Exact or rank-based procedures avoid normal-approximation assumptions, so they test whether the sign and significance of the gender gap are robust.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Same counts and rates (42.58% vs 36.52%, diff 6.06 pp, Newcombe CI 0.23–11.82). Fisher p≈0.05, Yates chi2=3.90 p≈0.05. LS delta diff 0.12, median diff 0, Mann-Whitney p=0.10. Within-gender Wilcoxon p<0.001.
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #3</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Batch-Stratified Volume-Weighted Estimation (Cochran-Mantel-Haenszel & Inverse-Variance Pooling)</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              Gender mix and baseline career plans may differ across Workshop_Batch_Number cohorts. Computing gender gaps within each batch and pooling them with volume or inverse-variance weights shows whether the crude FEMALE − MALE differences hold after adjusting for cohort composition.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Crude values identical (6.06 pp; 0.12). Batch-adjusted MH RD 5.68 pp, CMH p=0.06, OR_MH 1.27. IV-pooled LS diff 0.12 (CI −0.03 to 0.26, p=0.11).
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #4</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Outlier-Trimmed Means with Bootstrap Resampling Confidence Intervals</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              Extreme life-satisfaction swings (e.g. ±4) can dominate the mean delta. A 5% trimmed mean with a Yuen test, plus nonparametric bootstrap CIs for both the switch-rate gap and the mean-delta gap, checks whether the conclusions depend on a few extreme pairs or on sampling variability.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Same rates and 6.06 pp diff (bootstrap CI 0.31–12.38). Untrimmed and trimmed mean delta diff both 0.12. Yuen p=0.10, Welch p=0.13, bootstrap CI −0.04 to 0.26.
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #5</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Rank-Order Ordinal Transition Matrix & Cumulative Share Analysis</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              The binary full-time switch and the mean delta compress richer ordinal information. A full Pre→Post transition matrix on the 1–5 engagement ordinal, cumulative delta distributions and ordinal effect sizes test whether one gender consistently dominates in upward movement, not just at the full-time cutoff or in the mean.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Same rates and 6.06 pp diff (Pearson chi2=4.15, p=0.04; Yates 3.90, p=0.05). LS delta diff 0.12, Cliff's delta 0.05 (negligible), MW p=0.10, Welch p=0.13. Female share with delta≥2 is 37.98% vs 32.45%.
+            </div>
+          </div>
+        
+      </div>
+    </div>
+
+    <!-- 8. DOMAIN & SCHEMA CONTEXTUALIZATION -->
+    
+      <div style="margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+          <span style="width: 24px; height: 24px; background: #ede9fe; color: #6d28d9; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">8</span>
+          <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">8. Domain &amp; Schema Contextualization (schemadescription.txt)</h2>
+          <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">DDL Grounding &amp; Business Reality</span>
+        </div>
+        
+      <!-- CONTEXTUALIZED SECTION (TOP OF REPORT) -->
+      <div style="background: #f8fafc; border: 2px solid #6366f1; border-radius: 14px; padding: 24px; margin-bottom: 28px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #e0e7ff; padding-bottom: 10px;">
+          <div>
+            <span class="badge" style="background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;">
+              Domain &amp; Schema Contextualized Architecture
+            </span>
+            <h3 style="font-size: 18px; color: #1e1b4b; font-weight: 800; margin-top: 6px;">
+              Domain Understanding &amp; DDL Schema Context
+            </h3>
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: #4338ca; background: #ffffff; padding: 4px 10px; border-radius: 6px; border: 1px solid #c7d2fe;">
+            Source: schemadescription.txt (Project Files in DB)
+          </span>
+        </div>
+
+        <div style="margin-bottom: 18px;">
+          <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: #3730a3; margin-bottom: 6px;">
+            Domain Overview &amp; Consensus Interpretation
+          </h4>
+          <p style="font-size: 13px; color: #1e293b; line-height: 1.6; white-space: pre-wrap;">
+            The question asks whether women and men in NIRMAN's Point-1 workshop (the first-stage workshop, Workshop_Level 0.1 in prod_nirman_questionnaire) differ in two Pre→Post shifts. The first is moving into the 'Fulltime as a career' category on Career_Plan_Social_Action_Engagement, which is the schema's primary questionnaire outcome (switched_to_fulltime). The second is the change in Metric_Life_Satisfaction_Global, a 1–5 agreement item. The questionnaire holds one row per (Participant_Id, Workshop_Level, Workshop_Phase). The matched-pair recipe (split Pre/Post, suffix, inner-merge on string Participant_Id) therefore turns it into one row per participant. Gender comes from prod_nirman_demographics, a one-row-per-participant registry, through a left join on string Participant_Id. All five runs agree on the pipeline: 1,450 matched pairs (777 FEMALE, 673 MALE), with no loss at the Gender join or the career-plan null drop. This fits the YAML, where Gender is a zero-missing usable column with only FEMALE/MALE values. Among the 1,085 participants not full-time at Pre (573 F, 512 M), 42.58% of women and 36.52% of men reported full-time at Post, a gap of +6.06 pp that is borderline (p≈0.04–0.06). Life satisfaction rose about one scale point in both genders (F 1.12, M 1.00 on n=703 F and 604 M). The +0.12 difference is not significant (p≈0.10–0.13). All of this is single-arm observational association. The data contain no control group, no workshop-assignment variable and no causal identification, so none of it can be read as a workshop effect.
+          </p>
+        </div>
+
+        
+          <div style="margin-bottom: 18px;">
+            <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: #3730a3; margin-bottom: 8px;">
+              DDL Entity &amp; Schema Mapping
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;">
+              
+                <div style="background: #ffffff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 12px;">
+                  <strong style="color: #312e81; font-size: 12px;">Table: prod_nirman_questionnaire</strong>
+                  <p style="font-size: 11px; color: #475569; margin: 4px 0;">Source of both outcomes and of the Pre/Post structure. The grain is (Participant_Id, Workshop_Level, Workshop_Phase). Filtering to Workshop_Level == 0.1 (compared with parseFloat) leaves Point-1 rows only, about 3,609 rows (2,159 participants: 2,157 Pre rows and 1,452 Post rows). The inner merge keeps the 1,450 participants with both phases. The questionnaire is nominally batches 7–17, but matched pairs only appear in batches 11–17, which matches the schema note that Career_Plan_Social_Action_Engagement is built for Point 1, batches 11–17. Career_Plan_Social_Action_Engagement is a string with 4 nulls overall, and the exact label 'Fulltime as a career' (ordinal 5) defines is_fulltime. Metric_Life_Satisfaction_Global is an agreement_1_to_5 item. Zeros mean 'not answered' and must become NaN, and anything above 5 is also set to NaN (none was found).</p>
+                  <div style="font-size: 10px; color: #6366f1; font-weight: 600;">
+                    Columns: Participant_Id, Workshop_Phase, Workshop_Level, Workshop_Batch_Number, Workshop_Name, Career_Plan_Social_Action_Engagement, Metric_Life_Satisfaction_Global
+                  </div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 12px;">
+                  <strong style="color: #312e81; font-size: 12px;">Table: prod_nirman_demographics</strong>
+                  <p style="font-size: 11px; color: #475569; margin: 4px 0;">Supplies the stratifier Gender, a usable zero-missing column with values FEMALE and MALE. The registry covers 2,890 participants (batches 1–17), a superset of the questionnaire's 2,177, so the left join from matched pairs loses nothing. Only Gender was brought across. Both tables also carry Participant_Name, Workshop_Name and Workshop_Batch_Number, and selecting Gender alone avoids duplicate-column collisions. Other demographic fields such as Age_At_Workshop, Educational_Stream_Category and Current_Status_Of_Work were not used in this question. They are the natural next-step confounders or long-term outcomes.</p>
+                  <div style="font-size: 10px; color: #6366f1; font-weight: 600;">
+                    Columns: Participant_Id, Gender, Workshop_Batch_Number, Age_At_Workshop, Educational_Stream_Category, Current_Status_Of_Work
+                  </div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 12px;">
+                  <strong style="color: #312e81; font-size: 12px;">Table: Derived: matched Point-1 Pre/Post pairs</strong>
+                  <p style="font-size: 11px; color: #475569; margin: 4px 0;">The analytic unit is one participant per Point-1 level, created by an inner merge, not a groupby. Effective N is 1,450 overall, and it differs by sub-analysis. Part (a) uses 1,085 'at risk' participants (365 already full-time at Pre: 204 F, 161 M). Part (b) uses 1,307 pairs after life-satisfaction cleaning (143 dropped as zero-coded). The two parts therefore use overlapping but different subsets and are not directly comparable. Workshop_Batch_Number_pre serves as the stratum in the batch-adjusted run.</p>
+                  <div style="font-size: 10px; color: #6366f1; font-weight: 600;">
+                    Columns: Career_Plan_Social_Action_Engagement_pre, Career_Plan_Social_Action_Engagement_post, is_fulltime_pre, is_fulltime_post, Metric_Life_Satisfaction_Global_pre, Metric_Life_Satisfaction_Global_post, Metric_Life_Satisfaction_Global_delta, Workshop_Batch_Number_pre
+                  </div>
+                </div>
+              
+            </div>
+          </div>
+        
+
+        
+          <div style="margin-bottom: 18px;">
+            <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: #3730a3; margin-bottom: 8px;">
+              5-Run Domain Explanations (Schema Context)
+            </h4>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #1: Direct Proportion & Mean Aggregation with Two-Proportion Z-Test and Welch's t-Test</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">This run is the reference calculation. It applies the schema recipe literally: switched_to_fulltime = is_fulltime_post==1 restricted to is_fulltime_pre==0, and delta = post − pre. Women convert 244/573 (42.58%) against men's 187/512 (36.52%), a 6.06 pp gap. The pooled z-test (z=2.04, p=0.04) and the Wald CI (0.25–11.87) show the gap only just excludes zero. The life-satisfaction result is a roughly one-point rise on the 1–5 item in both genders, with a +0.12 gap (Welch t=1.53, df≈1301.7, p=0.13, d=0.08). Domain meaning: after the Point-1 workshop, both genders report much higher satisfaction, and the difference between them is practically negligible. The denominator includes participants whose Pre answer was 'Not yet decided / confused', which counts as is_fulltime=0 under the requested definition. The parametric tests assume approximately normal sampling distributions, which is reasonable with n≈500–700 per group.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #2: Robust Non-Parametric: Wilson Intervals, Fisher Exact Test, Medians/IQR and Mann-Whitney U</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">The 1–5 agreement scale produces a discrete delta, mostly −1 to +3, with many ties and a median of 1 in both genders, so rank-based tests suit it. Counts and rates are identical to Run 1. Fisher and Yates chi-square (p≈0.05) are slightly more conservative than the uncorrected z-test (p=0.04), which is why the same gap flips from 'significant' to 'borderline'. The Newcombe CI (0.23–11.82) matches the Wald CI closely. The post-workshop plan distribution among the at-risk group is dominated by 'Part time' (about 33%) and 'Volunteering frequently' (19–22%), so full-time is the top rung of a graded engagement ladder. For life satisfaction, 66.86% of women and 65.23% of men improved, 22.76% and 25.00% were unchanged, and 10.38% and 9.77% declined. Mann-Whitney finds no significant gender gap in change (p=0.10, rank-biserial about 0.05). Within-gender Wilcoxon tests (p<0.001) show a strong Pre→Post shift in each group. That is a large within-person change, not a between-gender difference. It also shows 'significant' here describes association within a single-arm cohort, with no counterfactual.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #3: Batch-Stratified Volume-Weighted Estimation (Cochran-Mantel-Haenszel & Inverse-Variance Pooling)</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">The schema warns that later batches have had less time to realise outcomes (censoring) and that Workshop_Batch_Number is a cohort id (higher = more recent). Stratifying by batch tests whether the gender gap is a cohort-composition artefact. It is not: the MH risk difference (5.68 pp), the direct-standardised gap (42.28% vs 36.60%) and OR_MH of 1.27 are all close to the crude 6.06 pp. The batch-adjusted CMH p is 0.06, borderline like the others. Batch heterogeneity is large, though: batch 14 shows +23.57 pp while batches 11 (−6.75) and 17 (−8.59) lean toward men. With small strata these swings are unstable, so a single pooled gender gap hides cohort-specific facilitation, recruitment or measurement differences. For life satisfaction the IV-pooled gap is 0.12 (CI −0.03 to 0.26, p=0.11). Batch 17 loses most of its data after cleaning (174 → 35 pairs). That suggests many zero-coded 'not answered' responses for this item in the most recent cohort, and the inverse-variance weights rightly discount it. Matched pairs occur only in batches 11–17, so earlier questionnaire batches (7–10) contribute nothing to this comparison.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #4: Outlier-Trimmed Means with Bootstrap Resampling Confidence Intervals</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">Possible extreme swings (±4) on a bounded 1–5 item might distort the mean delta. The 5% trimming (35 values per end for women, 30 for men) leaves the gap unchanged (1.12 vs 1.00, gap 0.12), so no outlier-driven artefact exists. This is plausible for a bounded item with a median shift of 1 in both groups. Yuen's test (p=0.10) and Welch's (p=0.13) agree. Bootstrap CIs for the mean-delta gap (−0.04 to 0.26) and the trimmed gap (−0.03 to 0.27) include zero. The bootstrap CI for the switch-rate gap (0.31–12.38) just excludes zero, which matches the Wald and Newcombe intervals. Resampling participants within gender also respects the one-row-per-participant grain after the Pre/Post merge. Both outcomes are therefore stable to outliers and sampling variability, and the only fragility is the switch-rate gap sitting near the p≈0.05 boundary.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #5: Rank-Order Ordinal Transition Matrix & Cumulative Share Analysis</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">This run unpacks the 1–5 ordinal ladder (Monetary contribution=1 … Fulltime as a career=5, plus 'Not yet decided / confused' as a separate state). It locates where the gender gap arises. Among pairs with both plans in 1–5, directional movement is almost identical: moving up 40.69% (F) vs 41.37% (M), staying 53.82% vs 53.27%, moving down 5.48% vs 5.36%. The female edge therefore comes from conversion into the top category, not from a generally more upward trajectory. By Pre category, women convert more from Part time (47.58% vs 43.78%), Volunteering (34.68% vs 30.77%) and especially undecided (54.43% vs 42.67%). The undecided stratum is the largest gap, about 12 pp, and is a definitional choice since the schema treats undecided as null in ordinal models while the question counts it as not full-time. Pre=1 and 2 strata are tiny (n=7 F and 12 M for Pre=2), so those rates are unstable. For life satisfaction, women have a higher share of gains ≥2 points (37.98% vs 32.45%) but similar ≥1 shares (66.86% vs 65.23%). Cliff's delta of 0.05 is negligible and Mann-Whitney p=0.10, and the cumulative curves cross at the low end, so neither gender strictly dominates. Pearson chi-square (4.15, p=0.04) vs Yates (3.90, p=0.05) again shows the borderline nature of the switch-rate gap.</p>
+                </div>
+              
+            </div>
+          </div>
+        
+
+        
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+            <strong style="font-size: 12px; color: #92400e; text-transform: uppercase; display: block; margin-bottom: 3px;">
+              Domain Nuances &amp; Constraints
+            </strong>
+            <p style="font-size: 12px; color: #78350f; line-height: 1.5;">1) Single-arm observational data: the schema is explicit that only association and change can be reported. There is no unexposed comparison group, so Pre→Post gains can reflect the workshop, survey demand effects (Post is collected immediately after), regression toward the mean (Pre life satisfaction averages about 2.9), maturation or self-report bias. 2) Selection into the matched sample: 2,157 Pre vs 1,452 Post rows at Point 1 means about a third of Pre respondents have no Post record. Those with both phases are not a random subset, and the join to demographics and the batch 11–17 restriction change N, so effective N must always be quoted. 3) Part (a) and part (b) use different subsets (1,085 'at risk' vs 1,307 cleaned pairs), so results should not be read as one cohort. 4) Zero-coded life-satisfaction responses (142 Pre, 141 Post) are 'not answered', not low scores. They are concentrated in recent batches (batch 17 drops from 174 to 35 pairs), so dropping them may not be random and the batch-17 life-satisfaction estimate is very imprecise. 5) 'Fulltime as a career' is a stated plan or intention for social action, not realised employment. It is a different construct from demographics.Current_Status_Of_Work, which is an undated snapshot of present work. Starting-state dependence matters too: the 365 already full-time at Pre (204 F, 161 M) are excluded by design, and the 'Not yet decided / confused' state is counted as non-full-time here although the schema treats it as null in ordinal models. 6) The switch-rate gap of 6.06 pp sits at p≈0.04–0.06 across tests, so its 'significance' depends on the test (pooled z and Pearson give 0.04; Yates, Fisher and CMH give 0.05–0.06). Across the many tests run, no multiplicity adjustment was applied, and the gap should be called suggestive. 7) Batch heterogeneity (batch 14 +23.57 pp vs batches 11 and 17 negative) suggests cohort-specific effects, such as facilitators, venues or timing, that a pooled gender gap hides. The recent-batch censoring rule applies to long-term outcomes, less so to immediate Pre/Post intentions. 8) Gender is binary (FEMALE/MALE) in the registry, so the comparison cannot speak to other identities. Age, education stream and native state are unadjusted confounders. 9) Life satisfaction is a bounded 1–5 item with ceiling effects, since high-Pre respondents cannot gain much. The gender gap in mean delta (0.12, d≈0.08, Cliff's 0.05) is practically negligible even where nominally borderline.</p>
+          </div>
+        
+
+        
+          <div>
+            <strong style="font-size: 12px; color: #1e1b4b; text-transform: uppercase; display: block; margin-bottom: 4px;">
+              Domain Expert Recommendations
+            </strong>
+            <ul style="margin-left: 18px; font-size: 12px; color: #334155;">
+              <li>Report the headline as: among matched Point-1 pairs (N=1,450; 777 F, 673 M), women were somewhat more likely than men to report 'Fulltime as a career' at Post if not already full-time at Pre (42.58% vs 36.52%, +6.06 pp, borderline), while life-satisfaction gains were similar (+1.12 vs +1.00). Do not describe this as a workshop effect or a gender causal effect.</li><li>Always cite effective N at each stage (1,450 matched; 1,085 at risk with 573 F and 512 M; 1,307 valid life-satisfaction pairs with 703 F and 604 M). Keep parts (a) and (b) clearly labelled as different subsets.</li><li>Treat the switch-rate gender gap as a hypothesis for confirmation, not a finding. Test it on a holdout of future batches or add covariates (Age_At_Workshop > 0, Educational_Stream_Category, Native_State, Workshops_Attended_Count) in a logistic model with Workshop_Batch_Number as a control.</li><li>Investigate batch heterogeneity, especially batch 14 (+23.57 pp) vs batches 11 and 17. Look at facilitator, venue, cohort-size and survey-administration differences, and treat per-batch gaps with caution given small strata.</li><li>Audit the zero-coded Metric_Life_Satisfaction_Global values, especially in batch 17 (usable n falls from 174 to 35). Confirm whether the item was skipped or not administered. Consider reporting life satisfaction only for batches with adequate coverage.</li><li>Make an explicit decision on 'Not yet decided / confused'. This analysis counts it as non-full-time, but the schema treats it as null for ordinal models. Report a sensitivity analysis excluding it, and note the undecided stratum shows the largest gender gap (54.43% vs 42.67%).</li><li>Because conversion into full-time, not general upward movement, drives the female edge, follow up with demographics.Current_Status_Of_Work (using the label_map: 'Social Impact Work' positive, 'Previously SIW' engaged-then-left) to see whether stated Post intentions translate into later outcomes. Avoid leaking Post-phase columns into any long-term model, and control for batch censoring.</li><li>Consider complementing the 1–5 mean-delta with ordinal and share-based metrics (share ≥2-point gain, Cliff's delta), because the female advantage is concentrated in larger gains (37.98% vs 32.45%) while medians are equal (1). Where a single test is preferred, use a non-parametric one given the discrete delta.</li>
+            </ul>
+          </div>
+        
+      </div>
+    
+      </div>
+    
+
+    <!-- Page Break for Printing -->
+    <div class="page-break"></div>
+
+    <!-- 9. SCIENTIFIC & TECHNICAL DATA SCIENCE EVALUATION (COLLAPSED BY DEFAULT) -->
+    <details class="collapsible-section" style="margin-bottom: 24px; border: 1px solid var(--gray-200); border-radius: 12px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <summary style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #fdf2f8; cursor: pointer; user-select: none; border-bottom: 1px solid #fbcfe8;">
+        <span style="width: 24px; height: 24px; background: #fce7f3; color: #be185d; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">9</span>
+        <h2 style="font-size: 16px; font-weight: 800; color: var(--gray-900); margin: 0;">9. Scientific &amp; Technical Data Science Evaluation</h2>
+        <span style="font-size: 11px; font-weight: 700; color: #9d174d; background: #fce7f3; border: 1px solid #fbcfe8; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">Collapsed by Default (Click to Expand)</span>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto; display: inline-flex; align-items: center; gap: 6px;">
+          <span>Details &amp; Matrix</span>
+          <span class="collapse-chevron" style="display: inline-block; transition: transform 0.2s ease; font-size: 10px;">▼</span>
+        </span>
+      </summary>
+      <div style="padding: 20px;">
+        <div class="card" style="margin-bottom: 16px;">
+          <h4 style="font-size: 12px; font-weight: 700; color: var(--gray-700); text-transform: uppercase; margin-bottom: 8px;">
+            Theoretical Framework &amp; Statistical Invariance
+          </h4>
+          <div style="font-size: 13px; color: var(--gray-700); line-height: 1.6;">
+            
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Plain-language overview: all five runs, using different statistical approaches, produced the same core results. They differ only in how they judged whether the gender gaps could be due to chance.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Data foundation: 1,450 matched Pre/Post pairs (777 women, 673 men). For the switch question, 573 women and 512 men were not full-time at Pre. For life satisfaction, 703 women and 604 men had valid scores both times after cleaning.</li><li style="margin-bottom: 5px;">Switch into full-time: 244 of 573 women (42.58%) vs 187 of 512 men (36.52%), a gap of +6.06 pp. The tests give p=0.04 (pooled z-test and Pearson chi-square), about 0.05 (Yates chi-square and Fisher), and 0.06 (batch-adjusted CMH). Confidence intervals (0.25–11.87 and bootstrap 0.31–12.38) only just exclude zero. Reading: borderline, suggestive but not firm.</li><li style="margin-bottom: 5px;">Batch check: adjusting for workshop batch moves the gap only slightly, to 5.68 pp, so batch mix does not explain it. The gap is uneven across batches: batch 14 shows a large positive gap, while batches 11 and 17 lean slightly negative.</li><li style="margin-bottom: 5px;">Life satisfaction: women improved from 2.86 to 3.98 (+1.12) and men from 2.95 to 3.95 (+1.00). The 0.12 difference is not significant under any test: Welch p=0.13, Yuen p=0.10, Mann-Whitney p=0.10, inverse-variance pooled p=0.11, and the bootstrap CI (−0.04 to 0.26) includes zero. The effect size is negligible (Cohen's d=0.08, Cliff's delta=0.05).</li><li style="margin-bottom: 5px;">Robustness: trimmed and untrimmed means agree and both medians are 1, so outliers are not driving the result. Women do have a slightly larger share with a gain of 2 or more points (37.98% vs 32.45%), but the overall difference remains small.</li><li style="margin-bottom: 5px;">Within each gender, improvement from Pre to Post is clearly different from zero (Wilcoxon p&lt;0.001). This describes change over time, not a workshop effect, since there is no control group.</li><li style="margin-bottom: 5px;">Caveats: parts (a) and (b) use different subsets of people. Batch 17 loses many life-satisfaction records after cleaning. Participants are self-selected and there is no comparison group, so all findings are associations only.</li>
+        </ul>
+      
+          </div>
+        </div>
+
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--gray-900); text-transform: uppercase; margin-bottom: 8px;">
+          Cross-Methodology Technical Matrix (All 5 Runs)
+        </h4>
+        <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">Run</th>
+            <th style="width: 180px;">Method &amp; Category</th>
+            <th>Augmented Query Specification</th>
+            <th style="width: 140px;">Convergence Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td style="font-weight: 700;">#1</td>
+              <td>
+                <strong style="color: var(--gray-900);">Direct Proportion & Mean Aggregation with Two-Proportion Z-Test and Welch's t-Test</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Parametric Aggregation</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"Run the following steps on the Point-1 workshop data.
+
+**Load and prepare**
+1. Load prod_nirman_questionnaire and prod_nirman_demographics.
+2. Cast Participant_Id to string in both frames.
+3. Force Workshop_Name to string.
+4. Keep questionnaire rows where parseFloat(Workshop_Level) === 0.1.
+
+**Build matched pairs**
+5. Split by Workshop_Phase === 'Pre' and === 'Post'.
+6. Rename all non-key columns with the suffix _pre / _post.
+7. Inner-merge on Participant_Id.
+8. Left-join Gender from demographics on Participant_Id (string).
+9. Keep Gender in ['FEMALE','MALE'].
+10. Report the effective N of matched pairs per gender, plus the total.
+
+**(a) Switch into full-time**
+11. Drop pairs where Career_Plan_Social_Action_Engagement_pre or _post is null/NaN. Report the N dropped.
+12. Set is_fulltime_x = 1 if the value === 'Fulltime as a career', else 0.
+13. Per gender:
+    - Denominator = count with is_fulltime_pre == 0.
+    - Numerator = count among those with is_fulltime_post == 1.
+    - Switch rate = 100 × numerator / denominator.
+14. Report the FEMALE − MALE rate difference in percentage points.
+15. Run a two-proportion z-test:
+    - Use the pooled p for the SE.
+    - Report the z statistic and two-sided p-value (normal CDF).
+    - Report the 95% Wald CI of the difference using the unpooled SE.
+
+**(b) Life-satisfaction change**
+16. Clean Metric_Life_Satisfaction_Global_pre and _post separately: 0 → NaN, values > 5 → NaN.
+17. Compute delta = post − pre and drop pairs with any NaN.
+18. Per gender, report n, mean Pre, mean Post, mean delta, SD of delta (sample, n−1) and median delta.
+19. Report the FEMALE − MALE difference in mean delta.
+20. Run Welch's unpaired t-test on the deltas:
+    - Report t, the Welch–Satterthwaite df and the two-sided p-value (Student t CDF, or a normal approximation if df > 100).
+    - Report Cohen's d using the pooled SD.
+
+**Output**
+21. Round all numbers to 2 decimals.
+22. Return a JSON summary.
+23. Present the findings as associations in single-arm observational data, not workshop effects."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Point-1 (Workshop_Level 0.1) matched Pre/Post analysis by Gender, using prod_nirman_questionnaire joined to prod_nirman_demographics.
+
+LOAD/PREPARE:
+(1) Load prod_nirman_questionnaire and prod_nirman_demographics.
+(2) Cast Participant_Id to string in both frames.
+(3) Force Workshop_Name to string so the value 'F' does not parse as boolean false. Keep Workshop_Phase and Career_Plan_Social_Action_Engagement as strings.
+(4) Keep questionnaire rows where parseFloat(Workshop_Level) === 0.1.
+
+MATCHED PAIRS:
+(5) Split into Workshop_Phase === 'Pre' and Workshop_Phase === 'Post'.
+(6) Suffix all non-key columns with _pre or _post. Participant_Id is the key.
+(7) Inner-merge on Participant_Id. This is a merge, not a groupby.
+(8) Left-join demographics.Gender on Participant_Id (string to string). Select only Gender from demographics to avoid duplicate Workshop_Name or Workshop_Batch_Number columns.
+(9) Keep Gender in ['FEMALE','MALE'].
+(10) Report the effective N of matched pairs per Gender and in total, after the merge and join.
+
+(a) SWITCH INTO FULL-TIME:
+(11) Drop pairs where Career_Plan_Social_Action_Engagement_pre or Career_Plan_Social_Action_Engagement_post is null, NaN or empty. Report the N dropped.
+(12) Set is_fulltime_pre and is_fulltime_post to 1 if the value === 'Fulltime as a career', else 0. Note that 'Not yet decided / confused' counts as 0 here.
+(13) Per Gender:
+- Denominator = count with is_fulltime_pre == 0.
+- Numerator = count of those with is_fulltime_post == 1.
+- switch_rate = 100 × numerator / denominator.
+(14) Report the FEMALE − MALE difference in percentage points.
+(15) Run a two-proportion z-test:
+- Pooled p = (x_F + x_M) / (n_F + n_M).
+- SE_pooled = sqrt(p(1−p)(1/n_F + 1/n_M)).
+- z = (p_F − p_M) / SE_pooled.
+- Two-sided p = 2(1 − Φ(|z|)), using a normal CDF approximation (e.g., an erf approximation).
+- 95% Wald CI = (p_F − p_M) ± 1.96·sqrt(p_F(1−p_F)/n_F + p_M(1−p_M)/n_M), reported in percentage points.
+
+(b) LIFE-SATISFACTION CHANGE:
+(16) Clean Metric_Life_Satisfaction_Global_pre and Metric_Life_Satisfaction_Global_post separately on the agreement_1_to_5 scale:
+- 0 → NaN (not answered).
+- Values > 5 → NaN.
+(17) Compute delta = post − pre. Drop pairs with NaN in pre, post or delta. Start from the gender-filtered matched pairs of step 9, independent of the step-11 drop.
+(18) Per Gender, report:
+- n
+- mean Pre and mean Post
+- mean delta
+- SD of delta (sample, n−1)
+- median delta
+(19) Report the FEMALE − MALE difference in mean delta.
+(20) Run Welch's unpaired t-test on the deltas:
+- t = (m_F − m_M) / sqrt(s_F²/n_F + s_M²/n_M).
+- Welch–Satterthwaite df.
+- Two-sided p-value from the Student t CDF, or a normal approximation if df > 100.
+- Cohen's d = (m_F − m_M) / pooled SD, where pooled SD = sqrt(((n_F−1)s_F² + (n_M−1)s_M²) / (n_F + n_M − 2)).
+
+OUTPUT:
+(21) Round all numbers to 2 decimals.
+(22) Return a JSON summary containing:
+- effective N (per gender and total)
+- part (a) counts, rates, difference, z, p and CI
+- part (b) descriptives, difference, t, df, p and d
+(23) Frame the results as associations in single-arm observational data. Do not describe them as causal workshop effects.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Baseline direct computation. It supplies the headline numbers that all other runs reproduce exactly.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#2</td>
+              <td>
+                <strong style="color: var(--gray-900);">Robust Non-Parametric: Wilson Intervals, Fisher Exact Test, Medians/IQR and Mann-Whitney U</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Robust Non-Parametric</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"**Shared pipeline (identical to Run 1)**
+1. Cast Participant_Id to string in both tables and force Workshop_Name to string.
+2. Keep rows where parseFloat(Workshop_Level) === 0.1.
+3. Split by Workshop_Phase 'Pre' / 'Post' and add the _pre / _post suffixes.
+4. Inner-merge on Participant_Id.
+5. Left-join Gender from demographics (string key) and keep FEMALE / MALE.
+6. Report the effective N of matched pairs per gender.
+
+**(a) Switch into full-time**
+7. Drop pairs where Career_Plan_Social_Action_Engagement _pre or _post is null.
+8. Set is_fulltime = 1 if the value is 'Fulltime as a career', else 0.
+9. Denominator = is_fulltime_pre == 0. Numerator = those with is_fulltime_post == 1.
+10. Per gender, report numerator, denominator, switch rate % and a 95% Wilson score interval.
+11. Report the FEMALE − MALE rate difference with a Newcombe hybrid-score CI.
+12. Build the 2×2 table (gender × switched yes/no):
+    - Run Fisher's exact test (two-sided, hypergeometric enumeration).
+    - Run a chi-square test with Yates correction.
+13. Also show the full Post distribution of Career_Plan_Social_Action_Engagement among the denominator, per gender.
+
+**(b) Life-satisfaction change**
+14. Clean Metric_Life_Satisfaction_Global _pre and _post: 0 → NaN, values > 5 → NaN.
+15. Compute delta = post − pre and drop pairs with NaN.
+16. Per gender, report n, mean Pre, mean Post, mean delta, SD of delta, median delta, Q1, Q3, IQR of delta, and the % of pairs with delta > 0, = 0 and < 0.
+17. Report the FEMALE − MALE difference in mean delta and in median delta.
+18. Run a Mann-Whitney U test on the deltas:
+    - Use average ranks for ties, a tie-corrected variance and the normal approximation.
+    - Report the rank-biserial correlation.
+19. Within each gender, run a Wilcoxon signed-rank test of delta vs 0.
+
+**Output**
+20. Round to 2 decimals.
+21. Frame the results as associations in single-arm observational data, not workshop effects."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use prod_nirman_questionnaire (Q) and prod_nirman_demographics (D). SHARED PIPELINE: (1) Cast Participant_Id to string in both tables. Force Workshop_Name to string in both, since 'F' otherwise parses as boolean. (2) Filter Q to rows where parseFloat(Workshop_Level) === 0.1 (Point 1 workshop). (3) Split by Workshop_Phase into 'Pre' and 'Post' frames and suffix the columns _pre / _post. (4) Inner-merge Pre and Post on Participant_Id; report the number of matched pairs. (5) Left-join D.Gender on string Participant_Id. Keep only Gender in ['FEMALE','MALE'] and report the effective N of matched pairs per gender. (a) SWITCH INTO FULL-TIME: (7) Drop pairs where Career_Plan_Social_Action_Engagement_pre or Career_Plan_Social_Action_Engagement_post is null; report N. (8) Set is_fulltime_pre/post = 1 if the value is exactly 'Fulltime as a career', else 0. (9) Denominator = pairs with is_fulltime_pre == 0. Numerator = denominator pairs with is_fulltime_post == 1 (switched_to_fulltime). (10) Per gender, report numerator, denominator, switch rate % and a 95% Wilson score interval. (11) Report the FEMALE − MALE rate difference with a Newcombe hybrid-score (Wilson-based) 95% CI. (12) Build the 2×2 table (Gender FEMALE/MALE × switched yes/no). Run Fisher's exact test (two-sided, by hypergeometric enumeration summing the probabilities of tables ≤ the observed probability). Run a Pearson chi-square test with Yates continuity correction (df=1) and report chi2 and p. (13) Within the denominator, per gender, show the full Post distribution (counts and %) of Career_Plan_Social_Action_Engagement_post across 'Fulltime as a career', 'Part time', 'Volunteering frequently', 'Occasionally', 'Monetary contribution' and 'Not yet decided / confused'. (b) LIFE-SATISFACTION CHANGE: (14) Clean Metric_Life_Satisfaction_Global_pre and Metric_Life_Satisfaction_Global_post (agreement 1–5 scale): set 0 → NaN and values > 5 → NaN. (15) Compute delta = post − pre and drop pairs where pre, post or delta is NaN; report N per gender. (16) Per gender, report n, mean Pre, mean Post, mean delta, SD of delta (sample, n−1), median delta, Q1, Q3 and IQR of delta, and the % of pairs with delta > 0, = 0 and < 0. (17) Report the FEMALE − MALE difference in mean delta and in median delta. (18) Run a Mann-Whitney U test on the deltas (FEMALE vs MALE) using average ranks for ties, a tie-corrected variance and the normal approximation (z, two-sided p). Report U and the rank-biserial correlation r = 1 − 2U/(n1·n2), stating the direction convention. (19) Within each gender, run a Wilcoxon signed-rank test of delta vs 0: drop zero deltas, use average ranks, tie-corrected normal approximation; report W+, W−, n_nonzero, z and p. OUTPUT: round all numbers to 2 decimals and report effective N at each step. Frame all results as associations and Pre–Post change in single-arm observational data, not causal workshop effects.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Continuity-corrected and exact tests put the switch gap right at p≈0.05, and the rank-based LS test is non-significant. Both are consistent with the consensus.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#3</td>
+              <td>
+                <strong style="color: var(--gray-900);">Batch-Stratified Volume-Weighted Estimation (Cochran-Mantel-Haenszel & Inverse-Variance Pooling)</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Weighted Estimation</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"**Shared pipeline (identical to Run 1)**
+1. Build the Point-1 matched Pre/Post pairs:
+    - Cast Participant_Id to string and force Workshop_Name to string.
+    - Keep parseFloat(Workshop_Level) === 0.1.
+    - Split by Workshop_Phase and add the _pre / _post suffixes.
+    - Inner-merge on Participant_Id.
+2. Left-join Gender from demographics (string key) and keep FEMALE / MALE.
+3. Use Workshop_Batch_Number_pre as the stratum.
+4. Report the effective N of matched pairs per gender, and per gender × batch.
+
+**(a) Switch into full-time**
+5. Drop pairs with a null Career_Plan_Social_Action_Engagement _pre or _post.
+6. Set is_fulltime = 1 if the value is 'Fulltime as a career', else 0.
+7. Restrict to is_fulltime_pre == 0.
+8. Report the crude numerator, denominator and switch rate % per gender, plus the FEMALE − MALE difference.
+9. Per batch, compute the gender-specific switch rates and the within-batch difference.
+10. Compute a pooled difference using Mantel-Haenszel risk-difference weights (n_F·n_M/(n_F+n_M)) per batch. Skip batches lacking either gender.
+11. Compute a direct-standardized switch rate per gender, using the combined denominator distribution across batches as the standard population.
+12. Run a Cochran-Mantel-Haenszel chi-square test (with continuity correction) and report the MH common odds ratio.
+
+**(b) Life-satisfaction change**
+13. Clean Metric_Life_Satisfaction_Global _pre and _post: 0 → NaN, values > 5 → NaN.
+14. Compute delta = post − pre and drop NaN pairs.
+15. Report the crude n, mean Pre, mean Post, mean delta, SD of delta and median delta per gender, plus the FEMALE − MALE difference in mean delta.
+16. Per batch, compute the gender difference in mean delta and its variance (s_F²/n_F + s_M²/n_M). Skip strata with n < 2 in either gender.
+17. Pool with inverse-variance (fixed-effect) weights and report the pooled difference, SE, 95% CI and z p-value.
+18. Also report the batch-standardized mean delta per gender.
+19. Report the crude Welch's t-test for reference.
+
+**Output**
+20. Compare the crude and adjusted gaps.
+21. Round to 2 decimals.
+22. Describe the results as associations in single-arm observational data, not workshop effects."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Gender comparison, adjusted for batch, of (a) the switch to a full-time social-action career and (b) the change in life satisfaction among matched Point-1 Pre/Post pairs. This is single-arm observational data, so report associations, not workshop effects.
+
+SHARED PIPELINE (identical to Run 1):
+1. Load prod_nirman_questionnaire. Cast Participant_Id to string and force Workshop_Name to string, because the value 'F' otherwise parses as boolean. Also keep Workshop_Phase and Career_Plan_Social_Action_Engagement as strings.
+2. Keep rows where parseFloat(Workshop_Level) === 0.1 (the Point-1 workshop).
+3. Split the rows by Workshop_Phase ('Pre' and 'Post') and add the suffixes _pre and _post to the non-key columns.
+4. Inner-merge the two sets on Participant_Id to get the matched pairs. This is a merge, not a groupby.
+5. Load prod_nirman_demographics and cast Participant_Id to string. Left-join Gender onto the matched pairs by Participant_Id.
+6. Keep only Gender in ['FEMALE', 'MALE'].
+7. Use Workshop_Batch_Number_pre (questionnaire batches 7–17) as the stratum.
+8. Report the effective N of matched pairs per Gender and per Gender × Workshop_Batch_Number_pre.
+
+(a) SWITCH TO FULL-TIME:
+9. Drop pairs where Career_Plan_Social_Action_Engagement_pre or Career_Plan_Social_Action_Engagement_post is null.
+10. Set is_fulltime_pre and is_fulltime_post to 1 if the value is exactly 'Fulltime as a career', else 0.
+11. Restrict to is_fulltime_pre == 0. The outcome switched_to_fulltime is is_fulltime_post == 1.
+12. Crude results per Gender: numerator (switched), denominator (at risk) and switch rate %. Also report the FEMALE − MALE rate difference in percentage points.
+13. Per batch: the FEMALE and MALE switch rates, their n, and the within-batch difference (FEMALE − MALE).
+14. Mantel-Haenszel pooled risk difference:
+   - Weight each batch by w_k = n_F·n_M/(n_F+n_M).
+   - Pooled RD = Σ w_k·(p_Fk − p_Mk) / Σ w_k.
+   - Skip batches that lack either gender.
+15. Direct standardization:
+   - Use the combined (FEMALE+MALE) denominator distribution across batches as the standard population.
+   - Standardized rate per gender = Σ_k (N_k/N)·p_gk.
+   - Over the batches where both genders are present, apply the same set of batches to both genders.
+   - Report the standardized FEMALE − MALE difference.
+16. Cochran-Mantel-Haenszel test:
+   - Run the CMH chi-square test across the batch 2×2 tables (gender × switched), with continuity correction, df = 1, and report the p-value.
+   - Report the MH common odds ratio, OR_MH = Σ(a_k·d_k/n_k) / Σ(b_k·c_k/n_k), with FEMALE as the exposed row and switched as the event.
+
+(b) LIFE-SATISFACTION CHANGE:
+17. Clean Metric_Life_Satisfaction_Global_pre and Metric_Life_Satisfaction_Global_post (agreement scale 1–5): set 0 to NaN and values > 5 to NaN.
+18. Compute delta = Metric_Life_Satisfaction_Global_post − Metric_Life_Satisfaction_Global_pre, then drop pairs with NaN.
+19. Crude results per Gender: n, mean Pre, mean Post, mean delta, SD of delta (sample, n−1) and median delta. Also report the FEMALE − MALE difference in mean delta.
+20. Per batch (Workshop_Batch_Number_pre):
+   - Compute the difference in mean delta, d_k = mean_F − mean_M.
+   - Compute its variance, v_k = s_F²/n_F + s_M²/n_M.
+   - Skip strata with n < 2 in either gender.
+21. Fixed-effect inverse-variance pooling:
+   - Weights w_k = 1/v_k.
+   - Pooled difference = Σ w_k·d_k / Σ w_k.
+   - SE = sqrt(1/Σ w_k).
+   - 95% CI = pooled ± 1.96·SE.
+   - z = pooled/SE, with a two-sided normal p-value.
+22. Batch-standardized mean delta per gender: weight the batch-specific gender means by the combined (FEMALE+MALE) n distribution across the eligible batches.
+23. Run Welch's unequal-variance t-test on delta (FEMALE vs MALE) as the crude reference. Report t, Welch–Satterthwaite df and the two-sided p-value.
+
+OUTPUT:
+24. Compare the crude and batch-adjusted gender gaps for both outcomes (switch-rate difference and mean-delta difference). Note any attenuation or reversal, which would suggest confounding by batch or cohort composition.
+25. Round all displayed numbers to 2 decimals.
+26. Report the effective N at every stage: after the merge, after the gender filter, after dropping null career-plan values, at the pre==0 restriction, after the life-satisfaction cleaning, and per stratum. List any skipped batches.
+27. Describe all results as associations in single-arm observational data, not as causal workshop effects.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Batch adjustment attenuates the switch gap only about 6% and does not reverse it. The conclusion is unchanged, though CMH is borderline non-significant.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#4</td>
+              <td>
+                <strong style="color: var(--gray-900);">Outlier-Trimmed Means with Bootstrap Resampling Confidence Intervals</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Outlier-Filtered</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"**Shared pipeline (identical to Run 1)**
+1. Cast Participant_Id to string in both tables and force Workshop_Name to string.
+2. Keep parseFloat(Workshop_Level) === 0.1.
+3. Split by Workshop_Phase 'Pre' / 'Post', add the _pre / _post suffixes and inner-merge on Participant_Id.
+4. Left-join Gender from demographics (string key) and keep FEMALE / MALE.
+5. Report the effective N of matched pairs per gender.
+
+**(a) Switch into full-time**
+6. Drop pairs with a null Career_Plan_Social_Action_Engagement _pre or _post.
+7. Set is_fulltime = 1 if the value is 'Fulltime as a career', else 0.
+8. Restrict to is_fulltime_pre == 0.
+9. Per gender, report numerator, denominator and switch rate %, plus the FEMALE − MALE difference.
+10. Bootstrap the rate difference:
+    - Run 2000 resamples, resampling participants with replacement within each gender.
+    - Use a seeded PRNG (e.g. mulberry32, seed 42) for reproducibility.
+    - Report the bootstrap mean difference, its SE and the percentile 95% CI.
+
+**(b) Life-satisfaction change**
+11. Clean Metric_Life_Satisfaction_Global _pre and _post: 0 → NaN, values > 5 → NaN.
+12. Compute delta = post − pre and drop NaN pairs.
+13. Per gender, report the untrimmed n, mean Pre, mean Post, mean delta, SD of delta and median delta.
+14. Per gender, sort the deltas, remove the bottom 5% and top 5% (floor(0.05·n) from each end), and report:
+    - the trimmed n
+    - the trimmed mean delta
+    - the 5% winsorized SD
+    - the trimmed means of Pre and Post
+15. Report the FEMALE − MALE difference in the untrimmed and the trimmed mean delta.
+16. Run Yuen's trimmed-mean t-test (winsorized variances, Welch-type df).
+17. Bootstrap (2000 resamples, same seed) the difference in mean delta and in trimmed mean delta, with percentile 95% CIs.
+18. Report Welch's t-test for comparison.
+
+**Output**
+19. Round to 2 decimals.
+20. Present the results as associations in single-arm observational data, not workshop effects."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use prod_nirman_questionnaire (Q) and prod_nirman_demographics (D). SHARED PIPELINE: (1) Cast Participant_Id to string in both tables and force Workshop_Name to string in both, so 'F' is not parsed as boolean. (2) Filter Q to parseFloat(Workshop_Level) === 0.1 (Point 1). (3) Split Q by Workshop_Phase 'Pre' and 'Post', suffix the columns _pre and _post, and inner-merge on Participant_Id to form matched Pre/Post pairs. (4) Left-join D.Gender on the string Participant_Id and keep Gender in ['FEMALE','MALE']. (5) Report the effective N of matched pairs per gender. PART (a) SWITCH INTO FULL-TIME: (6) Drop pairs where Career_Plan_Social_Action_Engagement_pre or _post is null. (7) Set is_fulltime = 1 if the value === 'Fulltime as a career', else 0, for pre and post. (8) Restrict to is_fulltime_pre == 0. (9) Per gender, report the numerator (is_fulltime_post == 1), the denominator (pairs with pre == 0) and the switch rate %, plus the FEMALE − MALE rate difference in percentage points. (10) Bootstrap the rate difference: 2000 resamples of participants with replacement, stratified within each gender, using a seeded PRNG (mulberry32, seed 42). Report the bootstrap mean difference, its SE (SD of the bootstrap differences) and the percentile 95% CI (2.5th and 97.5th percentiles). PART (b) LIFE-SATISFACTION CHANGE: (11) Clean Metric_Life_Satisfaction_Global_pre and _post (agreement scale 1–5): set 0 → NaN and values > 5 → NaN. (12) Compute delta = post − pre and drop pairs with NaN. (13) Per gender, report the untrimmed n, mean Pre, mean Post, mean delta, SD of delta (sample, n−1) and median delta. (14) Per gender, sort the deltas and trim g = floor(0.05·n) values from each end. Report: the trimmed n (n − 2g), the 5% trimmed mean delta, the 5% winsorized SD of delta, and the 5% trimmed means of Pre and Post (each trimmed independently with the same rule). (15) Report the FEMALE − MALE difference in the untrimmed mean delta and in the trimmed mean delta. (16) Run Yuen's trimmed-mean t-test on delta between genders: d_j = (n_j−1)·s²_winsorized_j / (h_j·(h_j−1)) with h_j = n_j − 2g_j; t = (trimmed mean_F − trimmed mean_M) / sqrt(d_F + d_M); Welch-type df = (d_F + d_M)² / (d_F²/(h_F−1) + d_M²/(h_M−1)); two-sided p-value. (17) Bootstrap (2000 resamples, stratified by gender, same mulberry32 seed 42) the FEMALE − MALE difference in mean delta and in 5% trimmed mean delta, with percentile 95% CIs. (18) Report Welch's two-sample t-test on untrimmed delta (t, Welch–Satterthwaite df, two-sided p) for comparison. OUTPUT: (19) Round all displayed numbers to 2 decimals. (20) Frame all results as associations in single-arm observational data (no control group), not as causal workshop effects, and state the effective N at each stage (after merge, after the gender join, after dropNa, after the pre == 0 restriction, after the life-satisfaction cleaning).
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Trimming leaves the means unchanged (1.12 and 1.00), so outliers are not driving the result.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#5</td>
+              <td>
+                <strong style="color: var(--gray-900);">Rank-Order Ordinal Transition Matrix & Cumulative Share Analysis</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Rank-Order Distribution</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"**Shared pipeline (identical to Run 1)**
+1. Cast Participant_Id to string in both tables and force Workshop_Name to string.
+2. Keep parseFloat(Workshop_Level) === 0.1.
+3. Split by Workshop_Phase 'Pre' / 'Post', add the _pre / _post suffixes and inner-merge on Participant_Id.
+4. Left-join Gender from demographics (string key) and keep FEMALE / MALE.
+5. Report the effective N of matched pairs per gender.
+
+**(a) Switch into full-time**
+6. Drop pairs with a null Career_Plan_Social_Action_Engagement _pre or _post.
+7. Compute the headline metric:
+    - Set is_fulltime = 1 if the value is 'Fulltime as a career', else 0.
+    - Among is_fulltime_pre == 0, report the numerator (post == 1), denominator and switch rate % per gender.
+    - Report the FEMALE − MALE rate difference and a chi-square test (1 df).
+8. Map the plans to an ordinal scale:
+    - 'Fulltime as a career' = 5, 'Part time' = 4, 'Volunteering frequently' = 3, 'Occasionally' = 2, 'Monetary contribution' = 1.
+    - 'Not yet decided / confused' = 0, a separate 'undecided' category.
+9. Build a Pre × Post transition count matrix per gender.
+10. Report the switch rate into full-time broken down by Pre category, per gender.
+11. Report the shares moving up, staying the same and moving down on the ordinal scale (excluding undecided).
+
+**(b) Life-satisfaction change**
+12. Clean Metric_Life_Satisfaction_Global _pre and _post: 0 → NaN, values > 5 → NaN.
+13. Compute delta = post − pre and drop NaN pairs.
+14. Per gender, report n, mean Pre, mean Post, mean delta, SD of delta and median delta, plus the FEMALE − MALE difference in mean delta.
+15. Tabulate the frequency and cumulative share of each delta value (−4 … +4) per gender.
+16. Report the share with delta ≥ 1 and the share with delta ≥ 2 per gender, and their FEMALE − MALE difference.
+17. Compute Cliff's delta, i.e. P(F > M) − P(F < M), over all FEMALE × MALE delta pairs.
+18. Run a Brunner-Munzel or Mann-Whitney test.
+19. Report Welch's t-test for reference.
+
+**Output**
+20. State whether FEMALE or MALE dominates at each cumulative threshold.
+21. Round to 2 decimals.
+22. Present the findings as associations in single-arm observational data, not workshop effects."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Gender comparison of Point-1 Pre→Post change (single-arm observational data; report associations, not workshop effects). SHARED PIPELINE: (1) Load prod_nirman_questionnaire and prod_nirman_demographics; cast Participant_Id to string in both frames; force Workshop_Name to string (the value 'F' otherwise parses as boolean). (2) Keep questionnaire rows where parseFloat(Workshop_Level) === 0.1. (3) Split by Workshop_Phase 'Pre' and 'Post', suffix all non-key columns with _pre / _post, and inner-merge on Participant_Id (one matched pair per participant). (4) Left-join Gender from prod_nirman_demographics on the string Participant_Id; keep Gender in ['FEMALE','MALE']. (5) Report the effective N of matched pairs overall and per Gender. PART (a) SWITCH INTO FULL-TIME: (6) Drop pairs where Career_Plan_Social_Action_Engagement_pre or _post is null. Report the remaining N per gender. (7) Set is_fulltime = 1 if Career_Plan_Social_Action_Engagement == 'Fulltime as a career', else 0, for both pre and post. Restrict to is_fulltime_pre == 0. Per gender, report the numerator (is_fulltime_post == 1), the denominator and the switch rate %. Report the FEMALE − MALE rate difference in percentage points. Run a 2x2 chi-square test (Gender × switched, 1 df) and report chi2 and p. (8) Map the plans to an ordinal scale: 'Fulltime as a career'=5, 'Part time'=4, 'Volunteering frequently'=3, 'Occasionally'=2, 'Monetary contribution'=1. 'Not yet decided / confused'=0 is a separate 'undecided' category, not part of the ordinal ranking. (9) Build a Pre (rows) × Post (columns) transition count matrix over the 6 categories (5,4,3,2,1,0) per gender. (10) Per gender, report the switch rate into full-time (post == 5) by Pre category (4,3,2,1,0), giving n and rate % for each. (11) Per gender, among pairs where both pre and post are in 1–5 (undecided excluded), report the % moving up (post > pre), staying the same (post == pre) and moving down (post < pre), with the n used. PART (b) LIFE-SATISFACTION CHANGE: (12) Clean Metric_Life_Satisfaction_Global_pre and _post (agreement scale 1–5): set 0 → NaN and values > 5 → NaN. (13) Compute ls_delta = post − pre and drop pairs where either value is NaN. Report the effective N per gender. (14) Per gender, report n, mean pre, mean post, mean delta, SD of delta (sample) and median delta. Report the FEMALE − MALE difference in mean delta. (15) Per gender, tabulate the count, % share and cumulative % share for each delta value from −4 to +4. (16) Per gender, report the % with delta ≥ 1 and the % with delta ≥ 2, and the FEMALE − MALE difference for each. (17) Compute Cliff's delta = P(F > M) − P(F < M) over all FEMALE × MALE delta pairs. (18) Run a Mann-Whitney U test (or Brunner-Munzel) on delta, FEMALE vs MALE, and report U/statistic, z and p. (19) Report Welch's t-test on delta for reference (t, df, p). OUTPUT: (20) For each cumulative threshold of delta (≤ k and ≥ k), state whether FEMALE or MALE has the larger share, i.e. which gender dominates. (21) Round all displayed numbers to 2 decimals. (22) Frame every result as an association in single-arm observational data, not as a causal workshop effect, and report the effective N at every step.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Adds distributional detail: the female edge is concentrated in larger gains (≥2), and the cumulative curves cross, so there is no strict dominance. It does not contradict the headline.
+                </div>
+              </td>
+            </tr>
+          
+        </tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- 10. PROGRAMMATIC IMPLEMENTATION & SANDBOX CODE (COLLAPSED BY DEFAULT) -->
+    <details class="collapsible-section" style="margin-top: 32px; margin-bottom: 24px; border: 1px solid var(--gray-200); border-radius: 12px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <summary style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #faf5ff; cursor: pointer; user-select: none; border-bottom: 1px solid #f3e8ff;">
+        <span style="width: 24px; height: 24px; background: #fae8ff; color: #a21caf; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">10</span>
+        <h2 style="font-size: 16px; font-weight: 800; color: var(--gray-900); margin: 0;">10. Programmatic Implementation &amp; Sandbox Code (5 Runs)</h2>
+        <span style="font-size: 11px; font-weight: 700; color: #86198f; background: #fae8ff; border: 1px solid #f3e8ff; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">Collapsed by Default (Click to Expand)</span>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto; display: inline-flex; align-items: center; gap: 6px;">
+          <span>Danfo.js Code &amp; Telemetry</span>
+          <span class="collapse-chevron" style="display: inline-block; transition: transform 0.2s ease; font-size: 10px;">▼</span>
+        </span>
+      </summary>
+      <div style="padding: 20px;">
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 1: Direct Proportion & Mean Aggregation with Two-Proportion Z-Test and Welch's t-Test</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>Step 1 – Data Ingestion: List Object.keys(data). Locate the questionnaire file (name contains 'prod_nirman_questionnaire') and the demographics file (name contains 'prod_nirman_demographics'). Load each into a plain JS row array; Danfo.js DataFrames are optional. Log the row counts and verify that these columns exist: Participant_Id, Workshop_Level, Workshop_Phase, Workshop_Name, Career_Plan_Social_Action_Engagement and Metric_Life_Satisfaction_Global in the questionnaire, and Participant_Id and Gender in demographics. If any column is missing, return an error object.</li><li>Step 2 – Type Casting: In both tables set Participant_Id = String(v).trim(). In the questionnaire, force Workshop_Name to a string, mapping boolean false back to 'F'. Force Workshop_Phase to a trimmed string. Keep Career_Plan_Social_Action_Engagement as a trimmed string, preserving null/undefined/NaN/'' as null.</li><li>Step 3 – Point-1 Filter: Keep questionnaire rows where parseFloat(Workshop_Level) === 0.1. Log the N rows and N unique participants.</li><li>Step 4 – Phase Split and Suffixing: Split the rows into a Pre set (Workshop_Phase === 'Pre') and a Post set (Workshop_Phase === 'Post'). For each set, build a map keyed by Participant_Id and keep the first row if a duplicate occurs; log any duplicates. Rename every non-key column with a '_pre' or '_post' suffix.</li><li>Step 5 – Matched Pairs: Inner-merge Pre and Post on Participant_Id. This is a key-intersection merge, not a groupby. Log the N matched pairs.</li><li>Step 6 – Gender Join: Build a lookup from demographics of Participant_Id (string) → Gender only. Do not carry Workshop_Name or Workshop_Batch_Number from demographics. Left-join Gender onto the matched pairs and count pairs with no Gender match.</li><li>Step 7 – Gender Filter and Effective N: Keep pairs with Gender in ['FEMALE','MALE']. Report effective_N as total, FEMALE and MALE, along with the counts lost to missing or other Gender. This gender-filtered set is the base for both parts (a) and (b).</li><li>Step 8 – Part (a) Cleaning: From the base set, drop pairs where Career_Plan_Social_Action_Engagement_pre or _post is null, undefined, NaN or empty after trimming. Record n_dropped (total and per gender) and the remaining N.</li><li>Step 9 – Part (a) Indicators: Set is_fulltime_pre = (value_pre === 'Fulltime as a career') ? 1 : 0, and compute is_fulltime_post the same way. 'Not yet decided / confused' and all other categories count as 0.</li><li>Step 10 – Part (a) Switch Rates: For each Gender, restrict to is_fulltime_pre == 0. The denominator n_g is the count of those pairs. The numerator x_g is the count among them with is_fulltime_post == 1. Compute switch_rate_g = 100·x_g/n_g, guarding against n_g = 0. Report diff_pp = rate_F − rate_M.</li><li>Step 11 – Part (a) Two-Proportion z-Test: Set p_F = x_F/n_F and p_M = x_M/n_M, and pooled p = (x_F+x_M)/(n_F+n_M). Compute SE_pooled = sqrt(p(1−p)(1/n_F+1/n_M)) and z = (p_F−p_M)/SE_pooled. The two-sided p-value is 2(1−Φ(|z|)), with Φ computed through an Abramowitz–Stegun erf approximation. Compute SE_wald = sqrt(p_F(1−p_F)/n_F + p_M(1−p_M)/n_M) and the 95% CI = (p_F−p_M) ± 1.96·SE_wald, multiplied by 100 to give percentage points. If SE = 0, return z and p as null with a note.</li><li>Step 12 – Part (b) Cleaning: Start again from the Step 7 gender-filtered base, independent of the Step 8 drop. Apply Number() to Metric_Life_Satisfaction_Global_pre and _post separately. Set the value to NaN if it is non-finite, equal to 0 (not answered) or greater than 5 (agreement_1_to_5 scale). Compute delta = post − pre. Drop pairs where pre, post or delta is NaN, and log the N dropped per gender.</li><li>Step 13 – Part (b) Descriptives: For each Gender, compute n, mean_pre, mean_post, mean_delta, sd_delta (sample, n−1 denominator) and median_delta (sort the values; average the two middle values when n is even). Report diff_mean_delta = mean_delta_F − mean_delta_M.</li><li>Step 14 – Part (b) Welch t-Test: Compute se2 = s_F²/n_F + s_M²/n_M and t = (m_F−m_M)/sqrt(se2). Compute the Welch–Satterthwaite df = se2² / ((s_F²/n_F)²/(n_F−1) + (s_M²/n_M)²/(n_M−1)). For the two-sided p-value: if df > 100, use the normal approximation 2(1−Φ(|t|)); otherwise use the Student t CDF via the regularized incomplete beta, p = I_{df/(df+t²)}(df/2, 1/2), computed with a continued-fraction implementation.</li><li>Step 15 – Part (b) Effect Size: Compute pooled SD = sqrt(((n_F−1)s_F² + (n_M−1)s_M²)/(n_F+n_M−2)) and Cohen's d = (m_F−m_M)/pooled SD.</li><li>Step 16 – Rounding and Validation: Round every numeric output to 2 decimals with a helper r2(x) that returns null for non-finite values. Note that p-values below 0.005 will display as 0; report them as '<0.01' alongside the rounded value. Check that the per-gender Ns sum to the totals and that all literals match the schema ('Pre', 'Post', 'Fulltime as a career', 'FEMALE', 'MALE').</li><li>Step 17 – Output JSON: Return a summary object with these sections:
+- effective_N: matched pairs before the gender filter; total, FEMALE and MALE after the filter; unmatched or other-gender counts.
+- part_a: n_dropped_missing_career_plan; per-gender denominator, numerator and switch_rate_pct; diff_pp_female_minus_male; z; p_two_sided; ci95_pp [low, high]; test name.
+- part_b: n_dropped_missing_or_invalid_ls; per-gender n, mean_pre, mean_post, mean_delta, sd_delta and median_delta; diff_mean_delta; welch_t; df; p_two_sided; cohens_d; test name.
+- interpretation: describe the results as associations in single-arm observational data, not causal workshop effects. Add caveats on self-selection into matched pairs and the reduction of N after merge, join and dropNa.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> Among the 1,450 matched Pre/Post pairs in Point-1 (777 female, 673 male), every pair had a demographics Gender record and a career-plan answer, so nothing was lost at the Gender join or the null-drop step. For switching into full-time, the analysis only counts people not already full-time at Pre (573 women, 512 men). Of these, 42.58% of women (244) and 36.52% of men (187) reported full-time at Post. That is a gap of 6.06 percentage points, with z = 2.04, p = 0.04 and a 95% CI of 0.25 to 11.87 points. The gap is statistically detectable, but only just. The interval nearly touches zero, so the true gap could be very small or fairly large. With several comparisons being made, I would treat this as suggestive rather than firm.
+
+For life satisfaction (1–5 scale), 143 pairs were dropped for missing or invalid scores, leaving 703 women and 604 men. Both groups moved up by about one point: women went from 2.86 to 3.98 (mean change 1.12, SD 1.43) and men from 2.95 to 3.95 (mean change 1.00, SD 1.29). The median change was 1 in both groups. The 0.12 difference in mean change is not statistically distinguishable from zero (Welch t = 1.53, df = 1301.72, p = 0.13) and is very small (Cohen's d = 0.08). So life-satisfaction change looks similar for women and men, while the full-time switch rate is somewhat higher for women.
+
+These are associations in single-arm, observational data, not causal workshop effects. There is no comparison group, and the pairs are self-selected because only people with both Pre and Post responses are included. Parts (a) and (b) also use different subsets of participants. Ceiling effects on the 1–5 scale may limit how much change can show up for those who started high.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 2: Robust Non-Parametric: Wilson Intervals, Fisher Exact Test, Medians/IQR and Mann-Whitney U</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>1. DATA INGESTION: List the keys of the `data` object. Find the questionnaire table (name contains 'prod_nirman_questionnaire') and the demographics table (name contains 'prod_nirman_demographics'). Load each as an array of row objects. Log the raw row counts; expect about 4304 for Q and 2890 for D.</li><li>2. SCHEMA INSPECTION: Confirm these columns exist and log any that are missing. In Q: Participant_Id, Workshop_Name, Workshop_Level, Workshop_Phase, Career_Plan_Social_Action_Engagement and Metric_Life_Satisfaction_Global. In D: Participant_Id, Workshop_Name and Gender. Log the distinct values of Workshop_Phase, Workshop_Level and Gender.</li><li>3. TYPE CASTING (step 1): In both tables, map every row so that Participant_Id = String(value).trim(). Also set Workshop_Name to a string in both tables, converting boolean false back to 'F' so 'F' is not lost. Cast Workshop_Phase and Career_Plan_Social_Action_Engagement to trimmed strings, keeping null/undefined as null. Use plain JS arrays or Maps for the merges to avoid Danfo dtype coercion.</li><li>4. POINT-1 FILTER (step 2): Keep Q rows where parseFloat(Workshop_Level) === 0.1; to be safe against float noise, also accept Math.abs(parseFloat(x) - 0.1) < 1e-9. Report the row count and the number of unique participants.</li><li>5. PRE/POST SPLIT (step 3): Split the Point-1 rows into Pre (Workshop_Phase === 'Pre') and Post (Workshop_Phase === 'Post'). Report the row count of each. Check for duplicate Participant_Id within each phase; if any exist, report the count and keep the first occurrence so pairs stay one-to-one. Suffix the needed columns as Career_Plan_Social_Action_Engagement_pre/_post and Metric_Life_Satisfaction_Global_pre/_post.</li><li>6. INNER MERGE (step 4): Build a Map of Post rows keyed by Participant_Id. Pair every Pre row whose Participant_Id is in that Map; this is the inner merge, not a groupby. Report the number of matched pairs (about 1450 expected).</li><li>7. GENDER JOIN (step 5): Build a Map from D Participant_Id to Gender, uppercased and trimmed. Take only Gender from D to avoid clashes on the shared columns Workshop_Name and Workshop_Batch_Number. Left-join Gender onto the pairs and report how many pairs have no Gender. Keep only Gender in ['FEMALE','MALE']. Report the effective N overall and per gender (FEMALE n, MALE n).</li><li>8. (a) CAREER CLEANING (step 7): Drop pairs where Career_Plan_Social_Action_Engagement_pre or _post is null, undefined, an empty string or 'NaN'. Report N overall and per gender. Also log the value counts of the pre and post strings to verify they exactly match the 6 allowed labels.</li><li>9. (a) FULL-TIME FLAGS (step 8): Set is_fulltime_pre = (pre === 'Fulltime as a career') ? 1 : 0, and set is_fulltime_post the same way from the post value.</li><li>10. (a) DENOMINATOR AND NUMERATOR (step 9): The denominator is pairs with is_fulltime_pre === 0. Within it, set switched_to_fulltime = is_fulltime_post === 1. Report how many pairs were excluded as already full-time at Pre, overall and per gender. Report the denominator overall and per gender.</li><li>11. (a) PER-GENDER RATE AND WILSON CI (step 10): For each gender, compute x = numerator, n = denominator and p = x/n, and report the rate as a percentage. With z = 1.959964, the Wilson interval is centre = (p + z²/(2n)) / (1 + z²/n) and half = z·sqrt(p(1−p)/n + z²/(4n²)) / (1 + z²/n). The interval is [centre − half, centre + half], reported as percentages. Guard against n = 0.</li><li>12. (a) NEWCOMBE DIFFERENCE CI (step 11): Compute d = pF − pM. Using the Wilson limits (lF, uF) and (lM, uM), compute lower = d − sqrt((pF − lF)² + (uM − pM)²) and upper = d + sqrt((uF − pF)² + (pM − lM)²). Report d and the CI in percentage points.</li><li>13. (a) 2×2 TABLE AND FISHER'S EXACT TEST (step 12): Build the table with a = F switched, b = F not switched, c = M switched and d = M not switched. Compute log-factorials iteratively. Hold the margins fixed, set r1 = a+b and c1 = a+c, and enumerate k from max(0, c1 − (c+d)) to min(r1, c1). For each k, compute the hypergeometric probability P(k) = C(r1,k)·C(N−r1, c1−k) / C(N,c1) using logs. The two-sided p is the sum of P(k) over all k with P(k) ≤ P(observed)·(1 + 1e-7). Also report the odds ratio (ad)/(bc), noting when a cell is zero.</li><li>14. (a) YATES CHI-SQUARE (step 12): Compute expected counts E = rowTotal·colTotal/N. Compute chi2 = Σ (max(0, |O − E| − 0.5))² / E with df = 1. The p-value is the upper tail of chi-square with df = 1, which equals 2·(1 − Φ(sqrt(chi2))). Implement Φ with an erf approximation (Abramowitz-Stegun 7.1.26 or a higher-precision series). Report chi2, p and the minimum expected count.</li><li>15. (a) POST DISTRIBUTION (step 13): Within the denominator and for each gender, count Career_Plan_Social_Action_Engagement_post in this fixed order: 'Fulltime as a career', 'Part time', 'Volunteering frequently', 'Occasionally', 'Monetary contribution', 'Not yet decided / confused'. Add an 'Other/unexpected' bucket if anything else appears. Report counts and % of the gender denominator, and check that the counts sum to the denominator.</li><li>16. (b) LIFE-SATISFACTION CLEANING (step 14): Start from the gender-filtered matched pairs from step 7, not the career-filtered set. Parse Metric_Life_Satisfaction_Global_pre and _post with parseFloat. Set a value to NaN if it is not finite, equals 0, or is greater than 5. Report how many values were set to NaN for pre and for post.</li><li>17. (b) DELTA (step 15): Compute delta = post − pre. Drop pairs where pre, post or delta is NaN. Report the remaining N overall and per gender.</li><li>18. (b) DESCRIPTIVES (step 16): For each gender, compute n, mean Pre, mean Post, mean delta and the sample SD of delta (divisor n−1). Compute median delta, Q1 and Q3 by linear interpolation (type 7, same as numpy's default), and IQR = Q3 − Q1. Report the % of pairs with delta > 0, delta = 0 and delta < 0.</li><li>19. (b) GENDER DIFFERENCES (step 17): Report FEMALE − MALE for mean delta and for median delta.</li><li>20. (b) MANN-WHITNEY U (step 18): Pool the deltas from FEMALE (n1) and MALE (n2), sort them, and assign average ranks to ties. Compute R1 = sum of the FEMALE ranks, U1 = R1 − n1(n1+1)/2 and U2 = n1·n2 − U1. Report U = U1 (FEMALE) and also min(U1, U2). The tie-corrected variance is σ² = (n1·n2/12)·[(N+1) − Σ(t³ − t)/(N(N−1))]. Compute z = (U1 − n1·n2/2)/σ without continuity correction (state this), and p = 2·(1 − Φ(|z|)). Compute the rank-biserial r = 1 − 2·U1/(n1·n2). State the convention: with U1 as FEMALE's U, positive r means MALE deltas tend to be larger and negative r means FEMALE deltas tend to be larger. Also report the equivalent r = 2·U1/(n1·n2) − 1 framed as FEMALE > MALE, to remove ambiguity.</li><li>21. (b) WILCOXON SIGNED-RANK (step 19): For each gender, drop zero deltas to get n_nonzero. Rank |delta| with average ranks for ties. W+ is the sum of ranks for positive deltas and W− is the sum for negative deltas. Compute mean = n(n+1)/4 and the tie-corrected variance = n(n+1)(2n+1)/24 − Σ(t³ − t)/48. Compute z = (W+ − mean)/sqrt(var) and p = 2·(1 − Φ(|z|)). Report W+, W−, n_nonzero, z and p, and guard against n_nonzero = 0.</li><li>22. EFFECTIVE-N LEDGER: Assemble an N trail with these entries:
+- Q raw
+- Point-1 rows
+- Pre rows and Post rows
+- duplicates removed
+- matched pairs
+- pairs without Gender
+- gender-valid pairs (F/M)
+- career non-null pairs (F/M)
+- denominator (F/M)
+- life-satisfaction valid pairs (F/M)
+- n_nonzero per gender</li><li>23. OUTPUT: Round all reported numbers to 2 decimals; keep small p-values readable, for example showing p < 0.001 as well as the rounded value. Return a structured object with these sections: summary/N trail, part_a (rates, Wilson CIs, Newcombe difference, 2×2 table, Fisher p, Yates chi2 and p, Post distribution) and part_b (descriptives, differences, Mann-Whitney U, Wilcoxon).</li><li>24. INTERPRETATION CAVEATS: State the following limits of interpretation:
+- Results are associations and Pre–Post change in single-arm observational Point-1 data, not causal workshop effects.
+- Post responses were captured immediately after the workshop and are self-reported intentions.
+- Gender differences may be confounded by batch, stream or age.
+- The analysis covers only questionnaire batches 7–17.
+- Small cells can make the chi-square test unreliable; prefer Fisher's test when an expected count is below 5.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> **Sample flow and Part A (switch into full-time).** Of 3,609 Point 1 rows (2,159 participants), 2,157 were Pre and 1,452 were Post. These gave 1,450 matched Pre–Post pairs. All 1,450 had a valid gender (777 female, 673 male) and a non-null career-plan answer. Excluding 365 pairs already at "Fulltime as a career" at Pre (204 female, 161 male) left a denominator of 1,085 (573 female, 512 male). Among these, 42.58% of females (244/573, Wilson 95% CI 38.60–46.67) and 36.52% of males (187/512, CI 32.47–40.78) reported "Fulltime as a career" at Post. The female–male difference is 6.06 percentage points (Newcombe 95% CI 0.23 to 11.82), with an odds ratio of 1.29. The 2×2 table is female 244 yes / 329 no and male 187 yes / 325 no. Fisher's exact test (p ≈ 0.05) and Yates-corrected chi-square (χ² = 3.90, df = 1, p ≈ 0.05) both sit right at the conventional threshold. The CI barely excludes zero, so this is a borderline, modest association rather than a firm gender gap. In both groups the other Post answers were mostly "Part time" (32.81% female, 33.59% male) and "Volunteering frequently" (19.20% female, 22.27% male). The remaining categories were each at or below 5.27%, and the counts sum to each denominator.
+
+**Part B (life satisfaction) and caveats.** Setting 0 values to missing (142 Pre, 141 Post; none above 5) left 1,307 valid pairs (703 female, 604 male). Both groups rose from Pre to Post. Females went from 2.86 to 3.98 (mean delta 1.12, SD 1.43). Males went from 2.95 to 3.95 (mean delta 1.00, SD 1.29). Both groups had a median delta of 1 (Q1 = 0, Q3 = 2, IQR = 2). The share of pairs improving was 66.86% for females and 65.23% for males. The share unchanged was 22.76% and 25.00%, and the share declining was 10.38% and 9.77%. The female–male difference is 0.12 in mean delta and 0 in median delta. The Mann-Whitney test showed no clear gender difference in change (U1 female = 223,141; U2 male = 201,471; z = 1.64; p = 0.10). The rank-biserial r = 1 − 2·U1/(n1·n2) is −0.05, where a negative value means female deltas tend to be slightly larger. Equivalently, the female-greater-than-male effect is 0.05, which is negligible. Within each gender, the Wilcoxon signed-rank test showed a strong Pre–Post shift. For females (543 non-zero pairs), W+ = 132,416.50, W− = 15,279.50, z = 16.29, p < 0.001. For males (453 non-zero pairs), W+ = 92,989, W− = 9,842, z = 15.27, p < 0.001. These are associations in single-arm observational data, so they do not show that the workshop caused the changes. Post answers were collected immediately after the workshop and reflect self-reported intentions. Gender differences may also be confounded by batch, stream or age, and the data cover only batches 7–17. The Mann-Whitney and Wilcoxon tests use normal approximations without continuity correction.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 3: Batch-Stratified Volume-Weighted Estimation (Cochran-Mantel-Haenszel & Inverse-Variance Pooling)</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>STEP 1 – DATA INGESTION & INSPECTION (locate tables): List Object.keys(data). Locate the questionnaire file (name contains 'prod_nirman_questionnaire') and the demographics file (name contains 'prod_nirman_demographics'). Build arrays of row objects from each. Log the row counts (expect about 4304 and 2890) and the column lists.</li><li>STEP 2 – COLUMN VALIDATION: Confirm these questionnaire columns exist: Participant_Id, Workshop_Level, Workshop_Phase, Workshop_Name, Workshop_Batch_Number, Career_Plan_Social_Action_Engagement and Metric_Life_Satisfaction_Global. Confirm these demographics columns exist: Participant_Id and Gender. If any is missing, stop and report it. Do not invent substitutes.</li><li>STEP 3 – TYPE CASTING ON LOAD (pre-process raw rows before creating any DataFrame):
+- Questionnaire: set Participant_Id = String(v).trim().
+- Workshop_Name: convert to string. If the value is boolean false or the string 'false', map it back to 'F'.
+- Workshop_Phase: convert to a trimmed string.
+- Career_Plan_Social_Action_Engagement: keep as a trimmed string. Keep null/undefined/NaN as null; do not convert them to the text 'null'.
+- Workshop_Level: parseFloat.
+- Workshop_Batch_Number: parseInt.
+- Metric_Life_Satisfaction_Global: parseFloat.
+- Demographics: set Participant_Id = String(v).trim() and Gender = String(v).trim().toUpperCase().</li><li>STEP 4 – POINT-1 FILTER: Keep questionnaire rows where parseFloat(Workshop_Level) === 0.1 (use a tolerance of 1e-9 to be safe). Log the row count and the distinct values of Workshop_Phase.</li><li>STEP 5 – SPLIT BY PHASE AND CHECK DUPLICATES:
+- Split into a pre set (Workshop_Phase === 'Pre') and a post set (Workshop_Phase === 'Post').
+- Check that Participant_Id is unique within each set.
+- If duplicates exist, log the count and keep the first occurrence so the merge stays 1:1. State this choice in the output.
+- Rename every non-key column with the suffix _pre or _post. This yields, for example, Workshop_Batch_Number_pre, Career_Plan_Social_Action_Engagement_post and Metric_Life_Satisfaction_Global_pre.</li><li>STEP 6 – INNER MERGE (not a groupby):
+- Inner-merge pre and post on Participant_Id, using dfd.merge with how:'inner' or an equivalent Map-based join.
+- Record N_after_merge, the number of matched pairs (about 1450 expected).</li><li>STEP 7 – GENDER LEFT JOIN: Build a Map from demographics Participant_Id to Gender. Left-join Gender onto the matched pairs. Bring in only Gender, to avoid name collisions with Workshop_Name or Workshop_Batch_Number. Log how many pairs have no demographics match (Gender null).</li><li>STEP 8 – GENDER FILTER AND STRATUM:
+- Keep pairs where Gender is in ['FEMALE','MALE']. Record N_after_gender_filter.
+- Define the stratum as batch = Workshop_Batch_Number_pre (an integer, expected range 7–17).
+- Log the count of pairs where Workshop_Batch_Number_pre ≠ Workshop_Batch_Number_post. This is informational only.</li><li>STEP 9 – EFFECTIVE N TABLES (shared): Report the matched-pair counts by Gender and by Gender × batch. Show batches sorted 7→17 with FEMALE n, MALE n and total n.</li><li>STEP 10 – (a) CLEANING, NULL CAREER PLAN:
+- Drop pairs where Career_Plan_Social_Action_Engagement_pre or _post is null, NaN or an empty string.
+- 'Not yet decided / confused' is a valid non-null string here, so keep it. It codes as not full-time.
+- Record N_after_career_null_drop overall and by gender.</li><li>STEP 11 – (a) DERIVE FLAGS:
+- is_fulltime_pre = (value_pre === 'Fulltime as a career') ? 1 : 0.
+- Compute is_fulltime_post the same way.
+- Restrict to is_fulltime_pre === 0. Record N_at_risk overall, by gender and by gender × batch.
+- Set switched_to_fulltime = is_fulltime_post.
+- Also log how many pairs were excluded for already being full-time at Pre.</li><li>STEP 12 – (a) CRUDE RATES: For each gender compute the numerator (sum of switched), the denominator (at-risk n) and the rate % = 100·num/den. Compute the crude rate difference in percentage points as FEMALE% − MALE%.</li><li>STEP 13 – (a) PER-BATCH TABLE: For each batch compute a_k (FEMALE switched), b_k (FEMALE not switched), c_k (MALE switched) and d_k (MALE not switched). Then derive n_F = a+b, n_M = c+d, n_k, p_F, p_M and the within-batch difference p_F − p_M in percentage points. Flag batches missing either gender (n_F = 0 or n_M = 0) as skipped and list them.</li><li>STEP 14 – (a) MANTEL-HAENSZEL RISK DIFFERENCE: Over eligible batches (both genders present), compute w_k = n_F·n_M/(n_F+n_M). Then RD_MH = Σ w_k(p_Fk − p_Mk)/Σ w_k, expressed in percentage points.</li><li>STEP 15 – (a) DIRECT STANDARDIZATION:
+- Over the same eligible batches, set N_k = n_F + n_M (combined at-risk denominator) and N = Σ N_k.
+- Standardized rate_g = Σ (N_k/N)·p_gk for g = FEMALE and MALE.
+- Report both standardized rates and their difference (FEMALE − MALE, in percentage points).</li><li>STEP 16 – (a) CMH TEST AND COMMON OR:
+- Use eligible batches with n_k ≥ 2.
+- E(a_k) = n_F·m1/n_k, where m1 = a+c.
+- Var(a_k) = n_F·n_M·m1·m0/(n_k²(n_k−1)), where m0 = b+d.
+- χ²_CMH = (|Σa − ΣE| − 0.5)² / ΣVar, with df = 1.
+- p = erfc(sqrt(χ²/2)), using a numerical erf approximation (Abramowitz–Stegun 7.1.26).
+- OR_MH = Σ(a_k·d_k/n_k)/Σ(b_k·c_k/n_k), with FEMALE as the exposed row and switched as the event. Guard against a zero denominator by reporting 'undefined'.</li><li>STEP 17 – (b) LIFE-SATISFACTION CLEANING:
+- Start from the gender-filtered matched pairs (not the at-risk subset).
+- For Metric_Life_Satisfaction_Global_pre and _post, set values that are 0, greater than 5, or non-numeric to NaN.
+- Compute delta = post − pre.
+- Drop pairs where pre, post or delta is NaN.
+- Record N_after_ls_cleaning overall, by gender and by gender × batch.</li><li>STEP 18 – (b) CRUDE DESCRIPTIVES: For each gender compute n, mean Pre, mean Post, mean delta, SD of delta (sample, n−1) and median delta. Report the crude difference in mean delta (FEMALE − MALE).</li><li>STEP 19 – (b) PER-BATCH DIFFERENCES:
+- For each batch compute n_F, n_M, mean_F, mean_M, s_F and s_M (n−1).
+- Skip strata where n_F < 2 or n_M < 2, and list them with the reason.
+- For eligible batches: d_k = mean_F − mean_M and v_k = s_F²/n_F + s_M²/n_M.
+- If v_k = 0, skip the batch and log it, to avoid infinite weight.</li><li>STEP 20 – (b) FIXED-EFFECT INVERSE-VARIANCE POOLING:
+- w_k = 1/v_k.
+- pooled = Σ w_k·d_k/Σ w_k.
+- SE = sqrt(1/Σ w_k).
+- 95% CI = pooled ± 1.96·SE.
+- z = pooled/SE.
+- Two-sided p = 2·(1 − Φ(|z|)), with Φ computed via erf.</li><li>STEP 21 – (b) BATCH-STANDARDIZED MEANS:
+- Over the eligible batches from Step 19, set N_k = n_F + n_M and N = Σ N_k.
+- std_mean_g = Σ (N_k/N)·mean_gk.
+- Report FEMALE, MALE and their difference.</li><li>STEP 22 – (b) WELCH t-TEST (crude):
+- t = (mean_F − mean_M)/sqrt(s_F²/n_F + s_M²/n_M).
+- df = (s_F²/n_F + s_M²/n_M)² / [(s_F²/n_F)²/(n_F−1) + (s_M²/n_M)²/(n_M−1)].
+- Two-sided p from the Student t CDF, implemented via the regularized incomplete beta function: p = I_{df/(df+t²)}(df/2, 1/2), using a continued-fraction (Lentz) implementation.</li><li>STEP 23 – CRUDE VS ADJUSTED COMPARISON:
+- Build a summary table for each outcome comparing:
+  - Switch outcome: crude RD vs RD_MH vs standardized RD.
+  - Mean delta: crude difference vs IV-pooled vs standardized difference.
+- Compute the absolute change and the % attenuation = (crude − adjusted)/crude·100.
+- Flag a sign reversal if the signs differ, and flag material attenuation if the change exceeds 20%.
+- Interpret any reversal or attenuation as possible confounding by batch or cohort composition (for example, gender mix differing across batches with different base rates), noting censoring of recent batches.</li><li>STEP 24 – OUTPUT ASSEMBLY:
+- Return a JSON summary with an effective-N cascade listing: after merge, after gender filter, after career-null drop, at pre==0 restriction, and after LS cleaning.
+- Include the per-stratum n tables, the lists of skipped batches for (a) and (b), and all of the following:
+  - Crude tables.
+  - Per-batch tables.
+  - RD_MH, the standardized rates, χ²_CMH, its p-value and OR_MH.
+  - The IV-pooled estimate with SE, CI, z and p.
+  - The standardized means.
+  - The Welch t, df and p.
+  - The comparison table.
+- Round every displayed number to 2 decimals.
+- Show p-values below 0.01 as '<0.01' alongside the 2-decimal convention.</li><li>STEP 25 – INTERPRETATION CAVEATS:
+- State explicitly that this is single-arm observational data.
+- Gender gaps and Pre→Post changes are associations, not causal workshop effects.
+- Mention selection from the demographics join, the exclusion of non-matched pairs, the small strata, multiple-comparison caution, and that 'Not yet decided / confused' was coded as not full-time.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> **Switch to full-time.** Of 1,450 matched Point-1 pairs (777 female, 673 male; none lost at the gender filter or the career-null drop), 365 were already full-time at Pre. That left 1,085 at risk (573 female, 512 male). Crude switch rates were 42.58% for women (244/573) and 36.52% for men (187/512), a gap of 6.06 percentage points. Adjusting for batch changed this very little. The Mantel-Haenszel risk difference was 5.68 pp, and the directly standardized rates were 42.28% vs 36.60%, also a 5.68 pp gap. That is about a 6% attenuation, with no reversal, so batch composition explains little of the gap. The CMH test was borderline: chi-square with continuity correction = 3.46, df = 1, p = 0.06, and OR_MH = 1.27. So women had somewhat higher odds of switching, but the evidence is not conclusive at the conventional 0.05 level. The batch-level gaps were not uniform. Batch 14 showed a large gap (+23.57 pp), while batches 11 (−6.75) and 17 (−8.59) leaned the other way. Several batches are small, so these patterns are unstable.
+
+**Life-satisfaction change.** After cleaning, 1,307 pairs remained (703 female, 604 male). Both genders rose by roughly one scale point: mean delta was 1.12 for women (SD 1.43) and 1.00 for men (SD 1.29), with a median of 1 for both. The crude female−male difference was 0.12 (Welch t = 1.53, df = 1301.72, p = 0.13). The batch-adjusted estimates were essentially the same. The inverse-variance pooled difference was 0.12 (95% CI −0.03 to 0.26, z = 1.59, p = 0.11), and the batch-standardized difference was 0.11 (1.10 vs 0.99). There was no meaningful attenuation and no reversal, and the gap is statistically indistinguishable from zero. Batch 17 stands out. Its usable life-satisfaction sample dropped from 174 matched pairs to 35 (13 female, 22 male) after cleaning, and it shows the most extreme and imprecise difference (−1.16). Because it is so imprecise, it has little weight in the pooled estimate. No batches were skipped for either outcome. Matched pairs only appear in batches 11–17, not 7–10.
+
+**Overall.** In both outcomes, women show slightly higher values than men (more switching to full-time, slightly larger satisfaction gains), and batch adjustment does not change this, so confounding by batch looks minimal. These are associations in single-arm observational data, limited to matched pairs with demographic data. They are not workshop effects. Small strata, multiple comparisons without correction, possible cohort differences in recent batches, and the bounded 1–5 scale all call for caution.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 4: Outlier-Trimmed Means with Bootstrap Resampling Confidence Intervals</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>1. DATA INGESTION: List Object.keys(data). Find the questionnaire file with name.toLowerCase().includes('prod_nirman_questionnaire') and the demographics file with includes('prod_nirman_demographics'). Load each as a raw row array. Work on the raw JS row arrays for the core pipeline, because merges, bootstraps and trimmed statistics are easier and safer in plain JS. Use dfd.DataFrame only for inspection or display. Log the row counts: Q should be about 4304 rows and D about 2890.</li><li>2. SCHEMA CHECK: Verify these columns exist in Q: Participant_Id, Workshop_Name, Workshop_Level, Workshop_Phase, Career_Plan_Social_Action_Engagement, Metric_Life_Satisfaction_Global. Verify these exist in D: Participant_Id, Workshop_Name, Gender. If any column is missing, log it and return an error object instead of inventing a substitute.</li><li>3. TYPE CASTING (shared step 1): In both tables, set Participant_Id = String(v).trim() and Workshop_Name = String(v). This also handles the case where 'F' was already parsed as boolean false: map false or 'false' back to 'F'. Cast Workshop_Phase and Career_Plan_Social_Action_Engagement to trimmed strings, but keep null/undefined/NaN as null rather than the string 'null'. Convert Workshop_Level with parseFloat. Convert Metric_Life_Satisfaction_Global with Number, and use NaN for empty or non-numeric values.</li><li>4. POINT 1 FILTER (shared step 2): Keep Q rows where Math.abs(parseFloat(Workshop_Level) - 0.1) < 1e-9. Using a tolerance avoids float equality issues while matching the intent of === 0.1. Log the row count and the number of unique Participant_Id values.</li><li>5. PRE/POST SPLIT (shared step 3): Split the Point 1 rows into a Pre set (Workshop_Phase === 'Pre') and a Post set (Workshop_Phase === 'Post'). Check for duplicate Participant_Id within each phase; the expected grain is one row per participant, level and phase. If duplicates exist, keep the first occurrence and log how many were dropped. Rename every non-key column with the suffix _pre or _post, for example Career_Plan_Social_Action_Engagement_pre and Metric_Life_Satisfaction_Global_post.</li><li>6. INNER MERGE: Build a Map from Participant_Id to the Post row. For each Pre row whose Participant_Id is in the Post map, emit one merged object containing Participant_Id plus all _pre and _post fields. Record N_after_merge as the number of matched pairs; it is expected to be about 1450.</li><li>7. GENDER JOIN (shared step 4): Build a Map from the string Participant_Id to Gender in D, using String(Gender).trim().toUpperCase(). Left-join Gender onto each merged pair, leaving it null if there is no match. Then keep only pairs with Gender in ['FEMALE','MALE']. Record N_after_gender_join in total and per gender, plus the number of pairs dropped because Gender was missing or invalid.</li><li>8. EFFECTIVE N REPORT (shared step 5): Store the matched pairs per gender (FEMALE, MALE, total) for the summary.</li><li>9. PART (a) DROPNA (step 6): From the gender-joined pairs, drop any pair where Career_Plan_Social_Action_Engagement_pre or _post is null, undefined, NaN, an empty string, or the string 'null'/'NaN'. Record N_after_dropNa_career in total and per gender.</li><li>10. PART (a) FULL-TIME FLAGS (step 7): Set is_fulltime_pre = (value_pre === 'Fulltime as a career') ? 1 : 0, and do the same for is_fulltime_post. Use an exact string match after trim.</li><li>11. PART (a) RESTRICT (step 8): Keep only pairs with is_fulltime_pre === 0. Record N_after_pre0_restriction in total and per gender. These are the denominators.</li><li>12. PART (a) SWITCH RATES (step 9): For each gender, compute numerator = count(is_fulltime_post === 1), denominator = count of rows in the restricted set, and rate_pct = 100 * numerator / denominator (null if the denominator is 0). Compute diff_pp = rate_FEMALE - rate_MALE.</li><li>13. PRNG SETUP: Implement mulberry32(seed) as follows: a |= 0; a = a + 0x6D2B79F5 | 0; t = Math.imul(a ^ a>>>15, 1 | a); t = t + Math.imul(t ^ t>>>7, 61 | t) ^ t; return ((t ^ t>>>14) >>> 0) / 4294967296. Draw a resample index as Math.floor(rng() * n). Re-initialise rng = mulberry32(42) at the start of each separate bootstrap procedure: once for the Part (a) bootstrap and once for the Part (b) bootstrap. Use a fixed draw order in every iteration: first n_F draws for FEMALE, then n_M draws for MALE. This keeps results reproducible.</li><li>14. PART (a) BOOTSTRAP (step 10): Hold the binary is_fulltime_post arrays for the restricted FEMALE and MALE sets. For b = 1..2000, resample each gender's array with replacement at its own size (stratified sampling). Compute the female and male rates in percent and store diff_b = rate_F - rate_M. Report the bootstrap mean of the diffs and the SE as the sample SD (n-1) of the 2000 diffs. Report the percentile 95% CI as the 2.5th and 97.5th percentiles of the sorted diffs, using linear interpolation at position p*(B-1).</li><li>15. PART (b) CLEANING (step 11): Start from the gender-joined pairs, not the Part (a) restricted set. For Metric_Life_Satisfaction_Global_pre and _post, convert to Number. Set values that are 0, greater than 5, or non-finite to NaN.</li><li>16. PART (b) DELTA (step 12): Compute delta = post - pre. Drop pairs where pre, post or delta is NaN. Record N_after_ls_cleaning in total and per gender.</li><li>17. HELPER FUNCTIONS: Write the following pure JS helpers. mean. sampleSD with an n-1 denominator. median, which averages the two middle values for even n. trimmedMean(arr, 0.05): sort ascending, set g = Math.floor(0.05 * n), slice from g to n-g, take the mean, and also return h = n-2g. winsorizedSD(arr, 0.05): sort, replace the lowest g values with sorted[g] and the highest g values with sorted[n-g-1], then take the sample SD (n-1). percentile with linear interpolation. Student-t two-sided p-value: p = I_{df/(df+t²)}(df/2, 1/2), using the regularized incomplete beta computed with a Lentz continued fraction and the log-gamma Lanczos approximation. Guard against df ≤ 0 and non-finite t.</li><li>18. PART (b) UNTRIMMED DESCRIPTIVES (step 13): For each gender, report n, mean_pre, mean_post, mean_delta, sd_delta (n-1) and median_delta.</li><li>19. PART (b) TRIMMED DESCRIPTIVES (step 14): For each gender, compute g = floor(0.05*n), trimmed_n = n - 2g, the 5% trimmed mean of delta, and the 5% winsorized SD of delta. Separately compute the 5% trimmed means of the pre and post arrays, each sorted and trimmed independently with the same g rule.</li><li>20. PART (b) GENDER DIFFERENCES (step 15): Compute diff_mean_delta = mean_delta_F - mean_delta_M and diff_trimmed_delta = trimmed_mean_delta_F - trimmed_mean_delta_M.</li><li>21. YUEN'S TEST (step 16): For each gender j, compute h_j = n_j - 2g_j, s²_w_j = winsorizedSD_j², and d_j = (n_j - 1) * s²_w_j / (h_j * (h_j - 1)). Then compute t = (trimmed_mean_F - trimmed_mean_M) / sqrt(d_F + d_M) and df = (d_F + d_M)² / (d_F²/(h_F - 1) + d_M²/(h_M - 1)). The two-sided p-value comes from the Student-t helper. If h_j < 2 or d_F + d_M = 0, return null and log a warning.</li><li>22. PART (b) BOOTSTRAP (step 17): Re-seed rng = mulberry32(42). For b = 1..2000, resample the FEMALE delta array (size n_F) and then the MALE delta array (size n_M) with replacement. Compute diff_mean_b = mean_F - mean_M and diff_trim_b = trimmedMean_F - trimmedMean_M, using the same 5% floor rule on each resample. For both statistics, report the bootstrap mean, the SE (SD of the bootstrap values) and the percentile 95% CI (2.5th and 97.5th percentiles).</li><li>23. WELCH'S t-TEST (step 18): Using the untrimmed delta, compute se² = s_F²/n_F + s_M²/n_M and t = (mean_F - mean_M) / sqrt(se²). Compute the Welch–Satterthwaite df = se⁴ / ((s_F²/n_F)²/(n_F - 1) + (s_M²/n_M)²/(n_M - 1)). Get the two-sided p-value from the t helper and present it alongside the Yuen result for comparison.</li><li>24. ROUNDING (step 19): Keep full precision through every computation. Round only at output using a helper r2 = x => (x == null || !isFinite(x)) ? null : Math.round(x * 100) / 100. Show counts as integers. Show p-values to 2 decimals, and add a p_display field reading '<0.01' when p < 0.005 so a very small value is not shown as 0.00.</li><li>25. N-FLOW REPORT (step 20): Build an effective_n object. It should hold Q Point 1 rows, Pre rows, and Post rows. It should also hold N_after_merge, N_after_gender_join (total, FEMALE, MALE), N_after_dropNa_career (total and by gender) and N_after_pre0_restriction (total and by gender). Finally include N_after_ls_cleaning (total and by gender) and the trimmed n by gender. Log each stage with console.log as it is computed.</li><li>26. FINAL OUTPUT: Return { summary, effective_n, part_a: {per_gender: {numerator, denominator, rate_pct}, diff_pp, bootstrap: {B: 2000, seed: 42, mean_diff, se, ci95_low, ci95_high}}, part_b: {per_gender: {n, mean_pre, mean_post, mean_delta, sd_delta, median_delta, g, trimmed_n, trimmed_mean_delta, winsorized_sd_delta, trimmed_mean_pre, trimmed_mean_post}, diff_mean_delta, diff_trimmed_mean_delta, yuen: {t, df, p}, welch: {t, df, p}, bootstrap: {mean_delta: {...}, trimmed_mean_delta: {...}}}, interpretation_notes }. The interpretation_notes must say that this is single-arm observational data with no control group. Gender differences in switch rate and life-satisfaction change are associations, not causal workshop effects. Life satisfaction is a 1–5 agreement scale where a positive delta means higher post-workshop agreement. Bootstrap CIs and p-values describe uncertainty, not causation.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> **Switch into full-time (Part a).** The analysis started from 1,450 matched Point 1 Pre/Post pairs (777 female, 673 male). No pairs were lost at the gender join or to null career-plan answers. Restricting to people not already "Fulltime as a career" at Pre left 1,085 pairs (573 female, 512 male). Among these, 244 of 573 women (42.58%) and 187 of 512 men (36.52%) reported full-time at Post. That is a female−male difference of 6.06 percentage points. The stratified bootstrap (2,000 resamples, seed 42) gave a mean difference of 6.13, SE 3.00 and a 95% CI of 0.31 to 12.38. The interval only just excludes zero, so the gap is suggestive but imprecise.
+
+**Life-satisfaction change (Part b).** After cleaning 0 and >5 values, 1,307 pairs remained (703 female, 604 male). Both groups rose by about one scale point from Pre to Post:
+
+| | Mean Pre | Mean Post | Mean delta | Median delta |
+|---|---|---|---|---|
+| Female | 2.86 | 3.98 | 1.12 | 1.00 |
+| Male | 2.95 | 3.95 | 1.00 | 1.00 |
+
+- **Trimming:** The 5% trim removes 35 values per end for women (trimmed n = 633) and 30 for men (trimmed n = 544). The trimmed mean deltas equal the untrimmed ones (1.12 and 1.00), so outliers are not driving the results. The gap is 0.12 either way.
+- **Tests:** Yuen's test gives t = 1.64, df = 1174.82, p = 0.10. Welch's test on untrimmed deltas gives t = 1.53, df = 1301.72, p = 0.13. Yuen's d_F and d_M display as 0.00 only because they are very small (about 0.003 each).
+- **Bootstrap:** The 95% CI for the difference in mean delta is −0.04 to 0.26. For the trimmed mean delta it is −0.03 to 0.27. Both include zero, so the data do not show a reliable gender difference in life-satisfaction change.
+
+**Interpretation.** These are associations in single-arm observational data with no control group. Nothing here shows that the workshop caused the Pre-to-Post changes, or that gender caused the differences between groups. The effective N shrinks at each stage, so the results apply only to the retained participants. The life-satisfaction subset is not restricted to the pre == 0 group, so its N differs from Part a's.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 5: Rank-Order Ordinal Transition Matrix & Cumulative Share Analysis</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>STEP 1 – DATA INGESTION: Find the two tables in `data` by filename, matching 'prod_nirman_questionnaire' and 'prod_nirman_demographics' case-insensitively. Before building any DataFrame, map over the raw row arrays and coerce types: Participant_Id → String(x).trim() in BOTH tables; Workshop_Name → string in both, mapping boolean false/true back to 'F'/'T' and null to null; Workshop_Phase and Career_Plan_Social_Action_Engagement → trimmed strings, keeping null/undefined/'' as null. Log the raw row counts (expected ~4304 questionnaire rows and 2890 demographics rows) and the number of unique Participant_Ids.</li><li>STEP 2 – INSPECTION: Confirm that these columns exist: Participant_Id, Workshop_Level, Workshop_Phase, Career_Plan_Social_Action_Engagement and Metric_Life_Satisfaction_Global in the questionnaire, and Participant_Id and Gender in demographics. Log the distinct values of Workshop_Phase, Workshop_Level, Gender and Career_Plan_Social_Action_Engagement. Also log the raw value counts of Metric_Life_Satisfaction_Global, including any 0 or >5 values. If a required column is missing, stop and report it.</li><li>STEP 3 – POINT-1 FILTER: Keep questionnaire rows where parseFloat(Workshop_Level) === 0.1. Use a tolerance check, Math.abs(v − 0.1) < 1e-9, to be safe. Report the row count and the unique participant count.</li><li>STEP 4 – PRE/POST SPLIT AND PAIRING: Split the Point-1 rows into Pre (Workshop_Phase === 'Pre') and Post (=== 'Post'). Check each phase for duplicate Participant_Ids. If any exist, keep the first occurrence and log how many duplicates were dropped, so there is exactly one row per participant per phase. Suffix all non-key columns with _pre and _post. Inner-merge on the string Participant_Id using plain JS Maps (equivalent to a Danfo merge with how='inner'). Report the number of matched pairs, expected ~1450.</li><li>STEP 5 – GENDER JOIN: Build a Map from demographics Participant_Id to Gender. Left-join Gender onto the matched pairs. Report how many pairs had no demographics match (null Gender). Keep only Gender in ['FEMALE','MALE']. Report the effective N of matched pairs overall and per gender (N_F, N_M). This frame is the SHARED BASE.</li><li>STEP 6 – PART (a) CLEANING: From the shared base, drop pairs where Career_Plan_Social_Action_Engagement_pre or _post is null or empty. Report the remaining N per gender and overall. Log any category strings that fall outside the 6 known labels and exclude them, with a count.</li><li>STEP 7 – PART (a) BINARY SWITCH: Set is_fulltime_pre/post = 1 if the value === 'Fulltime as a career', else 0. Restrict to is_fulltime_pre === 0. For each gender, compute: the denominator (n with pre ≠ full-time), the numerator (is_fulltime_post === 1), and the switch rate % = 100 × num/den. Compute the FEMALE − MALE rate difference in percentage points. Also report how many pairs were excluded per gender because they were already full-time at Pre.</li><li>STEP 8 – PART (a) CHI-SQUARE: Build a 2×2 table of Gender (F, M) × switched (1, 0) from Step 7. Compute expected counts E_ij = row_i × col_j / N. Compute the Pearson chi2 = Σ (O − E)² / E with no Yates correction, and also report the Yates-corrected value for reference. Use df = 1 and p = 1 − chi2CDF(chi2, 1) = erfc(sqrt(chi2/2)). Implement erfc numerically, e.g. the Abramowitz–Stegun approximation. Flag the test if any expected cell is < 5.</li><li>STEP 9 – PART (a) ORDINAL MAPPING: Map the plans to codes: 'Fulltime as a career' = 5, 'Part time' = 4, 'Volunteering frequently' = 3, 'Occasionally' = 2, 'Monetary contribution' = 1, 'Not yet decided / confused' = 0. Code 0 is kept as a separate 'undecided' category and is not treated as part of the ordinal ranking. Create plan_pre_code and plan_post_code on the Part (a) frame from Step 6.</li><li>STEP 10 – PART (a) TRANSITION MATRIX: For each gender, build a 6×6 count matrix with Pre on the rows and Post on the columns, both ordered [5, 4, 3, 2, 1, 0]. Add row totals, column totals and the grand total, and check that the grand total equals that gender's Part (a) N. Optionally add row-percentage versions.</li><li>STEP 11 – PART (a) SWITCH BY PRE CATEGORY: For each gender and each Pre category in [4, 3, 2, 1, 0], report n (pairs with that Pre code) and the rate % = 100 × count(post == 5) / n. Use 'NA' where n = 0. Check that the sum of numerators over categories 4–0 equals the Step 7 numerator for that gender.</li><li>STEP 12 – PART (a) DIRECTION OF MOVEMENT: For each gender, keep pairs where both pre and post codes are in 1–5 (undecided excluded) and report the n used. Compute % up (post > pre), % same (post == pre) and % down (post < pre); the three should sum to 100. Report the n excluded because of undecided at Pre or Post.</li><li>STEP 13 – PART (b) LIFE-SATISFACTION CLEANING: Start again from the SHARED BASE of Step 5, independent of the Part (a) null drop. Convert Metric_Life_Satisfaction_Global_pre and _post to numbers. Set 0 → NaN, values > 5 → NaN, and non-numeric values → NaN. Log how many values were set to NaN per phase.</li><li>STEP 14 – PART (b) DELTA: Compute ls_delta = post − pre. Drop pairs where pre or post is NaN. Report the effective N per gender and overall. Check that every delta is an integer in [−4, +4].</li><li>STEP 15 – PART (b) DESCRIPTIVES: For each gender, report n, mean pre, mean post, mean delta, SD of delta (sample, n−1 denominator) and median delta (average of the two middle values when n is even). Report the FEMALE − MALE difference in mean delta.</li><li>STEP 16 – PART (b) DELTA DISTRIBUTION: For each gender and each delta value k from −4 to +4, report the count, the % share (count/n × 100) and the cumulative % share P(delta ≤ k). Also compute the upper cumulative share P(delta ≥ k) for every k, which is used in Step 21. Check that the counts sum to n.</li><li>STEP 17 – PART (b) GAIN THRESHOLDS: For each gender, report % with delta ≥ 1 and % with delta ≥ 2. Report the FEMALE − MALE difference in percentage points for each threshold.</li><li>STEP 18 – PART (b) CLIFF'S DELTA: Over all FEMALE × MALE pairs of delta values, compute Cliff's δ = [#(F > M) − #(F < M)] / (n_F × n_M). Do this efficiently from the frequency tables of the 9 delta values rather than an O(n²) loop. Interpret the magnitude with the Romano thresholds: |δ| < 0.147 negligible, < 0.33 small, < 0.474 medium, otherwise large.</li><li>STEP 19 – PART (b) MANN-WHITNEY U: Pool the deltas, assign average ranks to ties, and sum the FEMALE ranks R_F. Compute U_F = R_F − n_F(n_F+1)/2 and U_M = n_F·n_M − U_F. Report U = U_F, and min(U) for reference. Use the tie-corrected variance σ² = (n_F·n_M/12) × [(N+1) − Σ(t³ − t)/(N(N−1))]. Compute z = (U_F − n_F·n_M/2) / σ, applying a continuity correction of 0.5 toward the mean and noting it, with two-sided p = erfc(|z|/√2). Check that the common-language effect AUC = U_F/(n_F·n_M) agrees with (Cliff's δ + 1)/2.</li><li>STEP 20 – PART (b) WELCH'S T-TEST (for reference): Compute t = (mean_F − mean_M) / sqrt(s_F²/n_F + s_M²/n_M). Compute the Welch–Satterthwaite df = (a + b)² / (a²/(n_F−1) + b²/(n_M−1)), where a = s_F²/n_F and b = s_M²/n_M. Get the two-sided p from the Student-t CDF via the regularized incomplete beta function, implemented with a continued fraction (Lentz), or use a normal approximation when df > 100. Report t, df and p.</li><li>STEP 21 – DOMINANCE TABLE: For each k from −4 to +4, compare the lower cumulative share P(delta ≤ k) between FEMALE and MALE, and the upper cumulative share P(delta ≥ k). State which gender has the larger share, or 'tie' if equal to 2 decimals. Then summarize: a gender with consistently larger ≥k shares and smaller ≤k shares shows first-order stochastic dominance, i.e. larger gains. Note any crossings.</li><li>STEP 22 – OUTPUT ASSEMBLY: Return a structured object with the following sections. (1) An effective-N log at every step: raw rows, Point-1 rows, Pre/Post counts, matched pairs, after the gender join, per gender, after the Part (a) null drop, the Part (a) pre ≠ full-time denominator, the n for the 1–5 movement analysis, and the Part (b) n after NaN cleaning. (2) Part (a) results: rates, pp difference, chi2 and p, transition matrices, switch-by-Pre-category table, and up/same/down percentages. (3) Part (b) results: descriptives, delta distribution with cumulative shares, threshold shares, Cliff's δ, Mann-Whitney U/z/p, Welch t/df/p and the dominance table. Round every displayed number to 2 decimals. Add explicit caveats: this is single-arm observational data with no control group; the results are Pre→Post associations by gender, not causal workshop effects; there are ceiling effects on the 1–5 scale (high Pre limits gains); and there is possible selection from the Pre/Post matching and the demographics join. Print key tables with console.log for traceability.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> **Part (a), switching into full-time.** Of 1,450 matched Pre/Post pairs (777 female, 673 male), all had a non-null career plan. Among those not already full-time at Pre (573 female, 512 male), 244 females (42.58%) and 187 males (36.52%) reported full-time at Post. That is a female-minus-male gap of 6.06 percentage points (chi-square = 4.15, 1 df, p = 0.04; with Yates correction 3.90, p = 0.05). So the gender difference is borderline and sits right at the conventional threshold.
+
+By starting category, females had higher switch rates into full-time from most Pre categories:
+- Pre = 4: 47.58% vs 43.78%
+- Pre = 3: 34.68% vs 30.77%
+- Pre = 0 (undecided): 54.43% vs 42.67%
+
+Pre = 2 (n = 7 female, 12 male) and Pre = 1 (n = 38 female, 45 male) have small counts, so those rates are unstable. Among pairs with both plans in the 1–5 range (693 female, 597 male), movement patterns were nearly identical:
+- Moving up: 40.69% female vs 41.37% male
+- Staying the same: 53.82% vs 53.27%
+- Moving down: 5.48% vs 5.36%
+
+The female edge therefore appears to come from conversion into full-time, not from a different overall direction of movement.
+
+**Part (b), life satisfaction.** After setting 0 values to missing, 1,307 pairs remained (703 female, 604 male). Both groups rose, with females slightly more:
+- Mean delta: 1.12 for females (SD 1.43) vs 1.00 for males (SD 1.29), a difference of 0.12. Both medians were 1.
+- Gain of at least 1 point: 66.86% vs 65.23% (+1.62 pp).
+- Gain of at least 2 points: 37.98% vs 32.45% (+5.53 pp).
+
+The formal tests do not show a clear difference. Cliff's delta is 0.05 (negligible), Mann-Whitney z = 1.64 (p = 0.10), and Welch t = 1.53 (df = 1301.72, p = 0.13). On cumulative shares, females have the larger "≥ k" share at k = −3, 1, 2, 3 and 4. Males have it at k = −2, −1 and 0, and k = −4 is a tie at 100%. For "≤ k", females are larger at k = −3, −2 and −1, and males at k = −4, 0, 1, 2 and 3. The pipeline's own summary counts these slightly differently, but the table gives the counts above. The curves therefore cross at the low end, and neither gender strictly dominates. The female advantage is concentrated in larger gains (+2 or more).
+
+**Caveats.** All of these are associations in single-arm observational data and cannot be read as workshop effects. Possible selection comes from requiring both Pre and Post responses and a recorded gender. Dropping about 143 zero-coded life-satisfaction responses per phase may also not be random. Ceiling effects limit how much high-scoring participants can gain.
+              </div>
+            
+          </div>
+        
+      </div>
+    </details>
+
+    
+      <!-- 11. INTERACTIVE EXPLAINER CONSULTATION LOG -->
+      <div style="margin-top: 36px; margin-bottom: 28px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--gray-200);">
+          <span style="width: 26px; height: 26px; background: #dbeafe; color: #1d4ed8; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">11</span>
+          <h2 style="font-size: 18px; font-weight: 800; color: var(--gray-900);">11. Interactive Explainer Consultation Log</h2>
+          <span style="font-size: 12px; font-weight: 700; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; padding: 3px 10px; border-radius: 9999px; margin-left: auto;">
+            1 Inquiry Documented
+          </span>
+        </div>
+        <p style="font-size: 12.5px; color: var(--gray-600); margin-bottom: 18px; line-height: 1.5;">
+          Direct consultation transcripts between the user and the Explainer Agent. Includes technical clarifications, sensitivity deep-dives, empirical tables, and statistical range explanations.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+              <!-- User Question Header -->
+              <div style="background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border-bottom: 1px solid #bfdbfe; padding: 12px 18px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="background: #2563eb; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Inquiry #1
+                  </span>
+                  <span style="font-size: 13.5px; font-weight: 700; color: #1e3a8a;">
+                    in simple words, what is the user question, the take away, the answer. How consistent are the different approaches with the answer.  Make it easy to understand, simple short sweet way. Give analogy example if it makes sense.
+                  </span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b;">
+                  <span>🕒 04:59 PM</span>
+                  <span style="background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">Consultation Record</span>
+                </div>
+              </div>
+
+              <!-- Explainer Answer Body (Formatted HTML) -->
+              <div style="padding: 18px 20px; background: #ffffff;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px; font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase; letter-spacing: 0.04em;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                  Explainer Agent Response &amp; Empirical Findings
+                </div>
+                <div style="font-size: 12.5px; color: #334155; line-height: 1.6;">
+                  <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Plain-English Summary</h2>
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">1. What was the user asking?</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Workshop participants answered a survey <strong>before</strong> and <strong>after</strong> a workshop. The user wanted to know whether <strong>women and men differ</strong> in two things:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>(a)</strong> Of people <strong>not</strong> planning a full-time social-action career before, what share said "full-time" afterwards?</li><li style="margin-bottom: 5px;"><strong>(b)</strong> How much did <strong>life satisfaction (1–5 scale)</strong> change from before to after?</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The results had to be framed as <strong>associations</strong>, not proof that the workshop caused anything. There is no control group.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">2. The answer</h3>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;"></th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Women</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Men</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Gap (F − M)</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Matched pairs</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">777</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">673</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Total 1,450</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>(a) Switched to full-time</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">244 / 573 = <strong>42.58%</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">187 / 512 = <strong>36.52%</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>+6.06 pp</strong> (borderline, p ≈ 0.04–0.06)</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>(b) Life-satisfaction change</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>+1.12</strong> (2.86 → 3.98)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>+1.00</strong> (2.95 → 3.95)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>+0.12</strong> (p = 0.13, not significant)</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">3. The takeaway</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Both groups went up about 1 point</strong> in life satisfaction, and women and men look <strong>basically the same</strong> on this.</li><li style="margin-bottom: 5px;"><strong>Women were somewhat more likely to say "full-time"</strong> afterwards (about 6 points higher). This is <strong>borderline</strong>, since the margin of error barely excludes zero. Treat it as a hint, not a firm finding.</li><li style="margin-bottom: 5px;">None of this shows the workshop <em>caused</em> the changes.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">4. How consistent were the 5 approaches?</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Very consistent.</strong> Every run got the <strong>same numbers</strong> (1,450 pairs, 244/573 vs 187/512, 1.12 vs 1.00). They differ only in how cautious the <em>statistical test</em> is.
+      </p>
+    
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Run</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Approach</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Result</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Agrees?</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">1</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Standard z-test and t-test</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">p = 0.04 (switch), p = 0.13 (satisfaction)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">✅ Baseline</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">2</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Exact and rank-based tests (Fisher, Mann-Whitney)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">p ≈ 0.05, p = 0.10</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">✅ Same story</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">3</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Adjusted for workshop batch</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Gap 5.68 pp (vs 6.06), p = 0.06; satisfaction gap 0.12</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">✅ Batch barely matters</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">4</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Trimmed extremes plus bootstrap</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">CI 0.31 to 12.38; trimmed mean gap still 0.12</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">✅ Outliers don't matter</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">5</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Full before/after transition view</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Gap in "gain of 2+ points" (38% vs 32%), but a negligible overall effect</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">✅ Same story</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Where the verdict flips:</strong> only the switch-rate p-value moves, between 0.04 and 0.06 depending on the test. That is why it is called "borderline."
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">5. An analogy</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Imagine two classes took the same fitness test before and after a course.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Both classes improved by about one level, and the difference between them is too small to call (<strong>life satisfaction</strong>).</li><li style="margin-bottom: 5px;">A few more students in Class A reached "advanced" than in Class B. The gap is real in these numbers but so small that a slightly different way of counting could make it look either significant or not (<strong>full-time switch</strong>).</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Five different referees reviewed the score sheet. They all counted the same scores, and all said "close call, not a clear win."
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">6. Things to keep in mind</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Part (a) and part (b) use different groups of people.</strong> Part (a) includes only those not full-time at the start. Part (b) includes everyone with valid satisfaction scores.</li><li style="margin-bottom: 5px;"><strong>About 143 pairs were dropped in (b)</strong> because satisfaction was recorded as 0 (not answered), which may not be random.</li><li style="margin-bottom: 5px;"><strong>Batch 17 is a small sample</strong> after cleaning. Some batches lean the opposite way (batches 11 and 17), so the pattern is not uniform.</li><li style="margin-bottom: 5px;"><strong>Only people with both Pre and Post responses are included</strong>, so the sample is self-selected.</li><li style="margin-bottom: 5px;">The reported CI is approximate. The exact bounds vary slightly by method: 0.23–11.87 for Wald/Newcombe, 0.31–12.38 for bootstrap.</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Bottom line:</strong> the answer is solid and reproducible. Women show a modest, borderline-higher full-time switch rate and a similar satisfaction gain to men, as associations only.
+      </p>
+    
+                </div>
+                <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 10.5px; color: #94a3b8;">
+                  <span>Explainer Model: claude-sonnet-5-5</span>
+                  <span>Cross-Validation Status: Invariance Verified</span>
+                </div>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+    
+
+    <!-- Sign-off footer -->
+    <div style="margin-top: 48px; pt-6; border-top: 2px solid var(--gray-200); display: flex; justify-content: space-between; font-size: 11px; color: var(--gray-500);">
+      <span>Answer Consistency Engine &bull; Multi-Run Verification Module</span>
+      <span>Statistical Agreement Threshold: &ge; 80% (4/5 runs)</span>
+    </div>
+  </div>
+</body>
+</html>

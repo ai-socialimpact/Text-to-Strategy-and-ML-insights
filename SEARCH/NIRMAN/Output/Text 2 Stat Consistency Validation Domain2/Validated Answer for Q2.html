@@ -1,0 +1,1632 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Answer Consistency Report - Using only the Questionnaire table (prod_nirman_questionnaire), measure the Pre vs Post change in Metric_Life_Satisfaction_Global (All things considered I am satisfied with my life, agreement scale 1-5) among matched participants. Steps: (1) Load the table and cast Participant_Id, Workshop_Name and Workshop_Phase to string. Parse Workshop_Level numerically with parseFloat. (2) Clean Metric_Life_Satisfaction_Global: set 0 (not answered) to NaN and set values >5 (out of range) to NaN. (3) Split rows by Workshop_Phase into Pre and Post. Suffix the columns _pre/_post. INNER MERGE on Participant_Id + Workshop_Level, so each pair compares the same workshop level. This is a merge, not a groupby. Drop pairs where either the Pre or Post value is NaN. (4) For the matched pairs, report N pairs and N unique participants, Pre mean, Pre median, Post mean, Post median, mean delta (Post - Pre) and median delta. Round all values to 2 decimals. (5) Compute delta = Post - Pre per pair and classify each pair: Improved (delta > 0), Stayed the same (delta = 0) or Declined (delta < 0). Report counts and percentages of matched pairs. (6) Primary result: Point 1 workshop (Workshop_Level = 0.1). Also give a breakdown by Workshop_Level (0.1 / 0.2 / 0.3) and an all-levels total. (7) Optionally run a paired test (Wilcoxon signed-rank or paired t-test) on the deltas and report the statistic and p-value. Phrase all results as observed change or association, not as causal effect of the workshop.</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #eff6ff;
+      --emerald: #059669;
+      --emerald-light: #ecfdf5;
+      --amber: #d97706;
+      --amber-light: #fffbeb;
+      --gray-900: #0f172a;
+      --gray-700: #334155;
+      --gray-600: #475569;
+      --gray-500: #64748b;
+      --gray-200: #e2e8f0;
+      --gray-100: #f1f5f9;
+      --gray-50: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--gray-700);
+      background: #f8fafc;
+      padding: 40px 20px;
+    }
+    .report-container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 16px;
+      padding: 48px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    .header-banner {
+      border-bottom: 2px solid var(--gray-200);
+      padding-bottom: 28px;
+      margin-bottom: 32px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-exceptional { background: var(--emerald-light); color: var(--emerald); border: 1px solid #a7f3d0; }
+    .badge-primary { background: var(--primary-light); color: var(--primary); border: 1px solid #bfdbfe; }
+    h1 { font-size: 26px; color: var(--gray-900); margin: 12px 0 6px 0; font-weight: 800; }
+    .meta-text { font-size: 13px; color: var(--gray-500); }
+    .question-box {
+      background: var(--gray-50);
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 24px 0;
+      font-size: 15px;
+      color: var(--gray-900);
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .stat-box {
+      background: var(--primary-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .stat-number { font-size: 40px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .stat-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--gray-600); margin-top: 6px; }
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--gray-900);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 36px 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .section-desc { font-size: 13px; color: var(--gray-500); margin-bottom: 20px; }
+    .run-card {
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 16px;
+      background: var(--gray-50);
+    }
+    .run-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .run-title { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+    .code-block {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 14px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+    th { background: var(--gray-100); text-align: left; padding: 10px 12px; font-weight: 700; border-bottom: 2px solid var(--gray-200); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    .aligned-tag { color: var(--emerald); font-weight: 700; }
+    .nuance-tag { color: var(--amber); font-weight: 700; }
+    .chart-box {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    /* Collapsible Sections (Details / Summary) */
+    details.collapsible-section {
+      transition: all 0.2s ease-in-out;
+    }
+    details.collapsible-section summary {
+      cursor: pointer;
+      user-select: none;
+      outline: none;
+      list-style: none;
+    }
+    details.collapsible-section summary::-webkit-details-marker {
+      display: none;
+    }
+    details.collapsible-section summary::marker {
+      display: none;
+    }
+    details.collapsible-section[open] .collapse-chevron {
+      transform: rotate(180deg);
+    }
+    details.collapsible-section:not([open]) summary {
+      border-bottom: none !important;
+    }
+    @media print {
+      body { background: #ffffff; padding: 0; }
+      .report-container { border: none; box-shadow: none; padding: 0; max-width: 100%; }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+      details.collapsible-section { display: block !important; border: 1px solid var(--gray-200) !important; }
+      details.collapsible-section summary { display: none !important; }
+      details.collapsible-section > * { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-container">
+    <!-- Header -->
+    <div class="header-banner">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <span class="badge badge-exceptional">
+            Exceptional Agreement Dossier
+          </span>
+          <h1>Answer Consistency Professional Dossier</h1>
+          <p class="meta-text">Project: NIRMAN &bull; Generated: Thursday, October 29, 2026 at 5:00:53 PM &bull; Multi-Method Analytical Cross-Validation</p>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 32px; font-weight: 800; color: var(--emerald); line-height: 1;">
+            100%
+          </div>
+          <div style="font-size: 11px; text-transform: uppercase; color: var(--gray-500); font-weight: 700; margin-top: 4px;">
+            5 / 5 Methods Converged
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. USER QUERY -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #eff6ff; color: #1e40af; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">1</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">1. User Query</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Original Business Prompt</span>
+      </div>
+      <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--gray-500); margin-bottom: 8px;">
+          Question Submitted by Human User:
+        </div>
+        <blockquote style="font-size: 15px; font-weight: 600; color: var(--gray-900); background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px 18px; margin: 0; font-style: italic;">
+          "Did life satisfaction change?
+Question: "For the statement 'All things considered I am satisfied with my life' (Metric_Life_Satisfaction_Global, 1–5), what are the Pre and Post average and median? How many improved, stayed the same or declined?"
+"
+        </blockquote>
+        <div style="font-size: 11px; color: var(--gray-500); margin-top: 8px;">
+          Target Project: <strong>NIRMAN</strong> &bull; Raw unmanipulated prompt authoring
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. REFINED USER QUERY -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #f3e8ff; color: #7e22ce; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">2</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">2. Refined User Query</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Domain Disambiguated &amp; Schema Mapped</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; border-color: #d8b4fe;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b21a8;">
+            Disambiguated by Query Interpreter Agent:
+          </span>
+          <span style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
+            ✓ Confirmed by Human Expert
+          </span>
+        </div>
+        <div style="font-size: 14px; font-weight: 700; color: #3b0764; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 14px 18px; font-family: monospace;">
+          "Using only the Questionnaire table (prod_nirman_questionnaire), measure the Pre vs Post change in Metric_Life_Satisfaction_Global ('All things considered I am satisfied with my life', agreement scale 1-5) among matched participants. Steps: (1) Load the table and cast Participant_Id, Workshop_Name and Workshop_Phase to string. Parse Workshop_Level numerically with parseFloat. (2) Clean Metric_Life_Satisfaction_Global: set 0 (not answered) to NaN and set values >5 (out of range) to NaN. (3) Split rows by Workshop_Phase into 'Pre' and 'Post'. Suffix the columns _pre/_post. INNER MERGE on Participant_Id + Workshop_Level, so each pair compares the same workshop level. This is a merge, not a groupby. Drop pairs where either the Pre or Post value is NaN. (4) For the matched pairs, report N pairs and N unique participants, Pre mean, Pre median, Post mean, Post median, mean delta (Post - Pre) and median delta. Round all values to 2 decimals. (5) Compute delta = Post - Pre per pair and classify each pair: Improved (delta > 0), Stayed the same (delta = 0) or Declined (delta < 0). Report counts and percentages of matched pairs. (6) Primary result: Point 1 workshop (Workshop_Level = 0.1). Also give a breakdown by Workshop_Level (0.1 / 0.2 / 0.3) and an all-levels total. (7) Optionally run a paired test (Wilcoxon signed-rank or paired t-test) on the deltas and report the statistic and p-value. Phrase all results as observed change or association, not as causal effect of the workshop."
+        </div>
+        <div style="font-size: 11px; color: #065f46; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px 12px; margin-top: 10px;">
+          <strong>Human Expert Confirmation:</strong> The Refined User Query was verified, inspected, and explicitly approved by the Human Expert prior to triggering the 5 independent analytical runs.
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. VERY SHORT SUMMARY (EXECUTIVE TL;DR) -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #fef3c7; color: #b45309; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">3</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">3. Very Short Summary (Executive TL;DR)</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Fast-Reading Synopsis for Leadership</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; background: #fffbeb; border-color: #fde68a;">
+        <p style="font-size: 15px; font-weight: 600; color: #1e293b; line-height: 1.6; margin-bottom: 14px;">
+          Across 5 independent analytical runs testing diverse data science methodologies, the system recorded an agreement score of 100% (5 of 5 runs matching). The dominant finding concludes: "• Who was measured: 1,307 people who answered the life-satisfaction question both before (Pre) and after (Post) the Point 1 workshop (Workshop Level 0.1). Each person is counted once.
+• Average score (1 = low, 5 = high): went from 2.90 before to 3.96 after, an average gain of about +1.06 points. The typical (median) person moved from 3 to 4, a gain of +1.
+• How individuals changed: 864 people (66.11%) scored higher, 311 (23.79%) stayed the same, and 132 (10.10%) scored lower.
+• Other workshop levels: Levels 0.2 and 0.3 (Points 2 and 3) have no matched before-and-after pairs (N = 0), so the 'all levels' total is the same as Level 0.1.
+• Is it just chance? No. Both statistical tests (paired t = 28.11, Wilcoxon z = 22.29) give p < 0.0001, meaning a change this large is very unlikely to be random noise.
+• Important caution: this is an observed change or association only. It does not prove the workshop caused the change.". This cross-method convergence confirms that the result is statistically robust and exceptionally consistent against distribution variations and outlier biases.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 14px; border-top: 1px solid #fef08a;">
+          <div style="background: #ffffff; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400e; margin-bottom: 4px;">
+              Core Answer
+            </div>
+            <div style="font-size: 14px; font-weight: 800; color: #1e3a8a; line-height: 1.5;">
+              • Who was measured: 1,307 people who answered the life-satisfaction question both before (Pre) and after (Post) the Point 1 workshop (Workshop Level 0.1). Each person is counted once.
+• Average score (1 = low, 5 = high): went from 2.90 before to 3.96 after, an average gain of about +1.06 points. The typical (median) person moved from 3 to 4, a gain of +1.
+• How individuals changed: 864 people (66.11%) scored higher, 311 (23.79%) stayed the same, and 132 (10.10%) scored lower.
+• Other workshop levels: Levels 0.2 and 0.3 (Points 2 and 3) have no matched before-and-after pairs (N = 0), so the 'all levels' total is the same as Level 0.1.
+• Is it just chance? No. Both statistical tests (paired t = 28.11, Wilcoxon z = 22.29) give p < 0.0001, meaning a change this large is very unlikely to be random noise.
+• Important caution: this is an observed change or association only. It does not prove the workshop caused the change.
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400e; margin-bottom: 4px;">
+              Convergence Ratio
+            </div>
+            <div style="font-size: 14px; font-weight: 800; color: #065f46; line-height: 1.5;">
+              5 / 5 Independent Methods Aligned (100% Agreement)
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400e; margin-bottom: 4px;">
+              Stability Verdict
+            </div>
+            <div style="font-size: 14px; font-weight: 800; color: #4338ca; line-height: 1.5;">
+              Exceptional Invariance (All runs converge to invariant conclusion)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. CONSENSUS CONCLUSION -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #d1fae5; color: #047857; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">4</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">4. Consensus Conclusion</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Cross-Validated Dominant Finding</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; border: 2px solid #a7f3d0;">
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 18px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #166534;">
+              Validated Core Answer:
+            </span>
+            <span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">
+              Exceptional Confidence
+            </span>
+          </div>
+          
+          <div style="margin-top: 8px;">
+            
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 14px 0;">
+          
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">Who was measured</div>
+              <div style="font-size: 14px; font-weight: 800; color: #064e3b; margin-top: 4px;">1,307 people who answered the life-satisfaction question both before (Pre) and after (Post) the Point 1 workshop (Workshop Level 0.1). Each person is counted once.</div>
+            </div>
+        </div>
+        <ul style="margin: 10px 0 10px 22px; font-size: 13px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Average score (1 = low, 5 = high): went from 2.90 before to 3.96 after, an average gain of about +1.06 points. The typical (median) person moved from 3 to 4, a gain of +1.</li><li style="margin-bottom: 5px;">How individuals changed: 864 people (66.11%) scored higher, 311 (23.79%) stayed the same, and 132 (10.10%) scored lower.</li><li style="margin-bottom: 5px;">Other workshop levels: Levels 0.2 and 0.3 (Points 2 and 3) have no matched before-and-after pairs (N = 0), so the 'all levels' total is the same as Level 0.1.</li><li style="margin-bottom: 5px;">Is it just chance? No. Both statistical tests (paired t = 28.11, Wilcoxon z = 22.29) give p &lt; 0.0001, meaning a change this large is very unlikely to be random noise.</li><li style="margin-bottom: 5px;">Important caution: this is an observed change or association only. It does not prove the workshop caused the change.</li>
+        </ul>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <strong style="font-size: 12px; text-transform: uppercase; color: var(--gray-700); display: block; margin-bottom: 6px;">
+            Detailed Consensus Verdict &amp; Analytical Evaluation:
+          </strong>
+          <div style="font-size: 13px; color: var(--gray-700); line-height: 1.6; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Bottom line: all 5 independent analyses reached the same answer. Agreement was 100%.</li><li style="margin-bottom: 5px;">What they agreed on:</li>
+        </ul>
+      
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        – 1,450 before-and-after pairs were matched, and 1,307 were usable once blank or invalid answers were removed. – All usable pairs come from the Point 1 workshop (Level 0.1). – The average score rose from 2.90 to 3.96 (+1.06). – 66.11% improved, 23.79% stayed the same, 10.10% declined. – Levels 0.2 and 0.3 have no matched pairs.
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Why you can trust it: the 5 runs used very different methods (standard average, median-based, weighted, outlier-trimmed, and a category-shift check) and still landed on the same numbers. Think of five people checking a bill with different calculators and getting the same total.</li><li style="margin-bottom: 5px;">Only differences: how the p-value was displayed (for example '0' versus '&lt; 0.001'). The conclusions did not differ.</li>
+        </ul>
+      
+          </div>
+        </div>
+
+        <!-- 5-Run Visual Alignment Strip -->
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px;">
+            <span>Method Alignment Across 5 Independent Pipelines:</span>
+            <span style="font-weight: 700; color: #047857;">5 / 5 Methods Aligned</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #1</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Paired Mean Change with Paired t-Test (Parametric Baseline)</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #2</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Median Change & Wilcoxon Signed-Rank Test (Robust Non-Parametric)</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #3</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Pair-Count-Weighted Pooled Estimate vs Level-Stratified Estimates</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #4</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">5% Trimmed Mean Delta with Sign Test (Outlier-Filtered)</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #5</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Rank-Order Transition Matrix & Cumulative Category Shift Analysis</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. EASY TO READ CONCLUSION -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #ccfbf1; color: #0f766e; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">5</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">5. Easy to Read Conclusion</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Plain-Language Translation &amp; Practical Business Takeaways</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; border-color: #99f6e4;">
+        <div style="margin-bottom: 14px;">
+          <h4 style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #0f766e; margin-bottom: 6px;">
+            What This Means in Plain English:
+          </h4>
+          <div style="font-size: 13px; color: #1e293b; line-height: 1.6; background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 8px; padding: 12px 16px;">
+            • The question: did people feel happier with their life after the workshop than before it?
+• How we checked: we took the people who answered the same question ('All things considered, I am satisfied with my life') both before and after. They rated it from 1 (strongly disagree) to 5 (strongly agree). That gave 1,307 people.
+• What we found:
+   – Average score before: 2.90 (a bit below the middle). Average score after: 3.96 (almost 'agree').
+   – That is a jump of about 1 point, like moving from a C to a B.
+   – About 2 out of 3 people (66%) scored higher, about 1 in 4 (24%) stayed the same, and 1 in 10 (10%) scored lower.
+• Is it a fluke? No. We ran five different checks, like five referees looking at the same play, and all five reached the same call. Statistical tests say the chance of seeing this by luck is under 1 in 10,000.
+• The catch: we can say scores went up after the workshop. We cannot say the workshop was the reason. Without a group of people who skipped the workshop to compare against, other things could have contributed. It is like noticing that people are happier after a vacation, but not knowing how much was the vacation and how much was just the time of year.
+• What's missing: the second and third workshops (Levels 0.2 and 0.3) had no before-and-after pairs, so we can say nothing about them yet. About 1 in 10 pairs was also left out because of missing answers.
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <h4 style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #166534; margin-bottom: 6px;">
+            Practical Business &amp; Mission Takeaways:
+          </h4>
+          <div style="font-size: 13px; color: #14532d; line-height: 1.6; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px;">
+            • The headline: people who attended the Point 1 workshop rated their life satisfaction about 1 point higher afterward (2.90 to 3.96 on a 1-5 scale).
+• The intuitive picture: out of every 100 people, about 66 felt more satisfied, about 24 felt the same, and about 10 felt less satisfied. Roughly 6 to 7 people improved for every 1 who dropped.
+• Another way to see it: before the workshop, about 1 in 3 people (32%) agreed they were satisfied with life. Afterward it was about 3 in 4 (72%).
+• How sure are we about the change? Very sure. All 5 analyses agree, and the result is far too large to be chance.
+• How sure are we that the workshop caused it? Not sure. There is no comparison group, so other factors (timing, natural bounce-back, who chose to respond) could play a part.
+• Next steps:
+   – Check why Points 2 and 3 (Levels 0.2 and 0.3) have no matched data.
+   – Look at the ~10% of people who were dropped for missing answers, to rule out bias.
+   – If proof of impact is needed, add a comparison group in future rounds.
+          </div>
+        </div>
+
+        <div style="padding-top: 10px; border-top: 1px solid var(--gray-200);">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--gray-500); margin-bottom: 6px;">
+            Actionable Recommendations for Project Leads:
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; font-size: 12px; color: var(--gray-700);">
+            <div style="background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 12px;">
+              <strong>1. Stakeholder Reporting:</strong> Cite the verified consensus metric (• Who was measured: 1,307 people who answered the life-satisfaction question both before (Pre) and after (Post) the Point 1 workshop (Workshop Level 0.1). Each person is counted once.
+• Average score (1 = low, 5 = high): went from 2.90 before to 3.96 after, an average gain of about +1.06 points. The typical (median) person moved from 3 to 4, a gain of +1.
+• How individuals changed: 864 people (66.11%) scored higher, 311 (23.79%) stayed the same, and 132 (10.10%) scored lower.
+• Other workshop levels: Levels 0.2 and 0.3 (Points 2 and 3) have no matched before-and-after pairs (N = 0), so the 'all levels' total is the same as Level 0.1.
+• Is it just chance? No. Both statistical tests (paired t = 28.11, Wilcoxon z = 22.29) give p < 0.0001, meaning a change this large is very unlikely to be random noise.
+• Important caution: this is an observed change or association only. It does not prove the workshop caused the change.) with executive confidence.
+            </div>
+            <div style="background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 12px;">
+              <strong>2. Decision Making:</strong> Proceed without requiring manual reconciliation audits across disparate reporting silos.
+            </div>
+            <div style="background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 12px;">
+              <strong>3. Audit Trail:</strong> Retain this multi-run dossier as verifiable documentation for compliance and donors.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. MULTI-METHOD CONVERGENCE & VISUAL METRICS -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #e0e7ff; color: #4338ca; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">6</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">6. Multi-Method Convergence &amp; Visual Metrics</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Statistical Alignment Distribution</span>
+      </div>
+      <div class="chart-box">
+        <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--gray-600); margin-bottom: 12px;">
+          Visual Method Alignment Matrix (5/5 Aligned)
+        </h4>
+        <svg width="100%" height="160" viewBox="0 0 700 160">
+          
+              <text x="10" y="34" font-size="11" font-weight="600" fill="#334155">Run 1: Paired Mean Change wit</text>
+              <rect x="220" y="20" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="33" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="62" font-size="11" font-weight="600" fill="#334155">Run 2: Median Change & Wilcox</text>
+              <rect x="220" y="48" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="61" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="90" font-size="11" font-weight="600" fill="#334155">Run 3: Pair-Count-Weighted Po</text>
+              <rect x="220" y="76" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="89" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="118" font-size="11" font-weight="600" fill="#334155">Run 4: 5% Trimmed Mean Delta </text>
+              <rect x="220" y="104" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="117" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="146" font-size="11" font-weight="600" fill="#334155">Run 5: Rank-Order Transition </text>
+              <rect x="220" y="132" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="145" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+        </svg>
+      </div>
+      
+      <div class="section-title">
+        <span>Custom Visual Analytics &amp; Deep-Dive Charts</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 20px 0;">
+        
+          <div class="card" style="margin-bottom: 0;">
+            <h4 style="font-size: 14px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px;">Change Classification of Matched Pairs (Level 0.1, N = 1,307)</h4>
+            <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 12px;">Share of matched Pre/Post pairs that improved, stayed the same or declined in life satisfaction. About two-thirds improved. This is observed change only, not a causal effect.</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Improved (delta > 0)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">66.11% (864)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 66.11%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Post score higher than Pre</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Stayed the same (delta = 0)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">23.79% (311)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 23.79%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">No change on the 1-5 scale</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Declined (delta < 0)</span>
+                    <span style="font-weight: 700; color: var(--amber);">10.10% (132)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 10.1%; height: 100%; background: #d97706; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Post score lower than Pre</div>
+                </div>
+              
+            </div>
+          </div>
+        
+          <div class="card" style="margin-bottom: 0;">
+            <h4 style="font-size: 14px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px;">Agreement Shift: Pre vs Post (Share Answering Agree, Neutral or Disagree)</h4>
+            <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 12px;">Share of the 1,307 matched participants who agreed (4-5), were neutral (3) or disagreed (1-2) with 'I am satisfied with my life', before and after. Agreement rose by about 40 percentage points.</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Agree (4-5): Pre</span>
+                    <span style="font-weight: 700; color: var(--emerald);">32.06%</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 32.06%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">419 participants</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Agree (4-5): Post</span>
+                    <span style="font-weight: 700; color: var(--emerald);">72.07%</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 72.07%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">942 participants, +40.01 pp</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Neutral (3): Pre</span>
+                    <span style="font-weight: 700; color: var(--emerald);">29.76%</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 29.76%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">389 participants</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Neutral (3): Post</span>
+                    <span style="font-weight: 700; color: var(--emerald);">19.66%</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 19.66%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">257 participants, -10.10 pp</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Disagree (1-2): Pre</span>
+                    <span style="font-weight: 700; color: var(--amber);">38.18%</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 38.18%; height: 100%; background: #d97706; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">499 participants</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Disagree (1-2): Post</span>
+                    <span style="font-weight: 700; color: var(--emerald);">8.26%</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 10%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">108 participants, -29.92 pp</div>
+                </div>
+              
+            </div>
+          </div>
+        
+      </div>
+    
+    </div>
+
+    <!-- 7. HOW EACH OF THE 5 RUNS ANALYZED THE DATA -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #e0f2fe; color: #0284c7; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">7</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">7. How Each of the 5 Runs Analyzed the Data (Explained Simply)</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Everyday Explanation of Each Methodology</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #1</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Paired Mean Change with Paired t-Test (Parametric Baseline)</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              This run sets the standard parametric baseline. It computes Pre and Post means and the mean delta on exactly matched pairs and tests whether the mean delta differs from 0. It also reports Cohen's dz as an effect size. The other runs are compared against these numbers.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Level 0.1: N = 1307, Pre 2.90/3, Post 3.96/4, mean delta 1.06, median delta 1. Improved 864 (66.11%), same 311 (23.79%), declined 132 (10.10%). Paired t(1306) = 28.11, p < 0.0001, 95% CI 0.99 to 1.14, dz = 0.78. Levels 0.2 and 0.3 have N = 0.
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #2</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Median Change & Wilcoxon Signed-Rank Test (Robust Non-Parametric)</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              Life satisfaction is a 1-5 ordinal item with many ties, so means and t-tests can mislead. Medians, the IQR of the deltas, and the Wilcoxon signed-rank test give an ordinal-appropriate check of the direction and size of the change.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Same descriptives and classification counts (N = 1307; Pre 2.90, Post 3.96; delta 1.06/1). Wilcoxon on 996 non-zero deltas gives z = 22.29, p < 0.0001, r = 0.71. IQR for delta 0 to 2. Levels 0.2 and 0.3 have no pairs.
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #3</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Pair-Count-Weighted Pooled Estimate vs Level-Stratified Estimates</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              The all-levels total mixes Point 1, 2 and 3 pairs of very different sizes. This run computes level-specific results and then rebuilds the all-levels mean delta as a pair-count-weighted average of level means. It also compares that with an equal-weighted (unweighted) average of level means. This checks that the pooled total matches the direct pooled computation and shows whether Point 1 dominates the total.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Same Level 0.1 results (N = 1307, delta 1.06, 66.11/23.79/10.10%). Direct, weighted and unweighted all-level means all equal 1.06 because only one level contributes. t = 28.11, p < 0.001 (normal approximation).
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #4</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">5% Trimmed Mean Delta with Sign Test (Outlier-Filtered)</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              On a 1-5 scale, deltas range from -4 to +4. A few extreme swings, which may be careless responses, could inflate or deflate the mean. Trimming the top and bottom 5% of deltas and running a distribution-free sign test checks whether the observed direction of change holds without extreme pairs.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Same untrimmed results. Trimmed mean delta 1.07 (n = 1177), winsorized 1.06, sign test 864 up vs 132 down (z = 23.19, p < 0.0001). Robustness flag true. Levels 0.2 and 0.3 have no pairs.
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #5</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Rank-Order Transition Matrix & Cumulative Category Shift Analysis</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              This run treats the 1-5 response as ordinal categories. It builds a 5x5 Pre-to-Post transition matrix and cumulative distributions, such as the share agreeing (>= 4) before and after. Improved/Same/Declined counts derived from the matrix (above, on, or below the diagonal) are an independent cross-check of the delta-based classification. Comparing cumulative distributions shows whether the whole response distribution shifted, not just the mean.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Same results (N = 1307, delta 1.06; 864/311/132). The transition matrix cross-check matches. Agree (>=4) rose from 32.06% to 72.07% (+40.01 pp) and disagree (<=2) fell from 38.18% to 8.26%. McNemar chi2 = 422.46 and Wilcoxon z = 22.29, both p < 0.01.
+            </div>
+          </div>
+        
+      </div>
+    </div>
+
+    <!-- 8. DOMAIN & SCHEMA CONTEXTUALIZATION -->
+    
+      <div style="margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+          <span style="width: 24px; height: 24px; background: #ede9fe; color: #6d28d9; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">8</span>
+          <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">8. Domain &amp; Schema Contextualization (schemadescription.txt)</h2>
+          <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">DDL Grounding &amp; Business Reality</span>
+        </div>
+        
+      <!-- CONTEXTUALIZED SECTION (TOP OF REPORT) -->
+      <div style="background: #f8fafc; border: 2px solid #6366f1; border-radius: 14px; padding: 24px; margin-bottom: 28px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #e0e7ff; padding-bottom: 10px;">
+          <div>
+            <span class="badge" style="background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;">
+              Domain &amp; Schema Contextualized Architecture
+            </span>
+            <h3 style="font-size: 18px; color: #1e1b4b; font-weight: 800; margin-top: 6px;">
+              Domain Understanding &amp; DDL Schema Context
+            </h3>
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: #4338ca; background: #ffffff; padding: 4px 10px; border-radius: 6px; border: 1px solid #c7d2fe;">
+            Source: schemadescription.txt (Project Files in DB)
+          </span>
+        </div>
+
+        <div style="margin-bottom: 18px;">
+          <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: #3730a3; margin-bottom: 6px;">
+            Domain Overview &amp; Consensus Interpretation
+          </h4>
+          <p style="font-size: 13px; color: #1e293b; line-height: 1.6; white-space: pre-wrap;">
+            NIRMAN is SEARCH's youth social-leadership program. It records subjective psychometrics in the Questionnaire table (prod_nirman_questionnaire), captured Pre and Post each workshop, and objective facts in the Demographics table (prod_nirman_demographics). This question uses only the Questionnaire table. Its grain is one row per (Participant_Id, Workshop_Level, Workshop_Phase): 4,304 rows, 2,177 participants, batches 7-17. The metric, Metric_Life_Satisfaction_Global ('All things considered I am satisfied with my life'), is on the agreement_1_to_5 scale. It sits in the wellbeing_self theme and the headline_columns list, and the schema names a life-satisfaction gain of 2 or more as a secondary ML target. The consensus answer is that among 1,307 matched Point 1 (Workshop_Level 0.1) participants, mean life satisfaction rose from 2.90 (median 3) to 3.96 (median 4). The mean delta was +1.06 and the median delta +1. Improved / stayed the same / declined was 864 / 311 / 132 pairs (66.11% / 23.79% / 10.10%). The share agreeing (>= 4) rose from 32.06% to 72.07%. The data flow follows the schema recipe 'pre_post_pairing': 2,157 Pre rows and 2,147 Post rows were inner-merged on Participant_Id + Workshop_Level, giving 1,450 pairs. This matches the 1,450 matched Pre/Post Point-1 pairs cited in the schema's ML guidance. After the cleaning rule (0 = not answered, > 5 = out of range; 286 zeros and 1 out-of-range value) and dropping NaN pairs, 1,307 remained. Levels 0.2 and 0.3 produced no pairs, so the all-levels total is the Point 1 result restated. The schema defines this as single-arm observational data, so every finding is an association or observed change, never proof that the workshop caused it.
+          </p>
+        </div>
+
+        
+          <div style="margin-bottom: 18px;">
+            <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: #3730a3; margin-bottom: 8px;">
+              DDL Entity &amp; Schema Mapping
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;">
+              
+                <div style="background: #ffffff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 12px;">
+                  <strong style="color: #312e81; font-size: 12px;">Table: prod_nirman_questionnaire</strong>
+                  <p style="font-size: 11px; color: #475569; margin: 4px 0;">The only table used. Each row is one participant's response set at one Workshop_Level and Workshop_Phase (Pre or Post). Pairing Pre and Post is therefore a merge on Participant_Id + Workshop_Level, not a groupby. Metric_Life_Satisfaction_Global is an agreement_1_to_5 item with zero missing values but a 0 = 'not answered' coding. It is also the base of the schema's secondary ML target 'Life-satisfaction gain >= 2'. The table covers batches 7-17 only, and Workshop_Level 0.1 is the Point 1 cohort.</p>
+                  <div style="font-size: 10px; color: #6366f1; font-weight: 600;">
+                    Columns: Participant_Id, Workshop_Phase, Workshop_Level, Workshop_Name, Workshop_Batch_Number, Metric_Life_Satisfaction_Global
+                  </div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 12px;">
+                  <strong style="color: #312e81; font-size: 12px;">Table: prod_nirman_demographics</strong>
+                  <p style="font-size: 11px; color: #475569; margin: 4px 0;">Not used, as the question requires. It matters only as context. It holds 2,890 participants over batches 1-17, against 2,177 participants in the Questionnaire, so the two tables do not cover the same people. Its Point_2_Workshop_Attended and Point_3_Workshop_Attended flags describe later-stage workshops that correspond to questionnaire Workshop_Level 0.2 and 0.3. The absence of Level 0.2/0.3 pairs here therefore means those later-stage surveys are essentially not available for Pre/Post analysis. Because no join was made, effective N is driven only by Pre/Post matching and cleaning, not by demographics coverage.</p>
+                  <div style="font-size: 10px; color: #6366f1; font-weight: 600;">
+                    Columns: Participant_Id, Workshop_Batch_Number, Workshops_Attended_Count, Point_2_Workshop_Attended, Point_3_Workshop_Attended
+                  </div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 12px;">
+                  <strong style="color: #312e81; font-size: 12px;">Table: Derived frames (Pre frame, Post frame, merged pair frame)</strong>
+                  <p style="font-size: 11px; color: #475569; margin: 4px 0;">These implement the schema recipes pre_post_pairing and delta. The Pre frame (2,157 rows) and Post frame (2,147 rows) are suffixed _pre/_post and inner-merged to 1,450 pairs. Dropping NaN pairs leaves 1,307. delta = Metric_Life_Satisfaction_Global_post - Metric_Life_Satisfaction_Global_pre is the 'internal change' measure. Each pair classification (Improved / Same / Declined) is a sign of delta. The transition matrix and the agree/disagree flags (agree >= 4, disagree <= 2) use the schema's agreement-scale semantics.</p>
+                  <div style="font-size: 10px; color: #6366f1; font-weight: 600;">
+                    Columns: Metric_Life_Satisfaction_Global_pre, Metric_Life_Satisfaction_Global_post, delta, Workshop_Level
+                  </div>
+                </div>
+              
+            </div>
+          </div>
+        
+
+        
+          <div style="margin-bottom: 18px;">
+            <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: #3730a3; margin-bottom: 8px;">
+              5-Run Domain Explanations (Schema Context)
+            </h4>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #1: Paired Mean Change with Paired t-Test (Parametric Baseline)</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">This run applies the schema pipeline directly. It casts keys to string, rounds Workshop_Level to 1 decimal so that 0.1 / 0.2 / 0.3 compare exactly, and sets 0 and values > 5 to NaN. The mean rose from 2.90 to 3.96 (delta +1.06, SD 1.37, 95% CI 0.99-1.14, dz 0.78, t(1306) = 28.11). The size of the change reflects the pairing design. Each person is compared with themselves, so between-person differences in baseline satisfaction drop out. Pre means near 2.9 on a 1-5 scale mean there was room to move before the ceiling. The shift from 32% to 72% agreeing suggests the whole distribution moved, not a few extreme responders. The 'no duplicate keys' result confirms the grain: one row per (participant, level, phase). The empty Level 0.2/0.3 groups return null statistics because of the n < 2 guard, and that is why the 'all levels' figure equals Level 0.1. The 1,307 are 1,307 distinct participants, because each person has only one Point 1 pair.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #2: Median Change & Wilcoxon Signed-Rank Test (Robust Non-Parametric)</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">The agreement scale is ordinal with heavy ties (only the values 1-5 and deltas of -4 to +4). This run is therefore the most appropriate in schema terms. Medians (3 to 4, delta +1) and an IQR for delta of 0 to 2 show a typical one-step improvement. The test used only the 996 non-zero deltas (864 + 132). The 311 'stayed the same' pairs are tie-discarded, which is why 996 rather than 1,307 enters the Wilcoxon. With 996 non-zero deltas the test is far from underpowered (z = 22.29, r = 0.71). It agrees with the t-test because the change is large and one-directional (about 6.5 up for every 1 down), not driven by outliers. This run also gives the clearest data-lineage explanation for the empty levels. Only one Post value exists at each of Levels 0.2 and 0.3, with no Pre to match, so the inner merge returns 0 pairs. Those are orphan rows, not a code failure.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #3: Pair-Count-Weighted Pooled Estimate vs Level-Stratified Estimates</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">This run tests whether the 'all levels' total is just Point 1 under another name, because the schema warns that Point 1/2/3 are different stages of the program. Direct pooled, pair-weighted and unweighted means all equal 1.06 and Level 0.1's share is 100%. Only one level contributes, so weighting cannot change anything. The weighted-versus-unweighted contrast it was designed to show is moot in this data. The narrative also contains a loose statement: the 143 dropped pairs are said to 'mostly reflect' the 286 zeros. Those 286 zeros are counted at row level across all Pre and Post rows, including rows that never matched, so they cannot be mapped one-to-one to pairs. The p-value here uses a normal approximation, which is acceptable because n > 30 (df = 1306), and it matches the exact t to 2 decimals.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #4: 5% Trimmed Mean Delta with Sign Test (Outlier-Filtered)</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">Life satisfaction is a self-rated item, and it could be argued that careless or extreme swings (for example -4 or +4) distort the mean. Trimming floor(0.05 x 1307) = 65 pairs from each end leaves 1,177 pairs and moves the mean delta only from 1.06 to 1.07 (winsorized 1.06). Each tail contains very few pairs, and the central mass of deltas (0, +1, +2) drives the result. The sign test (864 up vs 132 down, z = 23.19) ignores magnitude and also ignores the 311 ties, so it confirms direction only. It is very significant because the up:down ratio is about 6.5:1. The point that levels 0.2/0.3 are 'absent, not just small N' is the right domain reading, since no Pre rows exist at those levels. One narrative slip should be noted: 1,450 pairs is described as 1,450 unique participants after the merge, which is correct only because each participant has one pair at Level 0.1.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #5: Rank-Order Transition Matrix & Cumulative Category Shift Analysis</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">This run treats the 1-5 answer as ordered categories, using the schema's agreement semantics (agree >= 4, disagree <= 2). The 5x5 transition matrix reproduces the 864 / 311 / 132 classification exactly (above diagonal / diagonal / below diagonal), which independently validates the delta logic and the string/numeric casting. The agree share rose from 32.06% to 72.07% (+40.01 pp) and the disagree share fell from 38.18% to 8.26%, so the shift is a movement of the whole distribution from the lower half to the upper half. Most changes are +1 (30.68%) or +2 (20.96%), and drops of 2 or more are rare (about 2.7%). McNemar's test shows 584 pairs moving into agreement versus 61 moving out (chi2 = 422.46). Its p-value displays as 0 because it is too small to print at the chosen precision. The Wilcoxon sums (W+ = 446,733, W- = 49,773) add up to 996 x 997 / 2 = 496,506, which is internally consistent. This framing is the most meaningful for program staff. It translates the mean change of 1.06 into 'about 4 in 10 more participants now agree they are satisfied with life'.</p>
+                </div>
+              
+            </div>
+          </div>
+        
+
+        
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+            <strong style="font-size: 12px; color: #92400e; text-transform: uppercase; display: block; margin-bottom: 3px;">
+              Domain Nuances &amp; Constraints
+            </strong>
+            <p style="font-size: 12px; color: #78350f; line-height: 1.5;">(1) Design: this is single-arm observational data. The schema forbids causal claims, and there is no control group. A one-point rise on a global life-satisfaction item is large for a relatively trait-like construct. Because Pre and Post bracket a single workshop, state effects (mood, enthusiasm, social desirability right after a motivating event) and regression to the mean (Pre mean 2.90 is low) may account for part of it. Post is also 'immediately after' measurement, with no durable follow-up. (2) Matching loss: 2,157 Pre rows and 2,145 or so Post rows at Level 0.1 produced only 1,450 pairs. Roughly 700 participants have only a Pre or only a Post row, and 2,177 participants appear in the table overall. Another 143 pairs (about 10%) were lost to NaN cleaning. The 1,307 are therefore survivors who completed both surveys with valid scores. If dropout or non-response is related to how satisfied people felt, the result is biased, and it cannot be generalised to all NIRMAN participants. (3) Zero-coding: 286 zeros (0 = 'not answered') and 1 value > 5 were set to NaN. Treating a zero as a low score would have badly distorted the means. A clustering of zeros in particular batches or phases would indicate an administration gap, and this was not examined. (4) Levels 0.2 and 0.3: the schema allows these levels and links them to Point 2/3 later-stage workshops, yet only one orphan Post row exists at each. Pre/Post change at later stages therefore cannot be assessed from this table, and Demographics' Point_2/Point_3 attendance flags have no matching questionnaire evidence. These later stages are also invitation-gated and self-selected. (5) Scale and ceiling: Post Q3 = 5, so further improvement is capped, and the deltas are bounded at +4. The scale is ordinal, so the mean delta should be read alongside medians and the transition counts. (6) Coverage: the table covers batches 7-17 only, whereas Demographics covers 1-17, so the result says nothing about batches 1-6. The results are also not stratified by batch, and mixing recent and older cohorts could hide differences. (7) Statistical significance: with N = 1,307 any such change will be 'significant'. The effect sizes (dz 0.78, r 0.71) and the percentages are more informative than the p-values. (8) Minor reporting issues: Run 3's remark about 'unequal n' does not apply because only one level contributes, and p-values printed as 0 should be reported as '< 0.0001'.</p>
+          </div>
+        
+
+        
+          <div>
+            <strong style="font-size: 12px; color: #1e1b4b; text-transform: uppercase; display: block; margin-bottom: 4px;">
+              Domain Expert Recommendations
+            </strong>
+            <ul style="margin-left: 18px; font-size: 12px; color: #334155;">
+              <li>Report the headline as: 'Among 1,307 matched Point 1 participants (batches 7-17), average life satisfaction was 3.96 after the workshop versus 2.90 before (+1.06; 66% higher, 24% same, 10% lower; share agreeing rose from 32% to 72%)'. Always state the effective N and describe it as observed change in single-arm data, not workshop impact.</li><li>Quantify the non-matched and dropped population. Compare the roughly 700 participants with only a Pre or only a Post row, and the 143 pairs dropped for NaN, with the 1,307 retained on Pre score and batch. Only then can the bias from selective completion be judged. Report Pre-only dropout rate by Workshop_Batch_Number.</li><li>Check zero-coding by batch and phase. If the 286 'not answered' values concentrate in particular batches or in the Post phase, treat it as an administration issue and not as random non-response.</li><li>Stratify the analysis by Workshop_Batch_Number (7-17) and, using Participant_Id joined as a string to Demographics, by Gender, Educational_Stream_Category and Age_At_Workshop (> 0 only). Report the effective N after the join, since the join shrinks and skews N. Use these cuts to see where the gain is largest, and remember that recent batches have had less time to realise outcomes.</li><li>Confirm directly with a Workshop_Level x Workshop_Phase count that Levels 0.2/0.3 have no Pre rows. If Point 2/3 surveys were collected under another coding or in another file, locate them before drawing conclusions about later-stage change. Until then, use Demographics' Point_2/Point_3 attended flags only as exposure descriptors.</li><li>Use the transition matrix, the agree/disagree shares and the median delta for program communication, because they respect the ordinal nature of the item. Treat the t-test and Wilcoxon p-values as confirmatory only.</li><li>If this metric is used as an ML target (the schema's 'Life-satisfaction gain >= 2', about 20.96% at +2 plus the +3/+4 tail), build predictors only from Pre-phase items and demographics. Never include Post-phase values or deltas as features, to avoid leakage. Report the base rate and use AUC/recall.</li><li>Do not describe the result as program effectiveness. If causal evidence is needed, consider follow-up Post measures at later points, a wait-list or comparison cohort, or linking the Pre-to-Post gain with the Demographics outcome (Current_Status_Of_Work) as an association only.</li>
+            </ul>
+          </div>
+        
+      </div>
+    
+      </div>
+    
+
+    <!-- Page Break for Printing -->
+    <div class="page-break"></div>
+
+    <!-- 9. SCIENTIFIC & TECHNICAL DATA SCIENCE EVALUATION (COLLAPSED BY DEFAULT) -->
+    <details class="collapsible-section" style="margin-bottom: 24px; border: 1px solid var(--gray-200); border-radius: 12px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <summary style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #fdf2f8; cursor: pointer; user-select: none; border-bottom: 1px solid #fbcfe8;">
+        <span style="width: 24px; height: 24px; background: #fce7f3; color: #be185d; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">9</span>
+        <h2 style="font-size: 16px; font-weight: 800; color: var(--gray-900); margin: 0;">9. Scientific &amp; Technical Data Science Evaluation</h2>
+        <span style="font-size: 11px; font-weight: 700; color: #9d174d; background: #fce7f3; border: 1px solid #fbcfe8; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">Collapsed by Default (Click to Expand)</span>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto; display: inline-flex; align-items: center; gap: 6px;">
+          <span>Details &amp; Matrix</span>
+          <span class="collapse-chevron" style="display: inline-block; transition: transform 0.2s ease; font-size: 10px;">▼</span>
+        </span>
+      </summary>
+      <div style="padding: 20px;">
+        <div class="card" style="margin-bottom: 16px;">
+          <h4 style="font-size: 12px; font-weight: 700; color: var(--gray-700); text-transform: uppercase; margin-bottom: 8px;">
+            Theoretical Framework &amp; Statistical Invariance
+          </h4>
+          <div style="font-size: 13px; color: var(--gray-700); line-height: 1.6;">
+            
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Methods compared (plain-language label in brackets): paired t-test [compares averages], Wilcoxon signed-rank [compares ranks, less sensitive to extreme values], trimmed/winsorized means and sign test [ignore or cap extreme cases, then count ups versus downs], pooled/weighted estimate [checks that combining levels doesn't distort the result], and a transition matrix with McNemar test [tracks how people moved between answer categories].</li><li style="margin-bottom: 5px;">Result: every method shows the same large, consistent increase.</li><li style="margin-bottom: 5px;">Robustness: trimming extreme cases changes the average gain only from 1.06 to 1.07, so outliers are not driving the result. The median gain (+1) matches the average gain.</li><li style="margin-bottom: 5px;">Cross-check: the transition matrix reproduces the 864 improved / 311 same / 132 declined split exactly. The sign test agrees (864 up versus 132 down, z = 23.19).</li><li style="margin-bottom: 5px;">Statistical strength: p &lt; 0.0001 under every test (t = 28.11, Wilcoxon z = 22.29). Effect sizes are medium to large (dz = 0.78, r = 0.71), so the change is big as well as 'significant'.</li><li style="margin-bottom: 5px;">Category shift: people answering 'agree' (4 or 5) rose from 32.06% to 72.07% (+40.01 percentage points). People answering 'disagree' (1 or 2) fell from 38.18% to 8.26%. McNemar chi-square = 422.46.</li><li style="margin-bottom: 5px;">Data flow (identical across runs): 2,157 Pre rows and 2,147 Post rows, no duplicate keys, 286 zeros (not answered) and 1 out-of-range value set to blank, and 143 pairs (about 10%) dropped as incomplete.</li><li style="margin-bottom: 5px;">Levels 0.2 and 0.3: no pairs in any run. Run 2 traced this to a single Post value and no matching Pre value at each of those levels.</li><li style="margin-bottom: 5px;">Shared caveats: no control group (we cannot tell what would have happened without the workshop), possible ceiling effects (people already near 5 cannot rise much), regression to the mean (very low scorers tend to drift up on their own), and about 10% of pairs lost to non-response.</li>
+        </ul>
+      
+          </div>
+        </div>
+
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--gray-900); text-transform: uppercase; margin-bottom: 8px;">
+          Cross-Methodology Technical Matrix (All 5 Runs)
+        </h4>
+        <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">Run</th>
+            <th style="width: 180px;">Method &amp; Category</th>
+            <th>Augmented Query Specification</th>
+            <th style="width: 140px;">Convergence Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td style="font-weight: 700;">#1</td>
+              <td>
+                <strong style="color: var(--gray-900);">Paired Mean Change with Paired t-Test (Parametric Baseline)</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Parametric Aggregation</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"Use only prod_nirman_questionnaire.
+
+(1) Load and cast:
+- Find the table via Object.keys(data) where the name includes 'prod_nirman_questionnaire'.
+- Map rows to plain JS objects.
+- Set Participant_Id, Workshop_Name and Workshop_Phase to String(...).trim().
+- Set Workshop_Level = parseFloat(...) and round to 1 decimal to avoid float drift.
+
+(2) Clean Metric_Life_Satisfaction_Global:
+- Apply Number().
+- Set the value to NaN if it is 0, greater than 5, or non-finite.
+
+(3) Pair Pre and Post:
+- Split rows into Pre (Workshop_Phase === 'Pre') and Post (Workshop_Phase === 'Post').
+- Rename the metric to Metric_Life_Satisfaction_Global_pre and Metric_Life_Satisfaction_Global_post.
+- INNER MERGE on the key Participant_Id + '|' + Workshop_Level. This is a merge, not a groupby. A dfd.merge or a JS Map join are both fine.
+- If a key appears more than once within a phase, log the duplicate count and keep the first.
+- Drop pairs where either value is NaN.
+- Log N rows Pre, N rows Post, N merged and N after dropNa.
+
+(4) Compute per group. Groups are: Level 0.1 (PRIMARY), Level 0.2, Level 0.3, and ALL levels. For each group report:
+- N pairs and N unique Participant_Id
+- Pre mean and Pre median
+- Post mean and Post median
+- Mean delta and median delta, where delta = post - pre
+- SD of delta
+
+(5) Classify each pair:
+- Improved if delta > 0
+- Stayed the same if delta === 0
+- Declined if delta < 0
+- Report counts and percentages of N pairs.
+
+(6) Statistics per group:
+- Paired t-test: t = mean(delta) / (sd(delta) / sqrt(n)), df = n - 1.
+- Two-sided p-value from the Student-t CDF (implement the regularized incomplete beta function, or use the normal approximation when n > 30).
+- 95% CI of the mean delta.
+- Cohen's dz = mean(delta) / sd(delta).
+
+Round all numbers to 2 decimals (p-values to 4). Return JSON: { primary_point1, by_level: {0.1, 0.2, 0.3}, all_levels, test: 'paired t-test' }. Phrase results as observed Pre-to-Post change or association, not a causal effect of the workshop."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use ONLY the table prod_nirman_questionnaire (no join to demographics). (1) LOAD & CAST: locate the table via Object.keys(data).find(name => name.toLowerCase().includes('prod_nirman_questionnaire')); map rows to plain JS objects; set Participant_Id, Workshop_Name and Workshop_Phase to String(...).trim() (Workshop_Name 'F' must not parse as boolean); set Workshop_Level = Math.round(parseFloat(Workshop_Level)*10)/10 so it compares exactly to 0.1 / 0.2 / 0.3. (2) CLEAN Metric_Life_Satisfaction_Global (agreement_1_to_5 scale, 'All things considered I am satisfied with my life'): v = Number(value); set v = NaN if v === 0 (not answered), v > 5 (out of range), or !Number.isFinite(v). (3) PAIR PRE/POST: split rows into Pre (Workshop_Phase === 'Pre') and Post (Workshop_Phase === 'Post'); rename the metric to Metric_Life_Satisfaction_Global_pre / Metric_Life_Satisfaction_Global_post; build key = Participant_Id + '|' + Workshop_Level; within each phase, if a key occurs more than once, log the duplicate count and keep the first occurrence; INNER MERGE Pre and Post on the key (dfd.merge or a JS Map join, not a groupby); drop pairs where either _pre or _post is NaN; log N rows Pre, N rows Post, N merged, N after dropNa. Compute delta = post - pre. (4) PER-GROUP DESCRIPTIVES for groups Level 0.1 (PRIMARY, Point 1 workshop), Level 0.2, Level 0.3 and ALL levels combined: N pairs, N unique Participant_Id, Pre mean & median, Post mean & median, mean delta, median delta, SD of delta (sample SD, n-1). (5) CLASSIFY each pair: Improved (delta > 0), Stayed the same (delta === 0), Declined (delta < 0); report counts and percentages of N pairs per group. (6) STATISTICS per group: paired t-test t = mean(delta) / (sd(delta)/sqrt(n)), df = n-1; two-sided p-value from the Student-t CDF via the regularized incomplete beta function (normal approximation allowed when n > 30); 95% CI of mean delta = mean ± t_crit(0.975, df) * sd/sqrt(n); Cohen's dz = mean(delta)/sd(delta). Guard against n < 2 or sd = 0 (return null for t, p, CI, dz). Round all numbers to 2 decimals, p-values to 4 decimals. Return JSON { primary_point1: <Level 0.1 results>, by_level: { '0.1': ..., '0.2': ..., '0.3': ... }, all_levels: ..., test: 'paired t-test', logs: { n_pre_rows, n_post_rows, duplicates_pre, duplicates_post, n_merged, n_after_dropna } }. Phrase findings as observed Pre-to-Post change/association in single-arm observational data, not as a causal effect of the workshop; note Level 0.2/0.3 participation is invitation-gated (self-selected).
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Parametric baseline. It matches the core descriptives exactly and adds the CI and effect size.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#2</td>
+              <td>
+                <strong style="color: var(--gray-900);">Median Change & Wilcoxon Signed-Rank Test (Robust Non-Parametric)</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Robust Non-Parametric</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"Use only prod_nirman_questionnaire.
+
+Load, cast, clean and pair exactly as follows:
+- Set Participant_Id, Workshop_Name and Workshop_Phase to strings.
+- Parse Workshop_Level with parseFloat and round to 1 decimal.
+- Set Metric_Life_Satisfaction_Global to NaN if it is 0 or greater than 5.
+- Split into Pre and Post and suffix _pre/_post.
+- INNER MERGE on Participant_Id + Workshop_Level (merge, not groupby).
+- Drop pairs with NaN on either side.
+- Report effective N after the merge and after dropNa.
+
+For Level 0.1 (PRIMARY), 0.2, 0.3 and ALL levels, report:
+- N pairs and N unique participants
+- Pre mean and median
+- Post mean and median
+- Mean and median delta (post - pre)
+- Q1, Q3 and IQR of Pre, Post and delta
+- Improved (delta > 0), Stayed the same (delta = 0) and Declined (delta < 0), as counts and percentages
+
+Run a Wilcoxon signed-rank test on the deltas:
+- Discard zero deltas and record n_nonzero.
+- Rank |delta| using average ranks for ties.
+- Compute W+ and W-, and use W = min(W+, W-).
+- Use the normal approximation: mean = n(n+1)/4 and var = n(n+1)(2n+1)/24 - sum(t^3 - t)/48 for the tie correction. Apply a continuity correction of 0.5.
+- Report z, the two-sided p from the normal CDF (implement via erf), and the effect size r = z / sqrt(n_nonzero).
+- If n_nonzero < 10, report that the test is underpowered.
+
+Round to 2 decimals (p to 4). Return JSON with primary_point1, by_level, all_levels and the Wilcoxon results. Describe the result only as observed change or association, not as caused by the workshop."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use ONLY the table prod_nirman_questionnaire. Do not join prod_nirman_demographics.
+
+LOAD and CAST:
+- Cast Participant_Id, Workshop_Name and Workshop_Phase to string. Workshop_Name must be a string because the value 'F' otherwise parses as boolean false.
+- Parse Workshop_Level with parseFloat and round it to 1 decimal, so the values are 0.1, 0.2 and 0.3.
+
+CLEAN:
+- Metric_Life_Satisfaction_Global uses agreement_1_to_5, where 1 = strongly disagree and 5 = strongly agree. The item is 'All things considered I am satisfied with my life'.
+- Set it to NaN if the value is 0 (not answered) or greater than 5 (out of range).
+
+PAIR:
+- Split rows by Workshop_Phase into 'Pre' and 'Post'.
+- Suffix the value columns with _pre and _post.
+- INNER MERGE the Pre and Post frames on [Participant_Id, Workshop_Level]. Use a merge, not a groupby.
+- Report the effective N (pairs) after the merge.
+- Drop pairs where Metric_Life_Satisfaction_Global_pre or Metric_Life_Satisfaction_Global_post is NaN.
+- Report the effective N after dropNa.
+- Compute delta = Metric_Life_Satisfaction_Global_post - Metric_Life_Satisfaction_Global_pre.
+
+DESCRIPTIVES: Compute these separately for Workshop_Level 0.1 (PRIMARY, Point 1), 0.2 (Point 2), 0.3 (Point 3) and ALL levels combined:
+- N pairs and N unique Participant_Id
+- Pre mean and median
+- Post mean and median
+- Mean delta and median delta
+- Q1, Q3 and IQR (Q3 - Q1) for Pre, Post and delta
+- Improved (delta > 0), Same (delta = 0) and Declined (delta < 0), each as a count and as a percentage of N pairs
+
+WILCOXON SIGNED-RANK TEST: Run it on the deltas for each level and for ALL.
+1. Discard zero deltas and record n_nonzero.
+2. Rank |delta| ascending, giving tied values their average rank.
+3. Compute W+ (sum of ranks for positive deltas) and W- (sum of ranks for negative deltas). Set W = min(W+, W-).
+4. Use the normal approximation:
+   - mean = n(n+1)/4
+   - var = n(n+1)(2n+1)/24 - sum(t^3 - t)/48, where t is the size of each tie group
+   - z = (|W - mean| - 0.5) / sqrt(var), with continuity correction 0.5, reported with the sign of the direction of change
+5. Compute the two-sided p = 2 * (1 - Phi(|z|)), where Phi(x) = 0.5 * (1 + erf(x / sqrt(2))) and erf is implemented numerically (for example Abramowitz-Stegun).
+6. Compute the effect size r = z / sqrt(n_nonzero).
+7. If n_nonzero < 10, flag the result as underpowered.
+
+OUTPUT:
+- Round all values to 2 decimals, except p-values, which are rounded to 4 decimals.
+- Return JSON with these keys: effective_n (after_merge, after_dropna), primary_point1 (Level 0.1 descriptives + Wilcoxon), by_level (0.1, 0.2, 0.3), all_levels, and wilcoxon (per level and all).
+- Describe results only as observed Pre-to-Post change or association in single-arm observational data. Do not describe them as caused by the workshop.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  The rank-based test confirms the direction and significance without any normality assumption.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#3</td>
+              <td>
+                <strong style="color: var(--gray-900);">Pair-Count-Weighted Pooled Estimate vs Level-Stratified Estimates</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Weighted Estimation</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"Use only prod_nirman_questionnaire.
+
+Apply the standard pipeline:
+- Cast Participant_Id, Workshop_Name and Workshop_Phase to strings.
+- Parse Workshop_Level with parseFloat and round to 1 decimal.
+- Set Metric_Life_Satisfaction_Global to NaN if it is 0 or greater than 5.
+- Split Pre and Post, suffix _pre/_post, and INNER MERGE on Participant_Id + Workshop_Level (merge, not groupby).
+- Drop pairs where either side is NaN.
+- Print effective N.
+
+For each Workshop_Level (0.1 = PRIMARY, 0.2, 0.3), report:
+- N pairs and N unique participants
+- Pre and Post mean and median
+- Mean and median delta (post - pre)
+- Improved (delta > 0), Stayed the same (= 0) and Declined (< 0), as counts and percentages
+
+Then compute the ALL-levels total in three ways:
+- (a) Direct pooled: the mean and median of all pairs together, with N unique participants across levels (a participant may appear at several levels).
+- (b) Weighted: sum over levels of (n_level * mean_delta_level) / sum(n_level). Confirm it equals (a) to within 0.01.
+- (c) Unweighted: the simple average of the three level mean deltas.
+
+Also report:
+- Each level's share of total pairs as a percentage.
+- Pooled Improved/Same/Declined percentages, computed both from pooled counts and as a weighted average of level percentages.
+- A paired t-test on pooled deltas and on Level 0.1 deltas: t = mean / (sd / sqrt(n)), with a two-sided p from the t CDF or the normal approximation for n > 30.
+
+Round to 2 decimals. Return JSON: primary_point1, by_level, all_levels {direct, weighted, unweighted, level_shares}, tests. Use association language only, with no causal claims."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use ONLY the table prod_nirman_questionnaire (no join to demographics). LOAD/CAST: cast Participant_Id, Workshop_Name and Workshop_Phase to string (Workshop_Name 'F' would otherwise parse as boolean). Parse Workshop_Level with parseFloat and round to 1 decimal so values are exactly 0.1, 0.2, 0.3. CLEAN: parse Metric_Life_Satisfaction_Global as a number and set it to NaN when it equals 0 (not answered) or is greater than 5 (out of range on the agreement_1_to_5 scale). PAIRING: split rows by Workshop_Phase into 'Pre' and 'Post' frames, keeping Participant_Id, Workshop_Level and Metric_Life_Satisfaction_Global. Suffix the value column as Metric_Life_Satisfaction_Global_pre and Metric_Life_Satisfaction_Global_post. INNER MERGE (a merge, not a groupby) on the composite key Participant_Id + Workshop_Level. Drop pairs where either _pre or _post is NaN. Compute delta = Metric_Life_Satisfaction_Global_post - Metric_Life_Satisfaction_Global_pre. Print the effective N: rows before merge, Pre and Post row counts, merged pairs, pairs after dropNa, and unique participants. PER LEVEL: for each Workshop_Level (0.1 = PRIMARY / Point 1, 0.2 = Point 2, 0.3 = Point 3), report n_pairs, n_unique_participants, pre_mean, pre_median, post_mean, post_median, mean_delta and median_delta. Also report improved (delta > 0), same (delta == 0) and declined (delta < 0), each as a count and as a percentage of that level's pairs. ALL-LEVELS TOTAL, computed three ways: (a) DIRECT POOLED: pool all valid pairs across levels and report n_pairs; n_unique_participants across levels (a participant may contribute pairs at several levels, so unique < pairs is possible); and pre/post/delta mean and median. (b) WEIGHTED: sum_over_levels(n_level * mean_delta_level) / sum(n_level). Verify that |weighted - direct pooled mean_delta| <= 0.01 and report a boolean match flag. (c) UNWEIGHTED: the simple arithmetic mean of the three level mean_deltas. Note that (c) differs from (a) and (b) because levels have unequal n. LEVEL SHARES: each level's n_pairs / total pairs * 100. POOLED IMPROVED/SAME/DECLINED percentages, computed two ways: (i) from pooled counts / total pairs, and (ii) as the n-weighted average of the level percentages. Confirm that (i) and (ii) agree. TESTS: run a paired t-test on the pooled deltas and on the Level 0.1 deltas. Use mean_delta, sd_delta (sample sd, n-1), se = sd/sqrt(n), t = mean/se and df = n-1. Compute a two-sided p-value from the Student t CDF, or from the normal approximation when n > 30, and state which method was used. Report n, mean_delta, sd_delta, se, t, df, p and the method. Round all displayed numbers to 2 decimals (p-values may be shown as '<0.001' if very small). RETURN JSON with these keys: primary_point1 (the Level 0.1 block), by_level (0.1, 0.2, 0.3), all_levels {direct, weighted, unweighted, level_shares}, tests {pooled, level_0_1}, and effective_n. Interpretation must use association/change language only (e.g. 'Post scores were associated with higher life satisfaction'). This is single-arm observational data: make no causal claims that the workshop caused the change.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  The pooled, weighted and unweighted estimates are identical because Level 0.1 holds 100% of pairs.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#4</td>
+              <td>
+                <strong style="color: var(--gray-900);">5% Trimmed Mean Delta with Sign Test (Outlier-Filtered)</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Outlier-Filtered</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"Use only prod_nirman_questionnaire.
+
+Apply the standard pipeline:
+- Cast Participant_Id, Workshop_Name and Workshop_Phase to strings.
+- Parse Workshop_Level with parseFloat and round to 1 decimal.
+- Set Metric_Life_Satisfaction_Global to NaN if it is 0 or greater than 5.
+- Split Pre and Post, suffix _pre/_post, and INNER MERGE on Participant_Id + Workshop_Level (merge, not groupby).
+- Drop pairs with NaN on either side.
+- Report effective N after the merge and after dropNa.
+
+For Level 0.1 (PRIMARY), 0.2, 0.3 and ALL levels, first report the untrimmed values:
+- N pairs and N unique participants
+- Pre and Post mean and median
+- Mean and median delta
+- Improved (delta > 0), Stayed the same (= 0) and Declined (< 0), as counts and percentages
+
+Then apply robustness checks:
+- (a) Sort the deltas and remove floor(0.05 * n) pairs from each end. Report the trimmed N, trimmed mean delta, trimmed median delta, and trimmed Pre and Post means for the retained pairs.
+- (b) Compute a 5% winsorized mean delta.
+- (c) Run a sign test on the untrimmed deltas: n+ = count of delta > 0, n- = count of delta < 0, zeros excluded. Use the two-sided binomial p with p = 0.5. Use the exact binomial when n <= 50, otherwise the normal approximation z = (n+ - n/2) / sqrt(n/4).
+- (d) Flag whether the trimmed and untrimmed mean deltas agree in sign and differ by less than 0.1.
+
+Round to 2 decimals (p to 4). Return JSON with primary_point1, by_level, all_levels, a trimmed block and the sign_test. Describe findings as observed change, not a workshop effect."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use ONLY the table prod_nirman_questionnaire (no join to prod_nirman_demographics). LOAD/CAST: cast Participant_Id, Workshop_Name and Workshop_Phase to strings. Workshop_Name must be a string so that 'F' is not parsed as boolean false. Parse Workshop_Level with parseFloat and round it to 1 decimal (0.1 / 0.2 / 0.3). CLEAN: set Metric_Life_Satisfaction_Global (agreement_1_to_5 scale) to NaN where the value is 0 (0 = not answered) or > 5 (out of range). PAIRING: split rows by Workshop_Phase into 'Pre' and 'Post' frames. Keep Participant_Id, Workshop_Level and Metric_Life_Satisfaction_Global. Rename the score to Metric_Life_Satisfaction_Global_pre and Metric_Life_Satisfaction_Global_post. INNER MERGE (a merge, not a groupby) on [Participant_Id, Workshop_Level]. Report the effective N (pairs and unique Participant_Id) after the merge. Then drop pairs where either _pre or _post is NaN, and report the effective N after dropNa. Compute delta = Metric_Life_Satisfaction_Global_post - Metric_Life_Satisfaction_Global_pre. For each of four subsets, Workshop_Level 0.1 (PRIMARY, Point 1), 0.2 (Point 2), 0.3 (Point 3) and ALL levels combined, report the following UNTRIMMED values: N pairs; N unique Participant_Id; Pre mean and median; Post mean and median; mean delta and median delta; counts and percentages of Improved (delta > 0), Stayed the same (delta = 0) and Declined (delta < 0). ROBUSTNESS per subset: (a) Trimmed: sort the deltas, set k = floor(0.05 * n), and remove k pairs from each end. Report the trimmed N, trimmed mean delta, trimmed median delta, and the Pre and Post means of the retained pairs. (b) 5% winsorized mean delta: replace the lowest k deltas with the (k+1)-th smallest value and the highest k deltas with the (k+1)-th largest value, using the same k, then take the mean. (c) Sign test on the untrimmed deltas: n+ = count of delta > 0, n- = count of delta < 0, zeros excluded, n = n+ + n-. Compute a two-sided binomial p with p = 0.5. If n <= 50, use the exact binomial: p = min(1, 2 * P(X <= min(n+, n-))). Otherwise use the normal approximation z = (n+ - n/2) / sqrt(n/4) and p = 2 * (1 - Phi(|z|)). Report n+, n-, n, the method, z if applicable, and p. (d) Robustness flag: true if the trimmed and untrimmed mean deltas have the same sign AND |trimmed - untrimmed| < 0.1. ROUNDING: round displayed values to 2 decimals and p-values to 4 decimals. OUTPUT: return JSON with keys primary_point1 (Level 0.1 untrimmed stats), by_level (0.1, 0.2, 0.3), all_levels, trimmed (trimmed and winsorized results plus the agreement flag for each subset), sign_test (for each subset) and effective_n (after merge and after dropNa). INTERPRETATION: this is single-arm observational data. Describe results as observed Pre-to-Post change in life satisfaction among paired participants, not as a causal workshop effect. Note that Level 0.2/0.3 participants are invitation-gated and self-selected, and that small N at higher levels limits precision.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Trimming and winsorizing barely change the mean, so outliers have no meaningful influence.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#5</td>
+              <td>
+                <strong style="color: var(--gray-900);">Rank-Order Transition Matrix & Cumulative Category Shift Analysis</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Rank-Order Distribution</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"Use only prod_nirman_questionnaire.
+
+Apply the standard pipeline:
+- Cast Participant_Id, Workshop_Name and Workshop_Phase to strings.
+- Parse Workshop_Level with parseFloat and round to 1 decimal.
+- Set Metric_Life_Satisfaction_Global to NaN if it is 0 or greater than 5.
+- Split Pre and Post, suffix _pre/_post, and INNER MERGE on Participant_Id + Workshop_Level (merge, not groupby).
+- Drop pairs with NaN on either side.
+- Report effective N.
+
+For Level 0.1 (PRIMARY), 0.2, 0.3 and ALL levels, report:
+- N pairs and N unique participants
+- Pre and Post mean and median
+- Mean and median delta (post - pre)
+- Improved (delta > 0), Stayed the same (= 0) and Declined (< 0), as counts and percentages
+
+Then build the ordinal views:
+- (a) A 5x5 transition matrix of Pre value (rows 1-5) by Post value (columns 1-5), as counts.
+- Cross-check: above-diagonal = Improved, diagonal = Same, below-diagonal = Declined. These must equal the delta classification.
+- (b) Pre and Post frequency distributions with percentage and cumulative percentage for values 1 to 5.
+- (c) Percentage agreeing (>= 4) and percentage disagreeing (<= 2) at Pre vs Post, with the percentage-point change.
+- (d) A delta distribution table for values -4 to +4, with counts and percentages.
+- (e) A McNemar-style test on the agree (>= 4) flag: b = Pre not-agree to Post agree, c = Pre agree to Post not-agree. Compute chi2 = (|b - c| - 1)^2 / (b + c) and the p-value from chi-square with df = 1.
+- (f) Optionally, Wilcoxon signed-rank on the deltas using the normal approximation with tie correction.
+
+Round to 2 decimals. Return JSON with primary_point1, by_level, all_levels, transition_matrix, distributions and tests. Report as observed association or change only, not causal."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use only the prod_nirman_questionnaire table (Questionnaire). No join to demographics.
+
+LOAD/CAST:
+- Cast Participant_Id, Workshop_Name and Workshop_Phase to string. Workshop_Name 'F' must not become boolean.
+- Parse Workshop_Level with parseFloat and round to 1 decimal (0.1 / 0.2 / 0.3).
+
+CLEANING:
+- Metric_Life_Satisfaction_Global is on the agreement_1_to_5 scale. Set it to NaN when the value is 0 (not answered) or greater than 5 (out of range).
+
+PAIRING (a merge, not a groupby):
+- Split rows by Workshop_Phase into 'Pre' and 'Post'.
+- Keep Participant_Id, Workshop_Level and Metric_Life_Satisfaction_Global, suffixed _pre / _post.
+- INNER MERGE on Participant_Id + Workshop_Level.
+- Drop pairs where Metric_Life_Satisfaction_Global_pre or Metric_Life_Satisfaction_Global_post is NaN.
+- Report the effective N: rows before cleaning, Pre and Post row counts, merged pairs, and pairs after dropNa.
+- Compute delta = Metric_Life_Satisfaction_Global_post - Metric_Life_Satisfaction_Global_pre.
+
+SUMMARY FOR EACH SUBSET: Workshop_Level 0.1 (PRIMARY, Point 1), 0.2, 0.3 and ALL levels combined.
+- N pairs and N unique Participant_Id.
+- Pre mean and median; Post mean and median.
+- Mean delta and median delta.
+- Improved (delta > 0), Same (delta = 0) and Declined (delta < 0), as counts and as percentages of N pairs.
+
+ORDINAL VIEWS (on the PRIMARY Level 0.1 subset; also on ALL levels if feasible):
+(a) Transition matrix:
+- 5x5 counts with Pre value 1-5 as rows and Post value 1-5 as columns.
+- Cross-check: sum above the diagonal = Improved, diagonal = Same, sum below the diagonal = Declined.
+- These must equal the delta classification. Report a match flag.
+(b) Frequency distributions:
+- Pre and Post distributions for values 1-5.
+- Give count, percentage and cumulative percentage.
+(c) Agree / disagree shares:
+- % agree (>= 4) and % disagree (<= 2) at Pre and at Post.
+- Give the percentage-point change (Post - Pre).
+(d) Delta distribution:
+- Values -4 to +4, with count and percentage.
+(e) McNemar test on the agree flag (>= 4):
+- b = Pre not-agree -> Post agree; c = Pre agree -> Post not-agree.
+- chi2 = (|b - c| - 1)^2 / (b + c).
+- p-value from the chi-square distribution with df = 1, e.g. p = erfc(sqrt(chi2/2)).
+- Handle b + c = 0 by returning null.
+(f) Optional Wilcoxon signed-rank test on the non-zero deltas:
+- Use average ranks of |delta| and compute W+ and W-.
+- Normal approximation with tie correction: z = (W+ - n(n+1)/4) / sqrt(n(n+1)(2n+1)/24 - sum(t^3 - t)/48), with continuity correction.
+- Report the two-sided p-value.
+
+OUTPUT:
+- Round all displayed numbers to 2 decimals.
+- Return JSON with keys: primary_point1, by_level (0.1, 0.2, 0.3), all_levels, transition_matrix, distributions (pre_post_frequency, agree_disagree, delta_distribution) and tests (mcnemar, wilcoxon), plus effective_n.
+- Phrase all findings as observed association or change in single-arm observational data, not as causal effects of the workshop.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  The ordinal view confirms the shift is broad across categories and adds the agree/disagree shares.
+                </div>
+              </td>
+            </tr>
+          
+        </tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- 10. PROGRAMMATIC IMPLEMENTATION & SANDBOX CODE (COLLAPSED BY DEFAULT) -->
+    <details class="collapsible-section" style="margin-top: 32px; margin-bottom: 24px; border: 1px solid var(--gray-200); border-radius: 12px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <summary style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #faf5ff; cursor: pointer; user-select: none; border-bottom: 1px solid #f3e8ff;">
+        <span style="width: 24px; height: 24px; background: #fae8ff; color: #a21caf; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">10</span>
+        <h2 style="font-size: 16px; font-weight: 800; color: var(--gray-900); margin: 0;">10. Programmatic Implementation &amp; Sandbox Code (5 Runs)</h2>
+        <span style="font-size: 11px; font-weight: 700; color: #86198f; background: #fae8ff; border: 1px solid #f3e8ff; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">Collapsed by Default (Click to Expand)</span>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto; display: inline-flex; align-items: center; gap: 6px;">
+          <span>Danfo.js Code &amp; Telemetry</span>
+          <span class="collapse-chevron" style="display: inline-block; transition: transform 0.2s ease; font-size: 10px;">▼</span>
+        </span>
+      </summary>
+      <div style="padding: 20px;">
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 1: Paired Mean Change with Paired t-Test (Parametric Baseline)</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>Step 1 - Data Ingestion: Get the list of table names with Object.keys(data || {}). Find the questionnaire table with Object.keys(data).find(name => name.toLowerCase().includes('prod_nirman_questionnaire')). If the table is not found, return an error object. Map its rows to plain JS objects. Use ONLY this table, with no join to demographics. Log the total row count (expected ~4304) and check that these columns exist: Participant_Id, Workshop_Name, Workshop_Phase, Workshop_Level, Metric_Life_Satisfaction_Global.</li><li>Step 2 - Type Casting: For every row, set Participant_Id, Workshop_Name and Workshop_Phase to String(value ?? '').trim(). This stops Workshop_Name 'F' from being treated as boolean false. Set Workshop_Level = Math.round(parseFloat(Workshop_Level) * 10) / 10 so it compares exactly to 0.1, 0.2 and 0.3. Log the distinct values of Workshop_Phase and Workshop_Level to confirm they are 'Pre'/'Post' and 0.1/0.2/0.3.</li><li>Step 3 - Cleaning Metric_Life_Satisfaction_Global (agreement_1_to_5 scale, 'All things considered I am satisfied with my life'): Compute v = Number(value). Set v = NaN in any of these cases: (a) !Number.isFinite(v), (b) v === 0, which means not answered, or (c) v > 5, which is out of range. Log how many values became NaN under each rule.</li><li>Step 4 - Split by Phase: Make preRows = rows where Workshop_Phase === 'Pre' and postRows = rows where Workshop_Phase === 'Post'. Log n_pre_rows and n_post_rows. In each subset, rename the metric to Metric_Life_Satisfaction_Global_pre or Metric_Life_Satisfaction_Global_post, keeping Participant_Id and Workshop_Level.</li><li>Step 5 - Deduplicate Within Each Phase: Build key = Participant_Id + '|' + Workshop_Level. Walk through each phase in order using a JS Map. Keep the first occurrence of each key and count every later repeat. Record duplicates_pre and duplicates_post (the number of extra rows dropped), and log both.</li><li>Step 6 - Inner Merge Pre and Post: Join the deduplicated Pre map and Post map on the key. Use a JS Map lookup or dfd.merge with how:'inner'; do not use a groupby. Each merged record holds Participant_Id, Workshop_Level, the _pre value and the _post value. Log n_merged.</li><li>Step 7 - Drop Missing Pairs and Compute Delta: Remove merged pairs where either the _pre or _post value is NaN. Log n_after_dropna. For each remaining pair, compute delta = post - pre.</li><li>Step 8 - Define Groups: Create four groups from the clean paired records: Level 0.1 (PRIMARY, Point 1 workshop), Level 0.2, Level 0.3, and ALL levels combined. Select by exact comparison, for example Workshop_Level === 0.1.</li><li>Step 9 - Helper Functions: Write mean, median (sort a copy and handle even length), sample SD with n-1, and rounding helpers (2 decimals, 4 for p-values). Write a log-gamma function using the Lanczos approximation. Write the regularized incomplete beta function I_x(a,b) using the Lentz continued-fraction method. The Student-t two-sided p-value is p = I_{df/(df+t^2)}(df/2, 0.5). Use a normal approximation (erf-based) when n > 30. Write tCrit(0.975, df) by bisection on the t CDF, or use 1.96 when df > 30 under the normal approximation.</li><li>Step 10 - Descriptives per Group: For each of the 4 groups, compute: N pairs, N unique Participant_Id (size of a Set), Pre mean and median, Post mean and median, mean delta, median delta, and SD of delta (sample, n-1). Round to 2 decimals.</li><li>Step 11 - Classify Change per Group: Label each pair Improved (delta > 0), Stayed the same (delta === 0) or Declined (delta < 0). Report the count and the percentage of N pairs for each label (percent = count/N*100, rounded to 2 decimals). Guard against N = 0.</li><li>Step 12 - Paired t-test per Group: Compute se = sd/sqrt(n), t = mean(delta)/se and df = n-1. Get the two-sided p-value from the Student-t CDF (incomplete beta, or normal approximation when n > 30). Compute the 95% CI as mean ± tCrit(0.975, df)*se. Compute Cohen's dz = mean(delta)/sd(delta). If n < 2 or sd === 0, return null for t, p, CI and dz. Round t, CI and dz to 2 decimals and p to 4 decimals.</li><li>Step 13 - Assemble Output: Build each group's result object containing its descriptives, change classification and statistics. Return JSON { primary_point1: <Level 0.1 results>, by_level: { '0.1': ..., '0.2': ..., '0.3': ... }, all_levels: ..., test: 'paired t-test', logs: { n_pre_rows, n_post_rows, duplicates_pre, duplicates_post, n_merged, n_after_dropna } }.</li><li>Step 14 - Interpretation Notes: Add a short notes or interpretation field. Describe results as observed Pre-to-Post change in life satisfaction on the 1-5 agreement scale, in single-arm observational data. Do not claim the workshop caused the change. Note that the Level 0.2/0.3 groups are invitation-gated and self-selected, so they are not comparable to Level 0.1 as a dose-response. Mention the possibility of ceiling effects near 5 and regression to the mean. State the effective N for each group.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> Among the 1,307 Level 0.1 (Point 1) participants with a valid Pre and Post life-satisfaction score, the average rating rose from 2.90 to 3.96 on the 1-5 scale. The mean change was +1.06 points (median +1, SD 1.37). About two-thirds of participants (864, 66.1%) scored higher at Post, 311 (23.8%) were unchanged, and 132 (10.1%) scored lower. The paired t-test gives t(1306) = 28.11 with p < 0.0001 (rounded to 0). The 95% CI for the mean change is 0.99 to 1.14, and Cohen's dz is 0.78, a medium-to-large standardized change. This is an observed Pre-to-Post change in single-arm observational data. There is no comparison group, so it cannot show that the workshop caused the change. Ceiling effects near 5 and regression to the mean could also contribute.
+
+Levels 0.2 and 0.3 produced no usable pairs (N = 0), so no descriptives or tests are available for them. The "all levels" result is therefore identical to Level 0.1. Participation in Levels 0.2 and 0.3 is invitation-gated (self-selected), so those groups would not be comparable to Level 0.1 as a dose-response. The output does not say why they are empty. On data flow, there were 2,157 Pre rows and 2,147 Post rows, with no duplicate participant-level keys. The merge gave 1,450 pairs, and 1,307 remained after dropping pairs with a missing or invalid score. Cleaning flagged 286 zero ("not answered") values and 1 out-of-range value. Excluding about 10% of merged pairs, and the many Pre or Post rows that never matched, could bias the result if non-response is related to how people changed.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 2: Median Change & Wilcoxon Signed-Rank Test (Robust Non-Parametric)</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>Step 1 – Data Ingestion: List the keys of the global data object and find the file whose name, lowercased, contains 'prod_nirman_questionnaire'. Use ONLY this table and do not load or join prod_nirman_demographics. Read the rows into an array. Log the total row count (expected about 4304) and confirm these required columns exist: Participant_Id, Workshop_Level, Workshop_Phase, Workshop_Name, Metric_Life_Satisfaction_Global. If any is missing, return an error object listing it.</li><li>Step 2 – Type Casting: Map over every row and build a reduced record containing only the needed columns.
+- Participant_Id = String(v).trim()
+- Workshop_Name = String(v).trim(). This prevents 'F' from becoming boolean false. If the raw value === false, map it back to 'F'.
+- Workshop_Phase = String(v).trim()
+- Workshop_Level = Math.round(parseFloat(v) * 10) / 10, giving 0.1, 0.2 or 0.3.
+- Metric_Life_Satisfaction_Global = parseFloat(v).
+Log the distinct values of Workshop_Phase and Workshop_Level so you can confirm they are only 'Pre'/'Post' and 0.1/0.2/0.3. Drop rows with an invalid level or phase and log how many were dropped.</li><li>Step 3 – Cleaning: For Metric_Life_Satisfaction_Global (agreement_1_to_5 scale; item: 'All things considered I am satisfied with my life'), set the value to NaN when it is:
+- non-numeric,
+- === 0 (not answered), or
+- > 5 (out of range).
+Log the count of values set to NaN, broken down by phase and level. Do not impute anything.</li><li>Step 4 – Split by Phase: Create preRows (Workshop_Phase === 'Pre') and postRows (Workshop_Phase === 'Post').
+- Rename the value columns with suffixes: Metric_Life_Satisfaction_Global_pre / _post and Workshop_Name_pre / _post.
+- Keep Participant_Id and Workshop_Level as the keys.
+- Build Danfo DataFrames dfPre and dfPost.
+- Check for duplicate keys (Participant_Id, Workshop_Level) within each phase and log them, because duplicates would inflate the pairs.</li><li>Step 5 – Pair via INNER MERGE: Run dfd.merge({left: dfPre, right: dfPost, on: ['Participant_Id','Workshop_Level'], how: 'inner'}). This must be a merge, not a groupby. If Danfo has trouble merging on a float key, add a string key such as levelKey = Workshop_Level.toFixed(1) to both frames and merge on [Participant_Id, levelKey]. Record effective_n.after_merge = the number of merged rows (pairs).</li><li>Step 6 – Drop Missing Pairs and Compute Delta: Remove merged rows where Metric_Life_Satisfaction_Global_pre or Metric_Life_Satisfaction_Global_post is NaN. Record effective_n.after_dropna. Also record after_merge and after_dropna counts per level, for transparency. Compute delta = Metric_Life_Satisfaction_Global_post - Metric_Life_Satisfaction_Global_pre for each remaining pair.</li><li>Step 7 – Group Subsets: Define four subsets of the cleaned pairs:
+- Level 0.1 (PRIMARY, Point 1)
+- Level 0.2 (Point 2)
+- Level 0.3 (Point 3)
+- ALL levels combined
+If a subset is empty, return nulls for its statistics with a note instead of failing.</li><li>Step 8 – Descriptive Helpers: Write plain JavaScript helpers that operate on sorted numeric arrays.
+- mean
+- median
+- quantile, using linear interpolation (pos = (n-1)*p) to match the pandas/numpy default
+- Q1 = quantile(0.25), Q3 = quantile(0.75), IQR = Q3 - Q1</li><li>Step 9 – Descriptives per Subset: For each subset compute:
+- n_pairs and n_unique_participants (unique Participant_Id)
+- pre_mean, pre_median, post_mean, post_median
+- mean_delta, median_delta
+- Q1, Q3 and IQR for Pre, Post and delta
+- improved (delta > 0), same (delta === 0) and declined (delta < 0), each as a count and as a percentage = count / n_pairs * 100
+In ALL, n_unique can be smaller than n_pairs because one participant can contribute pairs at several levels. Add a note about this non-independence.</li><li>Step 10 – Wilcoxon Signed-Rank Test per Subset: Run the test on the deltas.
+1. Filter out zero deltas and set n = n_nonzero.
+2. Sort by |delta| ascending and assign average ranks to tie groups. Collect the tie-group sizes t.
+3. W+ = sum of ranks for positive deltas; W- = sum of ranks for negative deltas; W = min(W+, W-).
+4. mean_W = n(n+1)/4.
+5. var_W = n(n+1)(2n+1)/24 - Σ(t³ - t)/48.
+6. z_abs = (|W - mean_W| - 0.5) / sqrt(var_W), floored at 0.
+7. z = sign × z_abs, where sign = +1 if W+ > W- (increase), -1 if W+ < W- (decrease), and 0 if they are equal.
+8. Implement erf numerically using Abramowitz-Stegun 7.1.26 (p = 0.3275911; a1 = 0.254829592, a2 = -0.284496736, a3 = 1.421413741, a4 = -1.453152027, a5 = 1.061405429). Use the odd symmetry erf(-x) = -erf(x).
+9. Phi(x) = 0.5 × (1 + erf(x / √2)); p = 2 × (1 - Phi(|z|)), clamped to [0, 1].
+10. Effect size r = z / sqrt(n_nonzero).
+11. underpowered = n_nonzero < 10.
+12. If n_nonzero = 0 or var_W ≤ 0, return null for z, p and r with a note.</li><li>Step 11 – Rounding: Use a round2 helper (Math.round(x * 100) / 100) for every mean, median, quartile, IQR, percentage, W, z and r. Use a round4 helper for p-values. Leave counts as integers. Replace NaN with null so the output is valid JSON.</li><li>Step 12 – Assemble the Output JSON:
+- effective_n: {after_merge, after_dropna} plus the per-level breakdown
+- primary_point1: Level 0.1 descriptives merged with the Level 0.1 Wilcoxon result
+- by_level: {'0.1', '0.2', '0.3'} descriptives
+- all_levels: ALL descriptives
+- wilcoxon: {'0.1', '0.2', '0.3', 'ALL'}, each with n_nonzero, W_plus, W_minus, W, mean_W, var_W, z, p_value, r and underpowered
+- metadata: table_used = 'prod_nirman_questionnaire', item wording, scale, cleaning rule, and test method (normal approximation with tie and continuity correction)</li><li>Step 13 – Interpretation and Validation: Write an interpretation note for each level, with these wording rules:
+- Describe the direction of the observed Pre-to-Post change, its effect size (|r| ≈ 0.1 small, 0.3 medium, 0.5 large) and its significance.
+- State that this is single-arm observational data, that the result shows observed change or association only, and that it does not establish that the workshop caused the change.
+- Note that Point 2/3 attendance is invitation-gated and self-selected.
+Before returning, log the effective N values and run these checks:
+- No demographics join was used.
+- String casts were applied.
+- The pairing used a merge.
+- improved + same + declined = n_pairs for each subset.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> Only Workshop Level 0.1 produced usable Pre/Post pairs, so the Level 0.1 and "ALL levels" results are identical. The merge on Participant_Id and Workshop_Level gave 1,450 pairs, all at Level 0.1. Dropping pairs with an unanswered or out-of-range life-satisfaction score left 1,307 pairs from 1,307 unique participants (143 pairs, about 10%, were lost). Levels 0.2 and 0.3 had no matched pairs: the data show only one Post value at each of those levels and no matching Pre. Their descriptives and Wilcoxon tests could not be computed, so there is no level-by-level comparison.
+
+Among the 1,307 pairs, the observed life-satisfaction score (1-5 scale) rose from a Pre mean of 2.90 (median 3, IQR 2-4) to a Post mean of 3.96 (median 4, IQR 3-5). The mean change was +1.06 (median +1, IQR 0-2). By direction of change, 864 pairs (66.11%) improved, 311 (23.79%) stayed the same, and 132 (10.10%) declined. The Wilcoxon signed-rank test used the 996 non-zero changes, so it is not underpowered. It gave z = 22.29, p < 0.0001 (reported as 0) and r = 0.71, a large effect. The Pre-to-Post increase is therefore large and consistent in direction.
+
+This is single-arm observational data with no comparison group. The results describe an observed Pre-to-Post change or association and do not show that the workshop caused it. Other factors, such as timing, selection, or regression toward the mean, could also contribute. About 10% of pairs were excluded for missing or invalid scores, and Post scores near the top of the scale (Q3 = 5) may limit how much further they can rise.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 3: Pair-Count-Weighted Pooled Estimate vs Level-Stratified Estimates</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>Step 1 – Data Ingestion: List Object.keys(data) and locate the file whose name includes 'prod_nirman_questionnaire' (case-insensitive). Do NOT load or join prod_nirman_demographics. Read the rows array and log the total row count (expected about 4304). Confirm that the required columns exist: Participant_Id, Workshop_Name, Workshop_Phase, Workshop_Level and Metric_Life_Satisfaction_Global. If any are missing, stop and report which ones.</li><li>Step 2 – Load/Cast: Before building any DataFrame, map over the raw rows. Cast Participant_Id, Workshop_Name and Workshop_Phase to String(...) and trim them. This stops Workshop_Name 'F' from being parsed as boolean false. Set Workshop_Level = Math.round(parseFloat(v) * 10) / 10 so the values are exactly 0.1, 0.2 or 0.3. Rows with a non-parsable level, or a level outside {0.1, 0.2, 0.3}, should be set aside and counted. Log the distinct Workshop_Phase values (expected 'Pre' and 'Post') and the distinct Workshop_Level values.</li><li>Step 3 – Clean the outcome: Parse Metric_Life_Satisfaction_Global with parseFloat. Set it to NaN when it is not finite, equals 0 (not answered) or is greater than 5 (out of range on agreement_1_to_5). Log how many values were set to NaN for each reason. Keep only Participant_Id, Workshop_Level, Workshop_Phase and Metric_Life_Satisfaction_Global, and log 'rows before merge' (the total questionnaire rows).</li><li>Step 4 – Split by phase: Build a Pre frame (Workshop_Phase === 'Pre') and a Post frame (Workshop_Phase === 'Post'). Each frame keeps Participant_Id, Workshop_Level and the value column. Rename the value column to Metric_Life_Satisfaction_Global_pre or Metric_Life_Satisfaction_Global_post. Log the Pre and Post row counts. Check for duplicate (Participant_Id, Workshop_Level) keys within each frame and report any, since duplicates would inflate the merge.</li><li>Step 5 – Inner merge: Perform a merge (not a groupby) of Pre and Post on the composite key Participant_Id + Workshop_Level. Use dfd.merge({left, right, on:['Participant_Id','Workshop_Level'], how:'inner'}). As a robust alternative, build a Map keyed by `${Participant_Id}|${Workshop_Level}` from Pre and join the Post rows against it. Log the number of merged pairs.</li><li>Step 6 – Drop invalid pairs and compute delta: Drop pairs where either _pre or _post is NaN. Compute delta = Metric_Life_Satisfaction_Global_post - Metric_Life_Satisfaction_Global_pre. Log pairs after dropNa and unique Participant_Ids across the valid pairs. Assemble effective_n = {rows_before_merge, pre_rows, post_rows, merged_pairs, pairs_after_dropna, unique_participants}.</li><li>Step 7 – Helper functions: Write mean, median (sorted, averaging the middle two values for even n), sample sd (divisor n-1), and counts of delta>0, delta==0 and delta<0. Write a Student t two-sided p-value function using the regularized incomplete beta, p = I_{df/(df+t^2)}(df/2, 1/2). Write a normal-approximation function, p = 2*(1-Phi(|t|)), using an erf approximation. Write a formatter that rounds to 2 decimals and shows p as '<0.001' when p < 0.001.</li><li>Step 8 – Per-level statistics: For each Workshop_Level in [0.1, 0.2, 0.3], with labels 0.1 = 'PRIMARY / Point 1', 0.2 = 'Point 2' and 0.3 = 'Point 3', filter the valid pairs and compute: n_pairs, n_unique_participants, pre_mean, pre_median, post_mean, post_median, mean_delta and median_delta. Also compute improved, same and declined counts, each with a percentage of that level's n_pairs. Store the results in by_level. Set primary_point1 to the 0.1 block.</li><li>Step 9 – All-levels (a) direct pooled: Over all valid pairs, compute n_pairs and n_unique_participants. Unique participants is the distinct Participant_Id count across levels, which can be less than pairs because one participant may contribute at several levels. Also compute pre, post and delta mean and median, and the pooled improved/same/declined counts.</li><li>Step 10 – All-levels (b) weighted and (c) unweighted: Compute weighted_mean_delta = Σ(n_level × mean_delta_level) / Σ n_level, using only levels with n>0. Set match_flag = |weighted − direct pooled mean_delta| <= 0.01 and report the absolute difference. Compute unweighted_mean_delta as the simple arithmetic mean of the level mean_deltas (note if a level has n=0). Add a note that (c) differs from (a) and (b) because the levels have unequal n.</li><li>Step 11 – Level shares and pooled percentages: Compute level_shares as n_pairs_level / total_pairs × 100 for each level. Compute pooled improved/same/declined percentages two ways. (i) Divide pooled counts by total pairs × 100. (ii) Take Σ(n_level × pct_level) / Σ n_level. Report both, their absolute differences, and an agreement boolean (difference <= 0.01).</li><li>Step 12 – Paired t-tests: Run the test on the pooled deltas and on the Level 0.1 deltas. For each, compute n, mean_delta, sd_delta (n-1), se = sd/sqrt(n), t = mean/se and df = n-1. Compute a two-sided p using the normal approximation if n > 30, otherwise the Student t CDF, and record the method string. Guard the edge cases: return null when n < 2, and when sd is 0, set t to Infinity or NaN with a note.</li><li>Step 13 – Assemble the output: Round all displayed numbers to 2 decimals and format p-values. Return JSON with these keys: primary_point1, by_level {'0.1','0.2','0.3'}, all_levels {direct, weighted {value, direct_value, abs_diff, match}, unweighted {value, note}, level_shares, pooled_pct {from_counts, weighted_from_levels, agree}}, tests {pooled, level_0_1}, and effective_n. Log the effective N figures to the console as well.</li><li>Step 14 – Interpretation: Add an interpretation string that uses association and change language only. For example: 'Post scores were associated with higher/lower life satisfaction than Pre scores; mean change of X points on the 1–5 scale (n = N pairs).' Mention the share who improved, stayed the same or declined, and the differences between levels. State explicitly that this is single-arm observational data with no control group, so the change cannot be attributed causally to the workshop. Also note that Point 2/3 attendance is invitation-gated, so those levels are self-selected.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> All of the valid paired data comes from Level 0.1 (Point 1, the primary level). Of 4,304 rows, 2,157 were Pre and 2,147 were Post. Merging on Participant_Id + Workshop_Level gave 1,450 pairs, and 1,307 remained after dropping pairs with a missing score. The 143 dropped pairs mostly reflect cleaning: 286 responses of 0 ("not answered") and 1 response above 5 were set to NaN. All 1,307 pairs come from different participants, so the unique-participant count equals the pair count. There were no duplicate keys and no rows set aside for a bad level value.
+
+Among these pairs, Post life-satisfaction scores were associated with higher values than Pre scores. The mean rose from 2.90 to 3.96, a mean change of 1.06 points on the 1–5 scale, and the median rose from 3 to 4 (median change 1). About 66.1% of pairs improved (864), 23.8% stayed the same (311) and 10.1% declined (132). The paired test shows this change is very unlikely to be chance alone (SD 1.37, SE 0.04, t ≈ 28.11, df = 1306, p < 0.001). The p-value uses the normal approximation because n > 30. The pooled and Level 0.1 tests are identical because they use the same pairs.
+
+Levels 0.2 and 0.3 have no valid pairs (n = 0), so their statistics are empty. The "all-levels" results are therefore just Level 0.1 restated, which explains three things:
+- The direct, weighted and unweighted means all equal 1.06.
+- Level 0.1's share is 100%.
+- The pooled percentages agree whether computed from counts or as a weighted average.
+
+The narrative's remark that the unweighted mean differs "because levels have unequal n" does not apply here, since only one level contributes. It would be worth checking whether Levels 0.2 and 0.3 are truly absent from the table or were lost to parsing or pairing. This is single-arm observational data with no control group, so these are associations only and do not show that the workshop caused the change. Excluding unanswered (0) responses may also affect how representative the 1,307 pairs are.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 4: 5% Trimmed Mean Delta with Sign Test (Outlier-Filtered)</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>1. DATA INGESTION: List Object.keys(data) and locate the questionnaire file with name.toLowerCase().includes('prod_nirman_questionnaire'). Do NOT load or join prod_nirman_demographics. Read the rows as an array. If needed, build a Danfo DataFrame, but plain JS arrays are fine for the per-row logic. Log the total row count (expected about 4304) and the unique Participant_Id count (expected about 2177).</li><li>2. INSPECTION: Confirm that these columns exist: Participant_Id, Workshop_Name, Workshop_Phase, Workshop_Level, Metric_Life_Satisfaction_Global. If any is missing, return an error object listing the missing column(s). Log the distinct values of Workshop_Phase (expect 'Pre'/'Post') and Workshop_Level (expect 0.1/0.2/0.3).</li><li>3. LOAD/CAST: For every row, set Participant_Id = String(v).trim(), Workshop_Name = String(v) (this keeps 'F' from becoming boolean false), and Workshop_Phase = String(v).trim(). Set Workshop_Level = Math.round(parseFloat(v)*10)/10, which gives 0.1/0.2/0.3. Parse Metric_Life_Satisfaction_Global with parseFloat.</li><li>4. CLEAN: Set Metric_Life_Satisfaction_Global to NaN when the value is null/undefined/non-numeric, equals 0 (not answered), or is > 5 (out of range on the agreement_1_to_5 scale). Log how many values were set to NaN and the reason for each.</li><li>5. SPLIT BY PHASE: Build a preFrame from rows where Workshop_Phase === 'Pre' and a postFrame from rows where Workshop_Phase === 'Post'. Keep only Participant_Id, Workshop_Level and the score in each. Rename the score to Metric_Life_Satisfaction_Global_pre or Metric_Life_Satisfaction_Global_post. Log the row count of each frame. Check for duplicate (Participant_Id, Workshop_Level) keys within a frame and log any found, because duplicates would multiply merge rows.</li><li>6. INNER MERGE: Perform an inner merge (not a groupby) of preFrame and postFrame on [Participant_Id, Workshop_Level]. Use dfd.merge({left, right, on:['Participant_Id','Workshop_Level'], how:'inner'}), or an equivalent JS map keyed on Participant_Id + '|' + Workshop_Level that emits one output row per matching pre×post combination. Record effective_n.after_merge: total pairs, unique Participant_Id, and the per-level breakdown of pairs and unique IDs.</li><li>7. DROP NA: Remove pairs where _pre or _post is NaN. Record effective_n.after_dropna with the same breakdown (total and per level), plus the number of pairs dropped.</li><li>8. DELTA: For each retained pair compute delta = Metric_Life_Satisfaction_Global_post - Metric_Life_Satisfaction_Global_pre.</li><li>9. DEFINE SUBSETS: Create four subsets: L0.1 (Workshop_Level === 0.1, PRIMARY Point 1), L0.2 (Point 2), L0.3 (Point 3), and ALL (all retained pairs). Handle empty subsets gracefully by returning n = 0 and null stats.</li><li>10. UNTRIMMED STATS per subset: Report N pairs and N unique Participant_Id. Report the mean and median of _pre, the mean and median of _post, and the mean and median of delta. The median helper should sort a copy and average the two middle values when n is even. Report counts and percentages (count/n*100) for Improved (delta > 0), Stayed the same (delta === 0) and Declined (delta < 0).</li><li>11. TRIMMED (a) per subset: Sort the pairs by delta ascending and set k = Math.floor(0.05*n). If n - 2k > 0, keep pairs at indices k through n-k-1. Report trimmed N, trimmed mean delta, trimmed median delta, and the Pre and Post means of the retained pairs. Also report k.</li><li>12. WINSORIZED (b) per subset: Use the same sorted deltas and the same k. If k > 0, set lowVal = sorted[k] (the (k+1)-th smallest) and highVal = sorted[n-1-k] (the (k+1)-th largest). Replace sorted[0..k-1] with lowVal and sorted[n-k..n-1] with highVal, then take the mean. If k = 0, the winsorized mean equals the untrimmed mean.</li><li>13. SIGN TEST (c) per subset, on untrimmed deltas: Set nPlus = count of delta > 0, nMinus = count of delta < 0, and n = nPlus + nMinus (zeros excluded). If n === 0, set p = null and method = 'none'. If n <= 50, use the exact binomial: compute P(X <= min(nPlus, nMinus)) = sum over i = 0..m of C(n,i)*0.5^n, computing terms in log space via a lgamma or log-factorial helper for stability. Then p = min(1, 2*cdf), method = 'exact_binomial', z = null. If n > 50, compute z = (nPlus - n/2)/Math.sqrt(n/4) and p = 2*(1 - Phi(|z|)), using an erf approximation for Phi (Abramowitz-Stegun 7.1.26 or similar), with method = 'normal_approx'. Report nPlus, nMinus, n, method, z and p.</li><li>14. ROBUSTNESS FLAG (d) per subset: Set agreement = (Math.sign(trimmedMeanDelta) === Math.sign(untrimmedMeanDelta)) && (Math.abs(trimmedMeanDelta - untrimmedMeanDelta) < 0.1). Compute it on unrounded values. Store it with the trimmed and winsorized results.</li><li>15. ROUNDING: Round all displayed means, medians, deltas, percentages and z to 2 decimals, and p-values to 4 decimals. Keep counts as integers. Do all comparisons on unrounded values.</li><li>16. OUTPUT JSON: Return an object with these keys. primary_point1: the Level 0.1 untrimmed stats. by_level: {'0.1', '0.2', '0.3'}, each holding untrimmed stats. all_levels: the untrimmed stats for ALL. trimmed: for each of 0.1/0.2/0.3/ALL, holding k, trimmed_n, trimmed_mean_delta, trimmed_median_delta, trimmed_pre_mean, trimmed_post_mean, winsorized_mean_delta, untrimmed_mean_delta and robust_agreement. sign_test: for each subset, holding n_plus, n_minus, n, method, z and p. effective_n: {after_merge: {pairs, unique_participants, by_level}, after_dropna: {pairs, unique_participants, by_level}}. Log each step with console.log.</li><li>17. INTERPRETATION NOTES (include in the output as an 'interpretation' string array): State that this is single-arm observational data. Results describe observed Pre-to-Post change in self-reported life satisfaction (agreement_1_to_5) among paired participants, not a causal workshop effect. Level 0.2/0.3 participants are invitation-gated and self-selected, so they are not comparable to Level 0.1. Small N at the higher levels limits precision and widens uncertainty. Note possible ceiling effects on a 1–5 scale, and that the sign test ignores the magnitude of change. Report Level 0.1 as the primary finding, with ALL levels as context. Do not pool participants across levels as independent, since ALL may contain the same participant more than once.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> Among the 1,307 participants with valid Pre and Post scores at Level 0.1, life satisfaction (1-5 agreement scale) rose from a mean of 2.90 (median 3) to 3.96 (median 4). That is an average observed gain of 1.06 points (median +1). Two-thirds improved (864, 66.11%), 311 (23.79%) stayed the same and 132 (10.10%) declined. The sign test excludes the 311 ties and compares 864 improvers with 132decliners (n = 996). It gives z ≈ 23.19 and p < 0.0001, so the upward shift is very unlikely to be chance. The result is also robust to outliers. Trimming 65 pairs from each end (1,177 retained) gives a mean delta of 1.07 and a median of 1, the winsorized mean delta is 1.06, and the robustness flag is true. The merge produced 1,450 pairs (1,450 unique participants). After dropping pairs with a missing Pre or Post score, 1,307 remained, so 143 pairs (about 10%) were lost. The cleaning step set 286 zero ("not answered") values and 1 out-of-range value (>5) to NaN.
+
+**Level 0.2, Level 0.3 and ALL.** Levels 0.2 and 0.3 produced no pairs at all, so no statistics, trimmed results or sign tests exist for them. This is an absence of data, not just "small N", so nothing can be said about those levels. The ALL subset is therefore identical to Level 0.1 and adds no extra information. These results describe observed Pre-to-Post change among paired participants in single-arm observational data, not a causal workshop effect. Possible ceiling effects on a 1-5 scale, and the sign test ignoring the size of changes, are additional limits. The 10% of pairs dropped for missing scores could also bias the result if non-response was not random. The 0.2/0.3 participants are described as invitation-gated and self-selected, so they would not be comparable to Level 0.1 even if data were present.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 5: Rank-Order Transition Matrix & Cumulative Category Shift Analysis</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>Step 1 – Data Ingestion & Inspection: List Object.keys(data) and locate the questionnaire file with name.toLowerCase().includes('prod_nirman_questionnaire'). Use ONLY this table and do NOT load or join prod_nirman_demographics. Load the rows array and log rows_before_cleaning (expected ~4304). Verify that these columns exist: Participant_Id, Workshop_Name, Workshop_Phase, Workshop_Level, Metric_Life_Satisfaction_Global. Abort with a clear message if any is missing. Log the distinct values of Workshop_Phase (expect 'Pre'/'Post') and of Workshop_Level.</li><li>Step 2 – Type Casting (on raw JS row objects before building any Danfo DataFrame): Cast Participant_Id = String(v).trim(). Cast Workshop_Name = String(v), so the value 'F' stays the string 'F' and never becomes boolean false. Cast Workshop_Phase = String(v).trim(). Cast Workshop_Level = Math.round(parseFloat(v)*10)/10 so it lands on 0.1/0.2/0.3. Cast Metric_Life_Satisfaction_Global = parseFloat(v). Keep only the 3 analysis columns plus the phase to keep the frame light.</li><li>Step 3 – Cleaning (agreement_1_to_5 scale): For Metric_Life_Satisfaction_Global, set the value to NaN if it is not finite, equals 0 (not answered) or is greater than 5 (out of range). Also set to NaN any non-integer stray value outside 1–5. Count and log how many values became NaN for each reason (zero vs >5). Do not impute.</li><li>Step 4 – Phase Split: Filter rows into preRows (Workshop_Phase === 'Pre') and postRows (Workshop_Phase === 'Post'). Record n_pre_rows and n_post_rows. Build preDf with columns Participant_Id, Workshop_Level, Metric_Life_Satisfaction_Global_pre, and postDf with columns Participant_Id, Workshop_Level, Metric_Life_Satisfaction_Global_post. Check for duplicate (Participant_Id, Workshop_Level) keys within each phase and log the duplicate count, since duplicates would multiply pairs.</li><li>Step 5 – Pairing via INNER MERGE (not a groupby): Use dfd.merge({left: preDf, right: postDf, on: ['Participant_Id','Workshop_Level'], how: 'inner'}). As a fallback if Danfo merge misbehaves with the float key, build a composite string key Participant_Id + '|' + Workshop_Level.toFixed(1) and do a Map-based inner join. Record n_merged_pairs.</li><li>Step 6 – Drop Incomplete Pairs: Remove pairs where Metric_Life_Satisfaction_Global_pre or Metric_Life_Satisfaction_Global_post is NaN (dropNa on these two columns). Record n_pairs_after_dropna. Compute delta = Metric_Life_Satisfaction_Global_post - Metric_Life_Satisfaction_Global_pre for each pair. Assemble effective_n = {rows_before_cleaning, nan_set_zero, nan_set_out_of_range, pre_rows, post_rows, merged_pairs, pairs_after_dropna, pairs_after_dropna_by_level}.</li><li>Step 7 – Subset Definitions: Define four subsets of the clean paired data: L0.1 (Workshop_Level === 0.1, PRIMARY Point 1), L0.2, L0.3 and ALL (all levels combined). In ALL, one participant may contribute several pairs (one per level). Note this, because it violates independence for the tests.</li><li>Step 8 – Summary per Subset: Compute the following for each of L0.1, L0.2, L0.3 and ALL. N pairs and N unique Participant_Id (count via a Set). Pre mean and median, and Post mean and median. Mean delta and median delta. Improved (delta > 0), Same (delta = 0) and Declined (delta < 0) as counts, plus each as a percentage of N pairs. If a subset is empty, return nulls rather than NaN. Round all displayed numbers to 2 decimals.</li><li>Step 9 – Transition Matrix (L0.1 primary, also ALL): Build a 5x5 count matrix with rows = Pre value 1–5 and columns = Post value 1–5. Compute three sums: above_diagonal (post > pre), diagonal and below_diagonal (post < pre). Cross-check them against Improved, Same and Declined from Step 8. Set match_flag = (above === improved && diag === same && below === declined). Also report the total, which should equal N pairs. Output row and column labels explicitly.</li><li>Step 10 – Frequency Distributions (L0.1 and ALL): For Pre and for Post separately, report count, percentage of N and cumulative percentage (ascending 1→5) for each value 1–5. Include zero-count values so all five rows always appear.</li><li>Step 11 – Agree / Disagree Shares (L0.1 and ALL): Compute % agree (value >= 4) and % disagree (value <= 2) at Pre and at Post. Compute pp_change = Post% - Pre% for both shares. Also report % neutral (= 3) for completeness.</li><li>Step 12 – Delta Distribution (L0.1 and ALL): For each delta value from -4 to +4, report count and percentage of N pairs. Include zero-count values. Verify that the counts sum to N.</li><li>Step 13 – McNemar Test on the Agree Flag (L0.1 primary; ALL flagged as non-independent): Define agree = value >= 4. Set b = count of pairs with pre not-agree and post agree. Set c = count of pairs with pre agree and post not-agree. Also report a = agree→agree and d = not→not. If b + c === 0, return chi2 = null and p = null with a note. Otherwise compute chi2 = (|b - c| - 1)^2 / (b + c) and p = erfc(sqrt(chi2/2)). Implement erfc with the Numerical Recipes rational approximation (erfcc), which is accurate to ~1e-7. Report b, c, chi2 and p.</li><li>Step 14 – Wilcoxon Signed-Rank Test (optional; L0.1 primary, ALL as a sensitivity check): Keep only non-zero deltas, giving n. Rank |delta| ascending with average ranks for ties. Compute W+ (sum of ranks where delta > 0) and W- (sum where delta < 0). Compute tie_sum = Σ(t^3 - t) over tie groups. Compute mean = n(n+1)/4 and sd = sqrt(n(n+1)(2n+1)/24 - tie_sum/48). Compute z = (W+ - mean - 0.5*sign(W+ - mean)) / sd. Compute the two-sided p = erfc(|z|/sqrt(2)). If n === 0 or sd === 0, return nulls. Report n_nonzero, W+, W-, z and p.</li><li>Step 15 – Validation: Assert the following and log any mismatches. Summed per-level pair counts equal the ALL count. Transition-matrix totals equal N, and match_flag is true. Frequency and delta-distribution percentages each sum to ~100. Unique-participant counts are less than or equal to pair counts.</li><li>Step 16 – Output: Return a JSON object with these keys: effective_n; primary_point1 (L0.1 summary); by_level {'0.1','0.2','0.3'}; all_levels; transition_matrix {level_0_1, all_levels, each with matrix, above/diag/below and match_flag}; distributions {pre_post_frequency, agree_disagree, delta_distribution}, each for level_0_1 and all_levels; tests {mcnemar, wilcoxon} for level_0_1, with all_levels marked as a non-independent sensitivity check. Round all numbers to 2 decimals (p-values to 2 decimals, but report '<0.01' or keep the raw value in an extra field when very small). Add a notes field stating that the data are single-arm and observational, with no control group. Findings must describe observed Pre→Post change and association, not effects caused by the workshop. Note that p-values do not establish causation, and that Level 0.2/0.3 participants are invitation-gated and self-selected.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> Of 4,304 raw rows (2,157 Pre and 2,147 Post), 1,450 Participant_Id + Workshop_Level pairs merged. Of these, 1,307 remained after removing missing values: 286 zero "not answered" values and 1 value above 5 had been set to NaN. All 1,307 pairs are Level 0.1, which is the primary subset, and each comes from a different participant. Levels 0.2 and 0.3 have no usable pairs, so their summaries are empty. The "all levels" results are therefore identical to Level 0.1, and the independence concern about pooling levels does not arise here. The 143 pairs dropped for missing values could differ from the retained ones, so the results apply only to people with valid answers at both time points.
+
+Among these pairs, life-satisfaction agreement rose from a mean of 2.90 (median 3) at Pre to 3.96 (median 4) at Post, a mean change of +1.06 (median +1). In total, 864 pairs (66.11%) moved up, 311 (23.79%) stayed the same and 132 (10.10%) moved down. The transition matrix agrees with this: its above-diagonal, diagonal and below-diagonal sums match these counts (match flag = true). The share agreeing (≥4) went from 32.06% to 72.07%, a change of +40.01 percentage points. The share disagreeing (≤2) went from 38.18% to 8.26%, a change of −29.92 points. Most changes were of 1 to 2 points (30.68% at +1, 20.96% at +2), and large drops were rare (about 2.7% at −2 or lower). Both tests agree with this picture. McNemar's test on the agree flag found 584 pairs moving into agreement against 61 moving out (χ² = 422.46, df = 1, p < 0.01). The Wilcoxon signed-rank test on the 996 non-zero deltas gave W+ = 446,733 against W− = 49,773 (z = 22.29, p < 0.01). Both p-values are so small they display as 0, so read them as "< 0.01" rather than exactly zero.
+
+These findings describe an observed association and change in single-arm observational data. There is no control group, so none of this shows the workshop caused the improvement. Regression to the mean, other events between the two surveys, or who chose to answer could also contribute. The statistical significance reflects the large sample and consistent direction, not the cause. The Level 0.2 and 0.3 groups are described as invitation-gated and self-selected, but they contribute no pairs to these results.
+              </div>
+            
+          </div>
+        
+      </div>
+    </details>
+
+    
+      <!-- 11. INTERACTIVE EXPLAINER CONSULTATION LOG -->
+      <div style="margin-top: 36px; margin-bottom: 28px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--gray-200);">
+          <span style="width: 26px; height: 26px; background: #dbeafe; color: #1d4ed8; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">11</span>
+          <h2 style="font-size: 18px; font-weight: 800; color: var(--gray-900);">11. Interactive Explainer Consultation Log</h2>
+          <span style="font-size: 12px; font-weight: 700; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; padding: 3px 10px; border-radius: 9999px; margin-left: auto;">
+            1 Inquiry Documented
+          </span>
+        </div>
+        <p style="font-size: 12.5px; color: var(--gray-600); margin-bottom: 18px; line-height: 1.5;">
+          Direct consultation transcripts between the user and the Explainer Agent. Includes technical clarifications, sensitivity deep-dives, empirical tables, and statistical range explanations.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+              <!-- User Question Header -->
+              <div style="background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border-bottom: 1px solid #bfdbfe; padding: 12px 18px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="background: #2563eb; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Inquiry #1
+                  </span>
+                  <span style="font-size: 13.5px; font-weight: 700; color: #1e3a8a;">
+                    in simple words, what is the user question, the take away, the answer. How consistent are the different approaches with the answer.  Make it easy to understand, simple short sweet way. Give analogy example if it makes sense.
+                  </span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b;">
+                  <span>🕒 04:59 PM</span>
+                  <span style="background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">Consultation Record</span>
+                </div>
+              </div>
+
+              <!-- Explainer Answer Body (Formatted HTML) -->
+              <div style="padding: 18px 20px; background: #ffffff;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px; font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase; letter-spacing: 0.04em;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                  Explainer Agent Response &amp; Empirical Findings
+                </div>
+                <div style="font-size: 12.5px; color: #334155; line-height: 1.6;">
+                  <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Plain-Language Summary</h2>
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">1. What was the user asking?</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Did people's life satisfaction change between the <strong>start (Pre)</strong> and <strong>end (Post)</strong> of the Point 1 workshop? Satisfaction was rated 1–5 on "All things considered I am satisfied with my life."
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The question asked for the same people's before and after scores to be matched up, for the change to be measured, and for each person to be labeled as improved, same or declined. It also asked for a breakdown by workshop level (0.1, 0.2, 0.3), and it said to describe the result as an observed change, not as proof the workshop caused it.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">2. The answer</h3>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;"></th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Pre</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Post</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Average score</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>2.90</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>3.96</strong></td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Median score</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">3</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">4</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>1,307 people</strong> had a valid before and after score. All of them were at Level 0.1 (Point 1).</li><li style="margin-bottom: 5px;">The average change was <strong>+1.06 points</strong>.</li><li style="margin-bottom: 5px;"><strong>66%</strong> (864) improved, <strong>24%</strong> (311) stayed the same, and <strong>10%</strong> (132) declined.</li><li style="margin-bottom: 5px;">The change is statistically very strong (t = 28.11, Wilcoxon z = 22.29, p &lt; 0.0001).</li><li style="margin-bottom: 5px;">Levels 0.2 and 0.3 had <strong>no matched pairs</strong>, so the "all levels" total is just Level 0.1.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">3. The takeaway</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        On average, people reported being clearly more satisfied with life after the workshop than before. Roughly two out of three improved, and only one in ten went down.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        This is an <strong>association, not proof of cause</strong>. There was no comparison group, so the workshop can't be credited for sure. Other possible explanations are regression to the mean, ceiling effects near 5, and other events between the two surveys.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Also, about 10% of matched pairs were dropped because of blank or invalid answers (286 zeros and 1 out-of-range value were set to missing). If those people differ from the rest, the result could be slightly biased.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">4. Analogy</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Think of weighing the same 1,307 people before and after a fitness program. Wrong or missing weigh-ins are removed. You then check each person's change, and you also check whether the <em>typical</em> change and the <em>direction</em> of change tell the same story. Here every check points the same way. Without a group that skipped the program, though, you can't be sure the program caused the weight change.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">5. How consistent were the five approaches?</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Very consistent. All five runs reached the same numbers.</strong> Each took a different angle:
+      </p>
+    
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Run</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Method</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">What it checked</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">1</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Paired t-test (average change)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Is the mean change different from 0?</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">t = 28.11, CI 0.99–1.14, dz = 0.78 ✅</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">2</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Wilcoxon signed-rank (ranks and medians)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Does it hold without assuming a bell curve?</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">z = 22.29, r = 0.71 ✅</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">3</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Weighted pooled vs. per-level</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Does mixing levels distort the total?</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">No: only one level contributes, so all versions give 1.06 ✅</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">4</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Trimmed mean and sign test</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Do extreme answers drive the result?</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Trimmed 1.07, winsorized 1.06, 864 up vs 132 down ✅</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">5</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Transition matrix and agree-share</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Does the whole distribution shift?</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Agree (≥4) rose from 32% to 72%; matrix reproduces 864/311/132 ✅</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Identical across runs:</strong> the data flow (2,157 Pre rows, 2,147 Post rows, 1,450 merged pairs, 1,307 after cleaning), the means, the classification counts, and the empty Levels 0.2 and 0.3.</li><li style="margin-bottom: 5px;"><strong>Differences were only cosmetic.</strong> One example is whether the p-value is shown as "0" or "&lt;0.001".</li><li style="margin-bottom: 5px;"><strong>Why this matters:</strong> if the result were driven by outliers, ordinal quirks or pooling, at least one method would have disagreed. None did, so the finding is robust.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">6. One thing to double-check</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        Levels 0.2 and 0.3 are empty. Run 2 says each has only one Post value and no matching Pre. It would be worth confirming this is real, and not a data-loading or pairing problem, before concluding nothing can be said about those levels.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Bottom line:</strong> the five methods agree that satisfaction rose by about 1 point (2.90 → 3.96) among Point 1 participants, which is solid evidence of change but not proof the workshop caused it.
+      </p>
+    
+                </div>
+                <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 10.5px; color: #94a3b8;">
+                  <span>Explainer Model: claude-sonnet-5-5</span>
+                  <span>Cross-Validation Status: Invariance Verified</span>
+                </div>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+    
+
+    <!-- Sign-off footer -->
+    <div style="margin-top: 48px; pt-6; border-top: 2px solid var(--gray-200); display: flex; justify-content: space-between; font-size: 11px; color: var(--gray-500);">
+      <span>Answer Consistency Engine &bull; Multi-Run Verification Module</span>
+      <span>Statistical Agreement Threshold: &ge; 80% (4/5 runs)</span>
+    </div>
+  </div>
+</body>
+</html>
