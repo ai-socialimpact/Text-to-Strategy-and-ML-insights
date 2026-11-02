@@ -1,0 +1,1938 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Answer Consistency Report - Using only the Questionnaire table (prod_nirman_questionnaire), restrict to Workshop_Batch_Number == 14 and Workshop_Level == 0.1 (Point 1, compared with parseFloat). Cast Participant_Id and Career_Plan_Social_Action_Engagement to string.
+
+(1) Pre count: the number of unique Participant_Id values with Workshop_Phase == Pre and Career_Plan_Social_Action_Engagement == Fulltime as a career. Also report the Pre denominator: unique Pre participants with a non-null engagement value.
+
+(2) Post count: the same calculation for Workshop_Phase == Post.
+
+(3) Transition table: split the Batch 14 Point 1 rows into Pre and Post frames, add the suffixes _pre and _post, and inner-merge on Participant_Id within the same Workshop_Level. Drop pairs where Career_Plan_Social_Action_Engagement is null in either phase. Define is_fulltime = 1 if the value equals Fulltime as a career, otherwise 0. Classify each matched participant as:
+- Stayed full-time: pre = 1, post = 1
+- Switched in: pre = 0, post = 1
+- Switched out: pre = 1, post = 0
+- Stayed not full-time: pre = 0, post = 0
+
+Report the count and percentage of each category out of the effective matched N. Also report:
+- Net change: Post full-time count minus Pre full-time count, on both the unpaired and matched bases
+- Switch-in rate: switched in ÷ participants with pre = 0
+- Unmatched counts: Pre-only and Post-only participants excluded from the paired analysis
+
+Present results as association/change only, not as proof that the workshop caused the change.</title>
+  <style>
+    :root {
+      --primary: #1e3a8a;
+      --primary-light: #eff6ff;
+      --emerald: #059669;
+      --emerald-light: #ecfdf5;
+      --amber: #d97706;
+      --amber-light: #fffbeb;
+      --gray-900: #0f172a;
+      --gray-700: #334155;
+      --gray-600: #475569;
+      --gray-500: #64748b;
+      --gray-200: #e2e8f0;
+      --gray-100: #f1f5f9;
+      --gray-50: #f8fafc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      color: var(--gray-700);
+      background: #f8fafc;
+      padding: 40px 20px;
+    }
+    .report-container {
+      max-width: 960px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 16px;
+      padding: 48px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+    }
+    .header-banner {
+      border-bottom: 2px solid var(--gray-200);
+      padding-bottom: 28px;
+      margin-bottom: 32px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-exceptional { background: var(--emerald-light); color: var(--emerald); border: 1px solid #a7f3d0; }
+    .badge-primary { background: var(--primary-light); color: var(--primary); border: 1px solid #bfdbfe; }
+    h1 { font-size: 26px; color: var(--gray-900); margin: 12px 0 6px 0; font-weight: 800; }
+    .meta-text { font-size: 13px; color: var(--gray-500); }
+    .question-box {
+      background: var(--gray-50);
+      border-left: 4px solid var(--primary);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 24px 0;
+      font-size: 15px;
+      color: var(--gray-900);
+    }
+    .card {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .summary-grid {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 20px;
+      margin-bottom: 28px;
+    }
+    .stat-box {
+      background: var(--primary-light);
+      border: 1px solid #bfdbfe;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .stat-number { font-size: 40px; font-weight: 800; color: var(--primary); line-height: 1; }
+    .stat-label { font-size: 12px; font-weight: 700; text-transform: uppercase; color: var(--gray-600); margin-top: 6px; }
+    .section-title {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--gray-900);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 36px 0 16px 0;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+    .section-desc { font-size: 13px; color: var(--gray-500); margin-bottom: 20px; }
+    .run-card {
+      border: 1px solid var(--gray-200);
+      border-radius: 10px;
+      padding: 18px;
+      margin-bottom: 16px;
+      background: var(--gray-50);
+    }
+    .run-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+    .run-title { font-size: 14px; font-weight: 700; color: var(--gray-900); }
+    .code-block {
+      background: #0f172a;
+      color: #f8fafc;
+      padding: 14px;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      margin-top: 10px;
+    }
+    table { width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 13px; }
+    th { background: var(--gray-100); text-align: left; padding: 10px 12px; font-weight: 700; border-bottom: 2px solid var(--gray-200); }
+    td { padding: 10px 12px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
+    .aligned-tag { color: var(--emerald); font-weight: 700; }
+    .nuance-tag { color: var(--amber); font-weight: 700; }
+    .chart-box {
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: 12px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    /* Collapsible Sections (Details / Summary) */
+    details.collapsible-section {
+      transition: all 0.2s ease-in-out;
+    }
+    details.collapsible-section summary {
+      cursor: pointer;
+      user-select: none;
+      outline: none;
+      list-style: none;
+    }
+    details.collapsible-section summary::-webkit-details-marker {
+      display: none;
+    }
+    details.collapsible-section summary::marker {
+      display: none;
+    }
+    details.collapsible-section[open] .collapse-chevron {
+      transform: rotate(180deg);
+    }
+    details.collapsible-section:not([open]) summary {
+      border-bottom: none !important;
+    }
+    @media print {
+      body { background: #ffffff; padding: 0; }
+      .report-container { border: none; box-shadow: none; padding: 0; max-width: 100%; }
+      .no-print { display: none !important; }
+      .page-break { page-break-before: always; }
+      details.collapsible-section { display: block !important; border: 1px solid var(--gray-200) !important; }
+      details.collapsible-section summary { display: none !important; }
+      details.collapsible-section > * { display: block !important; }
+    }
+  </style>
+</head>
+<body>
+  <div class="report-container">
+    <!-- Header -->
+    <div class="header-banner">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+          <span class="badge badge-exceptional">
+            Exceptional Agreement Dossier
+          </span>
+          <h1>Answer Consistency Professional Dossier</h1>
+          <p class="meta-text">Project: NIRMAN &bull; Generated: Thursday, October 29, 2026 at 5:00:40 PM &bull; Multi-Method Analytical Cross-Validation</p>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 32px; font-weight: 800; color: var(--emerald); line-height: 1;">
+            100%
+          </div>
+          <div style="font-size: 11px; text-transform: uppercase; color: var(--gray-500); font-weight: 700; margin-top: 4px;">
+            5 / 5 Methods Converged
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. USER QUERY -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #eff6ff; color: #1e40af; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">1</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">1. User Query</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Original Business Prompt</span>
+      </div>
+      <div class="card" style="margin-bottom: 0;">
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: var(--gray-500); margin-bottom: 8px;">
+          Question Submitted by Human User:
+        </div>
+        <blockquote style="font-size: 15px; font-weight: 600; color: var(--gray-900); background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px 18px; margin: 0; font-style: italic;">
+          "Did full-time intent change?
+How many Batch 14 Point 1 participants chose 'Fulltime as a career' (Career_Plan_Social_Action_Engagement) at Pre, and how many at Post? How many stayed full-time, switched in, switched out, or stayed not full-time?"
+        </blockquote>
+        <div style="font-size: 11px; color: var(--gray-500); margin-top: 8px;">
+          Target Project: <strong>NIRMAN</strong> &bull; Raw unmanipulated prompt authoring
+        </div>
+      </div>
+    </div>
+
+    <!-- 2. REFINED USER QUERY -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #f3e8ff; color: #7e22ce; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">2</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">2. Refined User Query</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Domain Disambiguated &amp; Schema Mapped</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; border-color: #d8b4fe;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <span style="font-size: 11px; font-weight: 700; text-transform: uppercase; color: #6b21a8;">
+            Disambiguated by Query Interpreter Agent:
+          </span>
+          <span style="background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
+            ✓ Confirmed by Human Expert
+          </span>
+        </div>
+        <div style="font-size: 14px; font-weight: 700; color: #3b0764; background: #faf5ff; border: 1px solid #e9d5ff; border-radius: 8px; padding: 14px 18px; font-family: monospace;">
+          "Using only the Questionnaire table (prod_nirman_questionnaire), restrict to Workshop_Batch_Number == 14 and Workshop_Level == 0.1 (Point 1, compared with parseFloat). Cast Participant_Id and Career_Plan_Social_Action_Engagement to string.
+
+(1) Pre count: the number of unique Participant_Id values with Workshop_Phase == 'Pre' and Career_Plan_Social_Action_Engagement == 'Fulltime as a career'. Also report the Pre denominator: unique Pre participants with a non-null engagement value.
+
+(2) Post count: the same calculation for Workshop_Phase == 'Post'.
+
+(3) Transition table: split the Batch 14 Point 1 rows into Pre and Post frames, add the suffixes _pre and _post, and inner-merge on Participant_Id within the same Workshop_Level. Drop pairs where Career_Plan_Social_Action_Engagement is null in either phase. Define is_fulltime = 1 if the value equals 'Fulltime as a career', otherwise 0. Classify each matched participant as:
+- Stayed full-time: pre = 1, post = 1
+- Switched in: pre = 0, post = 1
+- Switched out: pre = 1, post = 0
+- Stayed not full-time: pre = 0, post = 0
+
+Report the count and percentage of each category out of the effective matched N. Also report:
+- Net change: Post full-time count minus Pre full-time count, on both the unpaired and matched bases
+- Switch-in rate: switched in ÷ participants with pre = 0
+- Unmatched counts: Pre-only and Post-only participants excluded from the paired analysis
+
+Present results as association/change only, not as proof that the workshop caused the change."
+        </div>
+        <div style="font-size: 11px; color: #065f46; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px 12px; margin-top: 10px;">
+          <strong>Human Expert Confirmation:</strong> The Refined User Query was verified, inspected, and explicitly approved by the Human Expert prior to triggering the 5 independent analytical runs.
+        </div>
+      </div>
+    </div>
+
+    <!-- 3. VERY SHORT SUMMARY (EXECUTIVE TL;DR) -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #fef3c7; color: #b45309; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">3</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">3. Very Short Summary (Executive TL;DR)</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Fast-Reading Synopsis for Leadership</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; background: #fffbeb; border-color: #fde68a;">
+        <p style="font-size: 15px; font-weight: 600; color: #1e293b; line-height: 1.6; margin-bottom: 14px;">
+          Across 5 independent analytical runs testing diverse data science methodologies, the system recorded an agreement score of 100% (5 of 5 runs matching). The dominant finding concludes: "Batch 14, Point 1 (level 0.1): 148 participants in each phase.
+• Pre full-time: 28 of 148 (18.92%)
+• Post full-time: 66 of 148 (44.59%)
+• Matched participants: 148 (0 dropped, 0 Pre-only, 0 Post-only)
+• Transitions: Stayed full-time 26 (17.57%), Switched in 40 (27.03%), Switched out 2 (1.35%), Stayed not full-time 80 (54.05%)
+• Net change: +38 on both the unpaired and matched bases
+• Switch-in rate: 40 of 120 = 33.33%
+• This is an association/change only, not proof that the workshop caused it.". This cross-method convergence confirms that the result is statistically robust and exceptionally consistent against distribution variations and outlier biases.
+        </p>
+        <div style="display: flex; flex-direction: column; gap: 12px; padding-top: 14px; border-top: 1px solid #fef08a;">
+          <div style="background: #ffffff; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400e; margin-bottom: 4px;">
+              Core Answer
+            </div>
+            <div style="font-size: 14px; font-weight: 800; color: #1e3a8a; line-height: 1.5;">
+              Batch 14, Point 1 (level 0.1): 148 participants in each phase.
+• Pre full-time: 28 of 148 (18.92%)
+• Post full-time: 66 of 148 (44.59%)
+• Matched participants: 148 (0 dropped, 0 Pre-only, 0 Post-only)
+• Transitions: Stayed full-time 26 (17.57%), Switched in 40 (27.03%), Switched out 2 (1.35%), Stayed not full-time 80 (54.05%)
+• Net change: +38 on both the unpaired and matched bases
+• Switch-in rate: 40 of 120 = 33.33%
+• This is an association/change only, not proof that the workshop caused it.
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400e; margin-bottom: 4px;">
+              Convergence Ratio
+            </div>
+            <div style="font-size: 14px; font-weight: 800; color: #065f46; line-height: 1.5;">
+              5 / 5 Independent Methods Aligned (100% Agreement)
+            </div>
+          </div>
+          <div style="background: #ffffff; border: 1px solid #fde68a; border-radius: 10px; padding: 14px 18px; box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+            <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em; color: #92400e; margin-bottom: 4px;">
+              Stability Verdict
+            </div>
+            <div style="font-size: 14px; font-weight: 800; color: #4338ca; line-height: 1.5;">
+              Exceptional Invariance (All runs converge to invariant conclusion)
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4. CONSENSUS CONCLUSION -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #d1fae5; color: #047857; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">4</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">4. Consensus Conclusion</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Cross-Validated Dominant Finding</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; border: 2px solid #a7f3d0;">
+        <div style="background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 10px; padding: 18px; margin-bottom: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #166534;">
+              Validated Core Answer:
+            </span>
+            <span style="background: #dcfce7; color: #15803d; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700;">
+              Exceptional Confidence
+            </span>
+          </div>
+          
+          <div style="margin-top: 8px;">
+            <p style="font-size: 14px; color: #1e293b; line-height: 1.6; margin: 10px 0;">Batch 14, Point 1 (level 0.1): 148 participants in each phase.</p>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 14px 0;">
+          
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">Pre full-time</div>
+              <div style="font-size: 14px; font-weight: 800; color: #064e3b; margin-top: 4px;">28 of 148 (18.92%)</div>
+            </div>
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">Post full-time</div>
+              <div style="font-size: 14px; font-weight: 800; color: #064e3b; margin-top: 4px;">66 of 148 (44.59%)</div>
+            </div>
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">Matched participants</div>
+              <div style="font-size: 14px; font-weight: 800; color: #064e3b; margin-top: 4px;">148 (0 dropped, 0 Pre-only, 0 Post-only)</div>
+            </div>
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">Transitions</div>
+              <div style="font-size: 14px; font-weight: 800; color: #064e3b; margin-top: 4px;">Stayed full-time 26 (17.57%), Switched in 40 (27.03%), Switched out 2 (1.35%), Stayed not full-time 80 (54.05%)</div>
+            </div>
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">Net change</div>
+              <div style="font-size: 14px; font-weight: 800; color: #064e3b; margin-top: 4px;">+38 on both the unpaired and matched bases</div>
+            </div>
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 14px; box-shadow: 0 1px 2px rgba(0,0,0,0.03);">
+              <div style="font-size: 10px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em;">Switch-in rate</div>
+              <div style="font-size: 14px; font-weight: 800; color: #064e3b; margin-top: 4px;">40 of 120 = 33.33%</div>
+            </div>
+        </div>
+        <ul style="margin: 10px 0 10px 22px; font-size: 13px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">This is an association/change only, not proof that the workshop caused it.</li>
+        </ul>
+          </div>
+        </div>
+
+        <div style="margin-bottom: 16px;">
+          <strong style="font-size: 12px; text-transform: uppercase; color: var(--gray-700); display: block; margin-bottom: 6px;">
+            Detailed Consensus Verdict &amp; Analytical Evaluation:
+          </strong>
+          <div style="font-size: 13px; color: var(--gray-700); line-height: 1.6; background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Bottom line: all 5 independent runs produced exactly the same numbers. Agreement is 100% (Exceptional).</li><li style="margin-bottom: 5px;">What matched: the Pre and Post counts, the four transition groups, the net change (+38), the switch-in rate (33.33%) and the unmatched counts (0).</li><li style="margin-bottom: 5px;">Why it is trustworthy: five different methods (a standard table merge, set matching, a 2x2 table, a duplicate audit and a resampling check) all landed on the same answer.</li><li style="margin-bottom: 5px;">Caveat: the data show a change, not its cause.</li>
+        </ul>
+      
+          </div>
+        </div>
+
+        <!-- 5-Run Visual Alignment Strip -->
+        <div>
+          <div style="display: flex; justify-content: space-between; font-size: 12px; font-weight: 600; color: var(--gray-600); margin-bottom: 6px;">
+            <span>Method Alignment Across 5 Independent Pipelines:</span>
+            <span style="font-weight: 700; color: #047857;">5 / 5 Methods Aligned</span>
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px;">
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #1</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Direct Danfo.js Filter, Unique-Count & Suffix Inner-Merge Baseline</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #2</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Pure JavaScript Set-Algebra Reconstruction (No DataFrame Merge)</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #3</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">2x2 Contingency Cross-Tabulation with McNemar Paired Test & Marginal Homogeneity Check</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #4</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Participant-Level Deduplication & Grain-Audit Aggregation</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+              <div style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 6px; padding: 8px; text-align: center;">
+                <div style="font-size: 11px; font-weight: 800; color: #065f46;">Run #5</div>
+                <div style="font-size: 10px; color: var(--gray-600); margin-top: 2px; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Bootstrap Resampling & Wilson Interval Stability of Transition Shares</div>
+                <div style="font-size: 10px; font-weight: 700; color: #059669; margin-top: 4px;">
+                  ✓ Aligned
+                </div>
+              </div>
+            
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 5. EASY TO READ CONCLUSION -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #ccfbf1; color: #0f766e; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">5</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">5. Easy to Read Conclusion</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Plain-Language Translation &amp; Practical Business Takeaways</span>
+      </div>
+      <div class="card" style="margin-bottom: 0; border-color: #99f6e4;">
+        <div style="margin-bottom: 14px;">
+          <h4 style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #0f766e; margin-bottom: 6px;">
+            What This Means in Plain English:
+          </h4>
+          <div style="font-size: 13px; color: #1e293b; line-height: 1.6; background: #f0fdfa; border: 1px solid #ccfbf1; border-radius: 8px; padding: 12px 16px;">
+            Think of it as a before-and-after photo of 148 workshop participants, each asked if they see a full-time career in social action.
+
+• Before: 28 people said yes (about 19 out of 100).
+• After: 66 people said yes (about 45 out of 100).
+• Net gain: 38 more people said yes.
+
+What happened to individuals:
+• 40 people changed from 'not full-time' to 'full-time'.
+• Only 2 went the other way.
+• 26 were already full-time and stayed that way.
+• 80 were not full-time before or after.
+
+In other words, of the 120 people who were not full-time at the start, 40 (1 in 3) changed their minds.
+
+How sure are we? Very. Five different ways of counting gave exactly the same numbers, and the data had no missing answers or double-counted people. A statistical test also says a shift this lopsided is very unlikely to be chance.
+
+One caution: we only looked at people who attended. Without a group that skipped the workshop, we cannot say the workshop caused the change. Other things could have played a part. So the safe message is: 'Career plans moved strongly toward full-time after the workshop', not 'the workshop made this happen'.
+          </div>
+        </div>
+
+        <div style="margin-bottom: 14px;">
+          <h4 style="font-size: 12px; font-weight: 800; text-transform: uppercase; color: #166534; margin-bottom: 6px;">
+            Practical Business &amp; Mission Takeaways:
+          </h4>
+          <div style="font-size: 13px; color: #14532d; line-height: 1.6; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 8px; padding: 12px 16px;">
+            • The share of participants planning a full-time career in social action rose from about 1 in 5 (18.92%) to nearly 1 in 2 (44.59%).
+• That is 38 more people: 28 at the start, 66 at the end.
+• Almost all of the movement was in one direction: 40 people switched into full-time and only 2 switched out.
+• About 1 in 3 people (33.33%) who were not full-time at the start became full-time.
+• The result is solid: all 5 methods agree and the statistical checks say it is not a fluke.
+• Do not claim the workshop caused it. There was no comparison group, so report it as a strong association, not proof.
+          </div>
+        </div>
+
+        <div style="padding-top: 10px; border-top: 1px solid var(--gray-200);">
+          <div style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: var(--gray-500); margin-bottom: 6px;">
+            Actionable Recommendations for Project Leads:
+          </div>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; font-size: 12px; color: var(--gray-700);">
+            <div style="background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 12px;">
+              <strong>1. Stakeholder Reporting:</strong> Cite the verified consensus metric (Batch 14, Point 1 (level 0.1): 148 participants in each phase.
+• Pre full-time: 28 of 148 (18.92%)
+• Post full-time: 66 of 148 (44.59%)
+• Matched participants: 148 (0 dropped, 0 Pre-only, 0 Post-only)
+• Transitions: Stayed full-time 26 (17.57%), Switched in 40 (27.03%), Switched out 2 (1.35%), Stayed not full-time 80 (54.05%)
+• Net change: +38 on both the unpaired and matched bases
+• Switch-in rate: 40 of 120 = 33.33%
+• This is an association/change only, not proof that the workshop caused it.) with executive confidence.
+            </div>
+            <div style="background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 12px;">
+              <strong>2. Decision Making:</strong> Proceed without requiring manual reconciliation audits across disparate reporting silos.
+            </div>
+            <div style="background: var(--gray-50); border: 1px solid var(--gray-200); border-radius: 6px; padding: 8px 12px;">
+              <strong>3. Audit Trail:</strong> Retain this multi-run dossier as verifiable documentation for compliance and donors.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 6. MULTI-METHOD CONVERGENCE & VISUAL METRICS -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #e0e7ff; color: #4338ca; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">6</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">6. Multi-Method Convergence &amp; Visual Metrics</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Statistical Alignment Distribution</span>
+      </div>
+      <div class="chart-box">
+        <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: var(--gray-600); margin-bottom: 12px;">
+          Visual Method Alignment Matrix (5/5 Aligned)
+        </h4>
+        <svg width="100%" height="160" viewBox="0 0 700 160">
+          
+              <text x="10" y="34" font-size="11" font-weight="600" fill="#334155">Run 1: Direct Danfo.js Filter</text>
+              <rect x="220" y="20" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="33" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="62" font-size="11" font-weight="600" fill="#334155">Run 2: Pure JavaScript Set-Al</text>
+              <rect x="220" y="48" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="61" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="90" font-size="11" font-weight="600" fill="#334155">Run 3: 2x2 Contingency Cross-</text>
+              <rect x="220" y="76" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="89" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="118" font-size="11" font-weight="600" fill="#334155">Run 4: Participant-Level Dedu</text>
+              <rect x="220" y="104" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="117" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+              <text x="10" y="146" font-size="11" font-weight="600" fill="#334155">Run 5: Bootstrap Resampling &</text>
+              <rect x="220" y="132" width="420" height="18" rx="4" fill="#059669" opacity="0.85" />
+              <text x="650" y="145" font-size="10" font-weight="700" fill="#059669">
+                100% Aligned
+              </text>
+            
+        </svg>
+      </div>
+      
+      <div class="section-title">
+        <span>Custom Visual Analytics &amp; Deep-Dive Charts</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 16px; margin: 20px 0;">
+        
+          <div class="card" style="margin-bottom: 0;">
+            <h4 style="font-size: 14px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px;">Where Did the 148 Matched Participants Land? Pre → Post Transition Mix</h4>
+            <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 12px;">Share of the 148 matched Batch 14 Point 1 participants in each full-time career transition category. Switched in (27.03%) far outweighs Switched out (1.35%). All five runs gave identical counts. This shows association/change only, not causation.</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Stayed full-time (1→1)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">26 (17.57%)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 17.57%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Already full-time at Pre and still full-time at Post</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Switched in (0→1)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">40 (27.03%)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 27.03%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Not full-time at Pre, full-time at Post; the main driver of the net gain</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Switched out (1→0)</span>
+                    <span style="font-weight: 700; color: var(--amber);">2 (1.35%)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 10%; height: 100%; background: #d97706; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Very small reverse movement; the bootstrap 95% interval is 0%–3.38%</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Stayed not full-time (0→0)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">80 (54.05%)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 54.05%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Largest group; not full-time at either phase</div>
+                </div>
+              
+            </div>
+          </div>
+        
+          <div class="card" style="margin-bottom: 0;">
+            <h4 style="font-size: 14px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px;">Full-Time Career Intent: Pre vs Post Share and Key Change Metrics</h4>
+            <p style="font-size: 11px; color: var(--gray-500); margin-bottom: 12px;">Compares the full-time share at Pre (28/148) and Post (66/148) with the switch-in rate (40/120) and the matched net change in percentage points (+38 participants). All five runs agree on every value.</p>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Pre full-time share</span>
+                    <span style="font-weight: 700; color: var(--emerald);">28/148 (18.92%)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 18.92%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Wilson 95% CI 13.43%–25.98%</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Post full-time share</span>
+                    <span style="font-weight: 700; color: var(--emerald);">66/148 (44.59%)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 44.59%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Wilson 95% CI 36.82%–52.64%</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Switch-in rate (of Pre not full-time)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">40/120 (33.33%)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 33.33%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Wilson 95% CI 25.53%–42.17%</div>
+                </div>
+              
+                <div>
+                  <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+                    <span style="font-weight: 600; color: var(--gray-800);">Net change (matched, pp of N)</span>
+                    <span style="font-weight: 700; color: var(--emerald);">+38 (+25.68 pp)</span>
+                  </div>
+                  <div style="width: 100%; height: 8px; background: #e2e8f0; border-radius: 4px; overflow: hidden;">
+                    <div style="width: 25.68%; height: 100%; background: #059669; border-radius: 4px;"></div>
+                  </div>
+                  <div style="font-size: 10px; color: var(--gray-500); margin-top: 2px;">Same on unpaired and matched bases; bootstrap 95% interval 27–49 participants; 0 Pre-only, 0 Post-only, 0 null pairs dropped</div>
+                </div>
+              
+            </div>
+          </div>
+        
+      </div>
+    
+    </div>
+
+    <!-- 7. HOW EACH OF THE 5 RUNS ANALYZED THE DATA -->
+    <div style="margin-bottom: 24px;">
+      <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+        <span style="width: 24px; height: 24px; background: #e0f2fe; color: #0284c7; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">7</span>
+        <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">7. How Each of the 5 Runs Analyzed the Data (Explained Simply)</h2>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">Everyday Explanation of Each Methodology</span>
+      </div>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px;">
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #1</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Direct Danfo.js Filter, Unique-Count & Suffix Inner-Merge Baseline</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              This run follows the schema's pre_post_pairing recipe exactly: split by phase, add _pre/_post suffixes and inner-merge on Participant_Id within the same Workshop_Level. It is the canonical reference that the other runs are checked against.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Pre 28/148 (18.92%), Post 66/148 (44.59%); matched N 148; categories 26/40/2/80; net change +38 (both bases); switch-in rate 33.33%; 0 Pre-only, 0 Post-only, 0 null pairs dropped.
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #2</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Pure JavaScript Set-Algebra Reconstruction (No DataFrame Merge)</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              This run recomputes every number with native Map and Set objects instead of Danfo's merge. That gives an independent code path that exposes problems with merge suffixes, dtype coercion or NaN handling in the DataFrame library.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Pre 28/148 (18.92%), Post 66/148 (44.59%); matched N 148; categories 26/40/2/80; net change +38; switch-in rate 33.33%; no duplicates; 0 unmatched.
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #3</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">2x2 Contingency Cross-Tabulation with McNemar Paired Test & Marginal Homogeneity Check</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              This run arranges the matched pairs as a 2x2 Pre × Post table. It checks that the marginal totals reconcile with the matched-basis full-time counts and that the discordant cells equal switched in and switched out. The McNemar test adds a statistical view of the change without changing the counts.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Same counts: a=26, b=2, c=40, d=80, N=148; net change +38; switch-in rate 33.33%; paired difference 25.68 pp; McNemar chi-square 32.6, p < 0.01.
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #4</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Participant-Level Deduplication & Grain-Audit Aggregation</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              This run first collapses the data to exactly one record per (Participant_Id, Workshop_Level, Workshop_Phase) and audits whether duplicates exist. That guards against row-count inflation and a many-to-many merge, so the counts are computed at the correct participant grain.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Same counts: Pre 28/148, Post 66/148, matched 148, categories 26/40/2/80, net change +38, switch-in 33.33%. The grain audit found 296 distinct keys, 0 duplicates and 0 conflicts. All validation checks passed.
+            </div>
+          </div>
+        
+          <div style="background: #ffffff; border: 1px solid var(--gray-200); border-radius: 8px; padding: 14px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-size: 11px; font-weight: 800; color: var(--primary);">RUN #5</span>
+              <span style="font-size: 10px; font-weight: 700; color: var(--emerald);">
+                ✓ Aligned
+              </span>
+            </div>
+            <strong style="font-size: 13px; color: var(--gray-900);">Bootstrap Resampling & Wilson Interval Stability of Transition Shares</strong>
+            <p style="font-size: 12px; color: var(--gray-600); margin-top: 4px; line-height: 1.5;">
+              This run keeps the deterministic point estimates and adds participant-level bootstrap and Wilson score intervals. These show how stable the category percentages and the switch-in rate are for a single cohort of modest size, which tests whether the reported shares are robust and not artefacts of a small N.
+            </p>
+            <div style="margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--gray-200); font-size: 11px; color: var(--gray-700);">
+              <strong>Calculated Finding:</strong> Same point estimates: 28/148 (18.92%), 66/148 (44.59%), categories 26/40/2/80, net change +38 (+25.68 pp), switch-in 33.33%. Wilson and bootstrap intervals are additional; the net-change bootstrap 95% interval is 27–49.
+            </div>
+          </div>
+        
+      </div>
+    </div>
+
+    <!-- 8. DOMAIN & SCHEMA CONTEXTUALIZATION -->
+    
+      <div style="margin-bottom: 24px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 2px solid var(--gray-200);">
+          <span style="width: 24px; height: 24px; background: #ede9fe; color: #6d28d9; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">8</span>
+          <h2 style="font-size: 17px; font-weight: 800; color: var(--gray-900);">8. Domain &amp; Schema Contextualization (schemadescription.txt)</h2>
+          <span style="font-size: 12px; color: var(--gray-500); margin-left: auto;">DDL Grounding &amp; Business Reality</span>
+        </div>
+        
+      <!-- CONTEXTUALIZED SECTION (TOP OF REPORT) -->
+      <div style="background: #f8fafc; border: 2px solid #6366f1; border-radius: 14px; padding: 24px; margin-bottom: 28px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid #e0e7ff; padding-bottom: 10px;">
+          <div>
+            <span class="badge" style="background: #e0e7ff; color: #4338ca; border: 1px solid #c7d2fe;">
+              Domain &amp; Schema Contextualized Architecture
+            </span>
+            <h3 style="font-size: 18px; color: #1e1b4b; font-weight: 800; margin-top: 6px;">
+              Domain Understanding &amp; DDL Schema Context
+            </h3>
+          </div>
+          <span style="font-size: 11px; font-weight: 700; color: #4338ca; background: #ffffff; padding: 4px 10px; border-radius: 6px; border: 1px solid #c7d2fe;">
+            Source: schemadescription.txt (Project Files in DB)
+          </span>
+        </div>
+
+        <div style="margin-bottom: 18px;">
+          <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: #3730a3; margin-bottom: 6px;">
+            Domain Overview &amp; Consensus Interpretation
+          </h4>
+          <p style="font-size: 13px; color: #1e293b; line-height: 1.6; white-space: pre-wrap;">
+            The question asks how many Batch 14 participants in NIRMAN, SEARCH's youth social-leadership program, say they plan to pursue social action 'Fulltime as a career' at the Pre and Post stage of the Point 1 workshop. It also asks how individuals move between 'full-time' and 'not full-time' across those two stages. This is subjective psychometric data, so it lives only in prod_nirman_questionnaire. Demographics holds objective facts, such as Current_Status_Of_Work, and is deliberately not joined. The questionnaire grain is one row per (Participant_Id, Workshop_Level, Workshop_Phase). Filtering to Workshop_Batch_Number = 14 and Workshop_Level = 0.1 therefore yields at most one Pre row and one Post row per participant. All five runs found 296 rows: 148 Pre and 148 Post, with the same 148 people in both phases. The headline result is that 'Fulltime as a career' (ordinal value 5 of Career_Plan_Social_Action_Engagement) rose from 28/148 (18.92%) to 66/148 (44.59%). The matched transitions are 26 stayed full-time, 40 switched in, 2 switched out and 80 stayed not full-time. The net change is +38 and the switch-in rate is 40/120 = 33.33%. Because the data is single-arm observational with no comparison group, this is Pre→Post association and change, not evidence that the workshop caused it. The stated engagement outcome is a self-reported career plan, not an observed work status like Current_Status_Of_Work.
+          </p>
+        </div>
+
+        
+          <div style="margin-bottom: 18px;">
+            <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: #3730a3; margin-bottom: 8px;">
+              DDL Entity &amp; Schema Mapping
+            </h4>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px;">
+              
+                <div style="background: #ffffff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 12px;">
+                  <strong style="color: #312e81; font-size: 12px;">Table: prod_nirman_questionnaire</strong>
+                  <p style="font-size: 11px; color: #475569; margin: 4px 0;">Sole source table for the analysis. It is a Pre/Post psychometric survey with 4,304 rows, 2,177 participants and 181 columns, covering batches 7–17. Its grain, one row per (Participant_Id, Workshop_Level, Workshop_Phase), explains why Pre and Post each have exactly one row per participant in this slice. The 'Fulltime as a career' response is the top of the 1–5 ordinal outcome scale and is the basis of the is_fulltime flag and the switched_to_fulltime recipe (restricted to pre == 0). Engagement has only 4 nulls in the whole table, and none fall in Batch 14 / Level 0.1, so no pairs were dropped.</p>
+                  <div style="font-size: 10px; color: #6366f1; font-weight: 600;">
+                    Columns: Participant_Id, Workshop_Phase, Workshop_Level, Workshop_Batch_Number, Career_Plan_Social_Action_Engagement
+                  </div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 12px;">
+                  <strong style="color: #312e81; font-size: 12px;">Table: Derived Pre/Post transition frame (pre_post_pairing recipe)</strong>
+                  <p style="font-size: 11px; color: #475569; margin: 4px 0;">An inner merge on Participant_Id within the same Workshop_Level, with _pre/_post suffixes. This is a merge, not a groupby, as the recipe prescribes. From it, is_fulltime_pre and is_fulltime_post are derived and cross-classified into Stayed full-time (1/1), Switched in (0/1), Switched out (1/0) and Stayed not full-time (0/0). The switch-in rate uses only the pre = 0 pool (120 people) as its denominator, matching the schema's switched_to_fulltime definition. The matched N of 148 equals the unpaired N in both phases, which is why the unpaired and matched net changes coincide.</p>
+                  <div style="font-size: 10px; color: #6366f1; font-weight: 600;">
+                    Columns: Participant_Id, Workshop_Level, Career_Plan_Social_Action_Engagement_pre, Career_Plan_Social_Action_Engagement_post, is_fulltime_pre, is_fulltime_post
+                  </div>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #c7d2fe; border-radius: 8px; padding: 12px;">
+                  <strong style="color: #312e81; font-size: 12px;">Table: prod_nirman_demographics</strong>
+                  <p style="font-size: 11px; color: #475569; margin: 4px 0;">Deliberately not used. It has 2,890 rows, one per Participant_Id, and covers batches 1–17. It would supply Current_Status_Of_Work, Gender, Age_At_Workshop and similar fields for follow-up or segmentation. Joining it would shrink and skew N, because not every participant appears in both tables. It would also bring in the objective outcome (actual work status), which is conceptually different from the self-declared plan measured here. The two tables share Participant_Id, Participant_Name, Workshop_Name and Workshop_Batch_Number, so any later join must cast the ID to string first.</p>
+                  <div style="font-size: 10px; color: #6366f1; font-weight: 600;">
+                    Columns: Participant_Id, Workshop_Batch_Number, Current_Status_Of_Work, Gender, Age_At_Workshop
+                  </div>
+                </div>
+              
+            </div>
+          </div>
+        
+
+        
+          <div style="margin-bottom: 18px;">
+            <h4 style="font-size: 13px; font-weight: 700; text-transform: uppercase; color: #3730a3; margin-bottom: 8px;">
+              5-Run Domain Explanations (Schema Context)
+            </h4>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #1: Direct Danfo.js Filter, Unique-Count & Suffix Inner-Merge Baseline</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">This run implements the schema's own pre_post_pairing recipe: split by Workshop_Phase, suffix _pre/_post, inner-merge on Participant_Id plus Workshop_Level. It applies the mandated casts (Participant_Id as string; Workshop_Level compared numerically, here with a 1e-9 tolerance on 0.1) and filters to Batch 14 and Point 1. Unique counts of Participant_Id, not row counts, are correct for 'how many participants'. The result is Pre 28/148, Post 66/148, the 26/40/2/80 split, net change +38 and switch-in 40/120 = 33.33%. Each category is a participant-level pattern: 26 people held a full-time plan before and after, 40 moved into it, 2 moved out, and 80 never held it. The switch-in rate is conditional on pre = 0, so the 26 already-committed people cannot 'switch in' and are correctly excluded from the denominator. The 2 who switched out are the only evidence of regression among the 28 Pre full-timers. This run is the reference the others are checked against.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #2: Pure JavaScript Set-Algebra Reconstruction (No DataFrame Merge)</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">This run replaces dfd.merge with Map/Set operations. Matched participants are the intersection of Pre and Post ID sets, and unmatched participants are the set differences. It guards against DataFrame-library artefacts such as suffix collisions and dtype coercion of the numeric-looking Participant_Id. It also guards against the NaN engagement values becoming the literal string 'NaN'. The set-based duplicate check returned nothing, as the schema's grain predicts, because one row exists per (Participant_Id, Workshop_Level, Workshop_Phase). The 'first non-null' fallback therefore never fired. Its switch-in denominator (switched in + stayed not full-time = 120) is algebraically the same as 'pairs with pre = 0'. The identical 28/66/26/40/2/80 and 0 Pre-only/0 Post-only show the result does not depend on the merge implementation. The Batch 14 Pre and Post cohorts are the same 148 people.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #3: 2x2 Contingency Cross-Tabulation with McNemar Paired Test & Marginal Homogeneity Check</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">This run arranges the matched pairs as a Pre × Post table: a = 26 (stayed full-time), b = 2 (switched out), c = 40 (switched in), d = 80 (stayed not full-time). The marginals reconcile with the unpaired counts: Pre full-time a+b = 28, Post full-time a+c = 66, Pre not full-time c+d = 120, Post not full-time b+d = 82. Net change c − b = +38 equals the unpaired 66 − 28 because the two cohorts are identical. McNemar tests only the discordant pairs (b + c = 42), of which 40 moved toward full-time. With a continuity-corrected χ² of (|2−40|−1)²/42 ≈ 32.6, the Pre→Post shift is very unlikely to be sampling noise. The paired difference of 38/148 ≈ 25.68 percentage points is a within-person change in stated plan. For the domain, the 106 people whose full-time status did not change (26 + 80) carry no information on this question. The chi-square and exact binomial p-values agree. The test establishes statistical association in a single-arm design, not that the workshop caused the change.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #4: Participant-Level Deduplication & Grain-Audit Aggregation</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">This run audits the declared grain of the questionnaire table. It found 296 rows, 296 distinct (Participant_Id, Workshop_Level, Workshop_Phase) keys, and no duplicates or conflicts. This confirms that no many-to-many merge inflation is possible here. Pivoting to wide format (engagement_pre, engagement_post) is mathematically the same as the suffix-and-inner-merge recipe. All 148 participants are in both phases with non-null engagement, so nothing was dropped. Its narrative also gives a response-level breakdown ('Volunteering frequently' 52→16, 'Monetary contribution' 8→0, 'Part time' 51→65). That is plausible for the 1–5 ordinal scale and suggests the full-time gain comes largely from people moving up from lower-intensity engagement levels. However, that breakdown was not part of the requested outputs and is not cross-checked by the other runs, so treat it as supplementary. It is not part of the consensus answer. The remark that unpaired and matched figures might diverge in other batches or levels is correct, because batches may have attrition between Pre and Post.</p>
+                </div>
+              
+                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-left: 4px solid #6366f1; border-radius: 6px; padding: 10px 14px;">
+                  <strong style="font-size: 12px; color: #0f172a;">Run #5: Bootstrap Resampling & Wilson Interval Stability of Transition Shares</strong>
+                  <p style="font-size: 12px; color: #334155; margin-top: 3px; line-height: 1.5;">This run keeps the deterministic counts and adds uncertainty. It uses Wilson intervals for Pre (13.43%–25.98%) and Post (36.82%–52.64%), whose non-overlap is consistent with a real shift. It also uses a 2,000-draw participant-level bootstrap (seeded mulberry32(42)) over the 148 matched pairs. The net change of +38 has a 95% interval of about 27–49 (18.24–33.11 pp), and the switch-in rate is 33.33% (Wilson 25.53%–42.17%). This matters because Batch 14 is a single cohort of modest size, one of 11 batches in the questionnaire. The intervals describe sampling variability within this cohort, not generalisability to other batches or causal effect. The 'Switched out' interval (0–3.38%) touches zero, reflecting its tiny count of 2. Bootstrap medians equal the point estimates because the resampling is centred on the observed sample, and the point estimates themselves come from the full-sample deterministic counts.</p>
+                </div>
+              
+            </div>
+          </div>
+        
+
+        
+          <div style="background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; margin-bottom: 14px;">
+            <strong style="font-size: 12px; color: #92400e; text-transform: uppercase; display: block; margin-bottom: 3px;">
+              Domain Nuances &amp; Constraints
+            </strong>
+            <p style="font-size: 12px; color: #78350f; line-height: 1.5;">1) Construct: Career_Plan_Social_Action_Engagement is a stated intention on a 5-point ordinal (Fulltime=5, Part time=4, Volunteering frequently=3, Occasionally=2, Monetary contribution=1; 'Not yet decided / confused' is null). 'Fulltime as a career' is a plan, not employment. Actual outcomes live in demographics Current_Status_Of_Work, which is undated, so no transition timing exists. 2) Design: the data is single-arm observational with no comparison group. The Pre→Post change is confounded by time, self-selection, social-desirability and workshop-priming effects, since Post is captured at the end of the workshop. Report it as association and change only. 3) Grain and N: the one-row-per-(participant, level, phase) grain explains why 148 = 148 = matched N and why the unpaired (+38) and matched (+38) net changes are identical. This is a property of this slice (no attrition, no duplicates, no nulls) and will not necessarily hold for other batches or levels. 4) Scope: the result covers only Batch 14 / Point 1 (Workshop_Level 0.1), which is about 10% of the roughly 1,450 matched Pre/Post Point-1 pairs cited in the ML guidance. Levels 0.2 and 0.3 (Point 2/3) are excluded. Workshop_Name (A–H) is not in the uniqueness key and was not used; the clean 296-key audit shows it caused no duplication here. 5) Ceiling and denominators: the 28 Pre full-timers can only stay or switch out, so the switch-in rate uses only the 120 pre = 0 participants. Quoting 40/148 = 27.03% as a 'switch-in rate' would be wrong. Because the pre = 0 pool includes people already leaning towards full-time, the switch-in rate may understate movement from truly distant starting points. 6) Reliability: the 4 engagement nulls in the table (and the 'confused' option mapped to null) mean any other batch needs explicit null handling and effective-N reporting. 7) Statistics: McNemar's p-value is overwhelming but rests on only 42 discordant pairs, and one-sidedness (40 vs 2) matters more than the p-value. Wilson and bootstrap intervals give sampling uncertainty only, not bias adjustment. 8) Joining demographics would shrink and skew N (demographics covers batches 1–17 but not every questionnaire participant is guaranteed a match), so any segmentation by Gender, Age_At_Workshop or stream needs a recomputed effective N. Participant_Name is masked PII and excluded. 9) Leakage: Post-phase values and deltas describe the immediate change and must not be used as features for long-term outcome models such as Current_Status_Of_Work.</p>
+          </div>
+        
+
+        
+          <div>
+            <strong style="font-size: 12px; color: #1e1b4b; text-transform: uppercase; display: block; margin-bottom: 4px;">
+              Domain Expert Recommendations
+            </strong>
+            <ul style="margin-left: 18px; font-size: 12px; color: #334155;">
+              <li>Present the headline as 'a stated full-time social-action career plan rose from 28 to 66 of 148 Batch 14 Point 1 participants (18.92% → 44.59%), driven by 40 switch-ins against 2 switch-outs', and always add 'association/change only, not causal'.</li><li>Quote the switch-in rate as 40/120 = 33.33% (conditional on pre = 0), and report the 26 stayed full-time and 2 switched out separately as retention (26/28 = 92.86%).</li><li>Report effective N at each step (4,304 → 296 → 148 per phase → 148 matched). State that matched N equals unpaired N in this batch because Pre and Post participant sets are identical, and re-verify this for other batches rather than assuming it.</li><li>To judge whether Batch 14 is typical, repeat the identical pipeline for batches 7–17 and show the per-batch net change and switch-in rate with Wilson or bootstrap intervals. Sort by Workshop_Batch_Number (17 = most recent).</li><li>Treat the Run 4 response-level breakdown (e.g. Volunteering frequently 52→16, Part time 51→65) as an interesting lead and verify it with a dedicated Pre×Post crosstab on the 1–5 ordinal before using it. It suggests much of the shift comes from people stepping up from lower engagement categories.</li><li>Complement this stated-plan analysis with the demographics outcome (Current_Status_Of_Work, Person_Years_Of_Social_Action) via a string-cast Participant_Id join to see whether Batch 14 switchers actually enter social-impact work. Recompute and report the effective N after the join, and control for censoring because Batch 14 is a recent cohort.</li><li>If modelling who switches in, use Pre-phase items and the theme scores plus demographics predictors (Gender, Age_At_Workshop, Educational_Stream_Category, Native_State). Restrict to pre = 0, and exclude Post items and deltas unless the question is explicitly about the immediate change. Expect a small sample (120 at-risk participants in this batch) and favour explainable models or pooled batches.</li><li>Communicate that the Wilson and bootstrap intervals show sampling stability within a single cohort. They do not remove confounding from time, self-selection or social-desirability in a Pre/Post design without a control group.</li>
+            </ul>
+          </div>
+        
+      </div>
+    
+      </div>
+    
+
+    <!-- Page Break for Printing -->
+    <div class="page-break"></div>
+
+    <!-- 9. SCIENTIFIC & TECHNICAL DATA SCIENCE EVALUATION (COLLAPSED BY DEFAULT) -->
+    <details class="collapsible-section" style="margin-bottom: 24px; border: 1px solid var(--gray-200); border-radius: 12px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <summary style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #fdf2f8; cursor: pointer; user-select: none; border-bottom: 1px solid #fbcfe8;">
+        <span style="width: 24px; height: 24px; background: #fce7f3; color: #be185d; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">9</span>
+        <h2 style="font-size: 16px; font-weight: 800; color: var(--gray-900); margin: 0;">9. Scientific &amp; Technical Data Science Evaluation</h2>
+        <span style="font-size: 11px; font-weight: 700; color: #9d174d; background: #fce7f3; border: 1px solid #fbcfe8; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">Collapsed by Default (Click to Expand)</span>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto; display: inline-flex; align-items: center; gap: 6px;">
+          <span>Details &amp; Matrix</span>
+          <span class="collapse-chevron" style="display: inline-block; transition: transform 0.2s ease; font-size: 10px;">▼</span>
+        </span>
+      </summary>
+      <div style="padding: 20px;">
+        <div class="card" style="margin-bottom: 16px;">
+          <h4 style="font-size: 12px; font-weight: 700; color: var(--gray-700); text-transform: uppercase; margin-bottom: 8px;">
+            Theoretical Framework &amp; Statistical Invariance
+          </h4>
+          <div style="font-size: 13px; color: var(--gray-700); line-height: 1.6;">
+            
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">Data used: after filtering to Batch 14 and Level 0.1, 296 rows remain: 148 Pre and 148 Post. Each participant has exactly one row per phase.</li><li style="margin-bottom: 5px;">Data quality: no duplicates, no missing engagement answers, and the same 148 people appear in both phases. Nothing was dropped or left unmatched.</li><li style="margin-bottom: 5px;">Why the methods agree: because the Pre and Post groups are the same people, the unpaired net change (66 − 28) equals the matched net change (40 − 2), at +38. The choice of merge method, duplicate rule or missing-value handling cannot change the result.</li><li style="margin-bottom: 5px;">Transitions (out of 148): 26 stayed full-time, 40 switched in, 2 switched out, 80 stayed not full-time.</li><li style="margin-bottom: 5px;">Switch-in rate: 40 of the 120 people who were not full-time at Pre = 33.33%.</li><li style="margin-bottom: 5px;">Extra statistical checks (Runs 3 and 5): 40 of the 42 people who changed moved toward full-time. The McNemar test gives χ² ≈ 32.6, p &lt; 0.01, so a shift this lopsided is very unlikely to be random noise. The bootstrap 95% interval for the +38 net change is roughly 27 to 49, well above zero. These checks add to the main answer and do not conflict with it.</li><li style="margin-bottom: 5px;">Limits: there is no comparison group, so the results describe association and change only, not causation.</li>
+        </ul>
+      
+          </div>
+        </div>
+
+        <h4 style="font-size: 13px; font-weight: 700; color: var(--gray-900); text-transform: uppercase; margin-bottom: 8px;">
+          Cross-Methodology Technical Matrix (All 5 Runs)
+        </h4>
+        <table>
+        <thead>
+          <tr>
+            <th style="width: 50px;">Run</th>
+            <th style="width: 180px;">Method &amp; Category</th>
+            <th>Augmented Query Specification</th>
+            <th style="width: 140px;">Convergence Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+            <tr>
+              <td style="font-weight: 700;">#1</td>
+              <td>
+                <strong style="color: var(--gray-900);">Direct Danfo.js Filter, Unique-Count & Suffix Inner-Merge Baseline</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Parametric Aggregation</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"Using only prod_nirman_questionnaire (locate it with filenames.find(n => n.toLowerCase().includes('prod_nirman_questionnaire'))), do the following.
+
+Load and clean:
+- Build a Danfo DataFrame.
+- Before casting, mark Career_Plan_Social_Action_Engagement as null when the value is NaN, null, undefined, an empty or whitespace string, or the literal 'NaN', 'null' or 'undefined'. Then cast non-null values to string and trim them.
+- Cast Participant_Id to string with String(x).trim().
+- Filter rows to Number(Workshop_Batch_Number) === 14 and Math.abs(parseFloat(Workshop_Level) - 0.1) < 1e-9.
+- Print the filtered row count.
+
+(1) Pre phase (Workshop_Phase === 'Pre'):
+- Pre denominator: number of unique Participant_Id with non-null engagement.
+- Pre count: number of unique Participant_Id with engagement === 'Fulltime as a career'.
+- Report the Pre full-time share as count ÷ denominator × 100, rounded to 2 decimals.
+
+(2) Post phase: repeat (1) with Workshop_Phase === 'Post'.
+
+(3) Transition table:
+- Create preDf and postDf, keeping only Participant_Id, Workshop_Level and Career_Plan_Social_Action_Engagement.
+- Rename every non-key column with the suffix _pre or _post.
+- Inner-merge with dfd.merge on ['Participant_Id', 'Workshop_Level'].
+- Drop pairs where either engagement value is null.
+- Compute is_fulltime_pre and is_fulltime_post as 1 if the value equals 'Fulltime as a career', otherwise 0.
+- Classify each pair:
+  - Stayed full-time: 1/1
+  - Switched in: 0/1
+  - Switched out: 1/0
+  - Stayed not full-time: 0/0
+- Report the effective matched N and each category's count and percentage of N (2 decimals).
+
+Also report:
+- Net change, unpaired basis: Post count minus Pre count from (1) and (2).
+- Net change, matched basis: (stayed full-time + switched in) minus (stayed full-time + switched out), which equals switched in minus switched out.
+- Switch-in rate: switched in ÷ number of pairs with pre = 0, also as a percentage.
+- Pre-only count: unique Pre participants not present in Post.
+- Post-only count: unique Post participants not present in Pre.
+- Pairs dropped because of null engagement.
+
+Print every step. Return a summary object labelled 'association/change only, not causal'."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use only the questionnaire table prod_nirman_questionnaire, located with filenames.find(n => n.toLowerCase().includes('prod_nirman_questionnaire')). Do not join demographics. Print every step.
+
+LOAD/CLEAN:
+- Build a Danfo DataFrame from data[file].
+- Null-marking before any cast: set Career_Plan_Social_Action_Engagement to null if the value is NaN, null, undefined, an empty or whitespace-only string, or the literal 'NaN', 'null' or 'undefined'. Otherwise set it to String(x).trim().
+- Cast Participant_Id with String(x).trim().
+- Cast Workshop_Phase to a trimmed string.
+- Filter rows where Number(Workshop_Batch_Number) === 14 && Math.abs(parseFloat(Workshop_Level) - 0.1) < 1e-9 (Point 1 workshop, batch 14).
+- Print the filtered row count.
+
+(1) PRE (Workshop_Phase === 'Pre'):
+- preDenominator = number of unique Participant_Id with non-null engagement.
+- preCount = number of unique Participant_Id with engagement === 'Fulltime as a career'.
+- preShare = round2(preCount / preDenominator * 100).
+
+(2) POST (Workshop_Phase === 'Post'): compute the same three values (postDenominator, postCount, postShare).
+
+(3) TRANSITION (matched pairs):
+- Build preDf and postDf from the filtered frame by phase.
+- Keep only Participant_Id, Workshop_Level and Career_Plan_Social_Action_Engagement.
+- Rename the non-key column to Career_Plan_Social_Action_Engagement_pre or Career_Plan_Social_Action_Engagement_post.
+- Inner-merge: dfd.merge({left: preDf, right: postDf, on: ['Participant_Id','Workshop_Level'], how: 'inner'}).
+- Record the total merged pairs.
+- Drop pairs where either engagement value is null, and record pairsDroppedNull.
+- Compute is_fulltime_pre and is_fulltime_post as 1 if the value === 'Fulltime as a career', else 0.
+- Classify each pair:
+  - Stayed full-time (1/1)
+  - Switched in (0/1)
+  - Switched out (1/0)
+  - Stayed not full-time (0/0)
+- Report the effective matched N, plus each category's count and % of N (2 decimals).
+
+ADDITIONAL METRICS:
+- netChangeUnpaired = postCount - preCount.
+- netChangeMatched = (stayed + switchedIn) - (stayed + switchedOut), which equals switchedIn - switchedOut.
+- switchInRate = switchedIn / (number of pairs with is_fulltime_pre === 0), also shown as a % (2 decimals).
+- preOnlyCount = unique Pre Participant_Id not present in Post (within the filtered frame).
+- postOnlyCount = unique Post Participant_Id not present in Pre.
+- pairsDroppedNull.
+
+Guard all divisions against zero. Return a summary object with label 'association/change only, not causal', containing every count, share, category breakdown, N and metric above.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Baseline that follows the requested merge procedure literally; all values match the consensus.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#2</td>
+              <td>
+                <strong style="color: var(--gray-900);">Pure JavaScript Set-Algebra Reconstruction (No DataFrame Merge)</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Set-Theoretic Verification</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"Using only the raw row array of prod_nirman_questionnaire, without dfd.merge, do the following.
+
+Clean and filter:
+- Normalise each row: pid = String(Participant_Id).trim().
+- Set eng to null when the raw value is NaN, null, undefined, an empty or whitespace string, or the literal 'NaN', 'null' or 'undefined'. Otherwise eng = String(raw).trim().
+- Keep only rows where Number(Workshop_Batch_Number) === 14 and Math.abs(parseFloat(Workshop_Level) - 0.1) < 1e-9.
+
+Build the phase maps:
+- Build preMap (pid → array of eng values) from rows with Workshop_Phase === 'Pre'.
+- Build postMap the same way from rows with Workshop_Phase === 'Post'.
+
+(1) and (2) Unpaired counts:
+- Denominator: Set of pids with at least one non-null eng.
+- Full-time count: Set of pids with eng === 'Fulltime as a career'.
+- Report the count, the denominator and the percentage (2 decimals).
+
+(3) Matched set:
+- Take the intersection of the key sets of preMap and postMap.
+- If any pid has more than one row in a phase, report it. Pair on the single row; if duplicates exist, flag them and use the first non-null value.
+- Exclude pids whose pre or post eng is null, and report how many were excluded.
+- Compute is_fulltime = (eng === 'Fulltime as a career') ? 1 : 0.
+- Tally the four categories (Stayed full-time 1/1, Switched in 0/1, Switched out 1/0, Stayed not full-time 0/0) with counts and percentages of the effective matched N.
+
+Also compute:
+- Net change, unpaired: Post full-time set size minus Pre full-time set size.
+- Net change, matched: switched in minus switched out.
+- Switch-in rate: switched in ÷ (switched in + stayed not full-time).
+- Pre-only count: size of Pre keys minus Post keys.
+- Post-only count: size of Post keys minus Pre keys.
+
+Report all values. State that the results describe association and change only, not causation."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use only the raw row array of prod_nirman_questionnaire (data[filename containing 'prod_nirman_questionnaire']). Do not use dfd.merge and do not join the demographics table.
+
+CLEAN: For each row:
+- Set pid = String(Participant_Id).trim().
+- Set eng from Career_Plan_Social_Action_Engagement. Use null when the raw value is NaN, null, undefined, an empty or whitespace-only string, or the literal 'NaN', 'null' or 'undefined'. Otherwise eng = String(raw).trim().
+
+FILTER: Keep only rows where Number(Workshop_Batch_Number) === 14 AND Math.abs(parseFloat(Workshop_Level) - 0.1) < 1e-9 (Point 1 workshop, batch 14). Report the filtered row count.
+
+PHASE MAPS:
+- preMap: pid -> array of eng values, from rows with Workshop_Phase === 'Pre'.
+- postMap: built the same way from rows with Workshop_Phase === 'Post'.
+
+(1) UNPAIRED PRE:
+- Denominator = Set of Pre pids with at least one non-null eng.
+- Full-time = Set of Pre pids with any eng === 'Fulltime as a career'.
+- Report the count, the denominator and the percentage (2 decimals).
+
+(2) UNPAIRED POST: Repeat step (1) for the Post phase.
+
+(3) MATCHED PRE/POST PAIRS:
+- Take matched pids as the intersection of the preMap and postMap key sets.
+- Detect and report any pid with more than one row in a phase (list the pids and the counts per phase).
+- For each phase, pair on the single row. If duplicates exist, flag them and use the first non-null eng value.
+- Exclude pids whose pre or post eng is null, and report the excluded count.
+- The effective matched N is the number of remaining pids.
+- Compute is_fulltime = (eng === 'Fulltime as a career') ? 1 : 0 for pre and post.
+- Tally four categories, each with a count and a percentage of the effective matched N (2 decimals):
+  - Stayed full-time (1/1)
+  - Switched in (0/1)
+  - Switched out (1/0)
+  - Stayed not full-time (0/0)
+
+ADDITIONAL METRICS:
+- Net change, unpaired = Post full-time set size − Pre full-time set size.
+- Net change, matched = switched in − switched out.
+- Switch-in rate = switched in ÷ (switched in + stayed not full-time), as a percentage with 2 decimals. Guard against a zero denominator.
+- Pre-only count = |Pre keys \ Post keys|.
+- Post-only count = |Post keys \ Pre keys|.
+
+OUTPUT: Return all counts, denominators, percentages, the duplicate report, the excluded count and the effective N. State explicitly that this is single-arm observational data, so the results describe association and change only, not causation.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Set intersection replaces the merge and reproduces the same numbers. Its duplicate check found none, which confirms the one-row-per-participant grain.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#3</td>
+              <td>
+                <strong style="color: var(--gray-900);">2x2 Contingency Cross-Tabulation with McNemar Paired Test & Marginal Homogeneity Check</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Paired Categorical Inference</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"Using only prod_nirman_questionnaire, apply the same load, cast and null rules as the baseline:
+- Participant_Id cast to string.
+- Engagement nulls (NaN, null, undefined, '', 'NaN', 'null', 'undefined') detected before the string cast.
+- Filter to Workshop_Batch_Number == 14 and parseFloat(Workshop_Level) == 0.1, with a 1e-9 tolerance.
+
+(1) and (2) Unpaired counts:
+- Compute the unpaired Pre and Post full-time counts as unique Participant_Id with engagement 'Fulltime as a career'.
+- Compute the denominators as unique participants with non-null engagement in each phase.
+
+(3) Contingency table:
+- Split into Pre and Post frames with the suffixes _pre and _post.
+- Inner-merge on Participant_Id and Workshop_Level, then drop pairs with null engagement in either phase.
+- Build is_fulltime_pre and is_fulltime_post (1 if 'Fulltime as a career', else 0).
+- Build a 2x2 table: rows are pre 0/1, columns are post 0/1.
+- Map the cells to categories: a = 1/1 Stayed full-time, b = 1/0 Switched out, c = 0/1 Switched in, d = 0/0 Stayed not full-time.
+- Report each cell's count and percentage of N = a + b + c + d.
+- Report the row and column marginals:
+  - Matched Pre full-time = a + b.
+  - Matched Post full-time = a + c.
+- Net change, matched basis: (a + c) − (a + b) = c − b.
+- Net change, unpaired basis: Post count minus Pre count from (1) and (2).
+- Switch-in rate: c ÷ (c + d).
+
+McNemar test:
+- Compute the continuity-corrected chi-square: (|b − c| − 1)² ÷ (b + c).
+- Compute the exact binomial two-sided p-value on min(b, c) with n = b + c and p = 0.5. Use the exact test if b + c < 25.
+- Report the paired difference in proportions (c − b) ÷ N.
+
+Unmatched counts:
+- Pre-only participants and Post-only participants.
+
+Round all values to 2 decimals. State that the p-value describes association or change in single-arm observational data and is not causal proof."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use only the prod_nirman_questionnaire table. Do not join demographics.
+
+LOAD/CAST: Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to string. Before any string cast, flag Career_Plan_Social_Action_Engagement as null if its raw value is NaN, null, undefined, '', 'NaN', 'null' or 'undefined'. Keep this as a boolean engagement_is_null so null values do not become the literal strings 'NaN' or 'null'.
+
+FILTER: Keep rows where Number(Workshop_Batch_Number) == 14 and Math.abs(parseFloat(Workshop_Level) - 0.1) < 1e-9 (Point 1 workshop, batch 14).
+
+(1) Unpaired Pre counts: in Workshop_Phase == 'Pre' rows, count unique Participant_Id with Career_Plan_Social_Action_Engagement == 'Fulltime as a career'. The denominator is unique Pre Participant_Id with non-null engagement. Report the count, the denominator and the percentage.
+
+(2) Unpaired Post counts: do the same for Workshop_Phase == 'Post'.
+
+(3) Paired analysis:
+- Split the filtered frame into Pre and Post frames, suffixed _pre and _post.
+- Inner-merge on Participant_Id and Workshop_Level. This is a merge, not a groupby.
+- Drop pairs where engagement is null in either phase. Report the effective N of matched pairs.
+- Build is_fulltime_pre and is_fulltime_post: 1 if Career_Plan_Social_Action_Engagement == 'Fulltime as a career', else 0.
+- Build a 2x2 contingency table with rows = is_fulltime_pre (0/1) and columns = is_fulltime_post (0/1). The cells are:
+  - a (1/1) = Stayed full-time
+  - b (1/0) = Switched out
+  - c (0/1) = Switched in
+  - d (0/0) = Stayed not full-time
+- Report each cell's count and its percentage of N = a+b+c+d.
+- Report the marginals:
+  - Matched Pre full-time = a+b
+  - Matched Post full-time = a+c
+  - Pre not full-time = c+d
+  - Post not full-time = b+d
+- Net change, matched basis = (a+c) − (a+b) = c − b.
+- Net change, unpaired basis = Post full-time unique count (2) − Pre full-time unique count (1).
+- Switch-in rate = c / (c+d). Guard against a zero denominator.
+
+McNemar test:
+- Continuity-corrected chi-square = (|b−c| − 1)² / (b+c), with df = 1. Return null if b+c = 0.
+- Exact binomial two-sided p-value: k = min(b,c), n = b+c, p = 0.5, so p = min(1, 2 × Σ_{i=0..k} C(n,i) 0.5^n).
+- Use the exact p-value as the primary result when b+c < 25. Otherwise report the chi-square p-value (df = 1) as primary, and still show both.
+- Report the paired difference in proportions = (c − b) / N.
+
+Unmatched counts:
+- Pre-only participants: unique Participant_Id in Pre but not in Post, within the batch 14 / level 0.1 filter.
+- Post-only participants: unique Participant_Id in Post but not in Pre.
+
+Round all displayed values to 2 decimals. State that the p-value describes association or change in single-arm observational data and is not causal proof that the workshop caused the change.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Adds an inferential test on top of the identical core numbers. One minor inconsistency: it reports the chi-square as primary even though b+c=42 ≥ 25, which is correct under its rule. Its note that unpaired and matched figures differ because of unmatched participants is generic, since both are identical here.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#4</td>
+              <td>
+                <strong style="color: var(--gray-900);">Participant-Level Deduplication & Grain-Audit Aggregation</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Data-Integrity / Grain-Controlled Aggregation</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"Using only prod_nirman_questionnaire, apply the same load, cast and null rules as the baseline:
+- Cast Participant_Id to a trimmed string.
+- Detect engagement nulls before the string cast (NaN, null, undefined, '', 'NaN', 'null', 'undefined'); otherwise use the trimmed string.
+- Filter to Workshop_Batch_Number == 14 and parseFloat(Workshop_Level) == 0.1, with a 1e-9 tolerance.
+
+Grain audit:
+- Group by Participant_Id + Workshop_Level + Workshop_Phase.
+- Report total rows, distinct keys and the number of keys with more than one row.
+- Deduplicate to one row per key. Prefer a non-null engagement value; if conflicting non-null values exist, flag them and keep the first.
+
+(1) Pre phase, on the deduplicated frame:
+- Pre denominator: unique Pre participants with non-null engagement.
+- Pre count: participants with 'Fulltime as a career'.
+
+(2) Post phase: repeat (1) for Post.
+
+(3) Transition table:
+- Use groupby to create one value per participant per phase.
+- Pivot to wide format with columns engagement_pre and engagement_post, which is equivalent to adding the _pre/_post suffixes and inner-merging on Participant_Id within Workshop_Level.
+- Keep only participants present in both phases with both values non-null.
+- Derive is_fulltime_pre and is_fulltime_post.
+- Report the counts and percentages of Stayed full-time (1/1), Switched in (0/1), Switched out (1/0) and Stayed not full-time (0/0) over the effective matched N.
+- Net change, unpaired basis: Post count minus Pre count.
+- Net change, matched basis: switched in minus switched out.
+- Switch-in rate: switched in ÷ pre = 0 pairs.
+- Pre-only and Post-only counts.
+- Number of matched participants dropped because of null engagement.
+
+Confirm the result matches the baseline and print the audit. Results describe association and change only, not causation."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use only the table prod_nirman_questionnaire (no join to prod_nirman_demographics).
+
+LOAD / CAST (baseline rules):
+- Cast Participant_Id to a trimmed string.
+- Cast Workshop_Phase to a trimmed string.
+- For Career_Plan_Social_Action_Engagement, check for null before casting to string. Treat these raw values as null: NaN, null, undefined, '', 'NaN', 'null', 'undefined'. Otherwise use String(value).trim().
+- Filter rows to Workshop_Batch_Number == 14 AND |parseFloat(Workshop_Level) - 0.1| < 1e-9 (Point 1 workshop).
+
+GRAIN AUDIT on the filtered frame:
+- Group by the key (Participant_Id, Workshop_Level, Workshop_Phase).
+- Report total rows, number of distinct keys, and number of keys with more than one row.
+- Deduplicate to one row per key:
+  - Prefer a row with non-null Career_Plan_Social_Action_Engagement.
+  - If a key has conflicting non-null engagement values, flag it (count and list the keys) and keep the first non-null value.
+
+(1) PRE PHASE, using the deduplicated frame with Workshop_Phase == 'Pre':
+- Pre denominator = unique Participant_Id with non-null Career_Plan_Social_Action_Engagement.
+- Pre count = unique Participant_Id with Career_Plan_Social_Action_Engagement == 'Fulltime as a career'.
+- Report the Pre percentage.
+
+(2) POST PHASE: apply the same logic to Workshop_Phase == 'Post'. Report the Post denominator, Post count and Post percentage.
+
+(3) TRANSITION TABLE:
+- Build the matched frame:
+  - Group by Participant_Id + Workshop_Level + Workshop_Phase to get one engagement value per participant per phase.
+  - Pivot to wide format with columns engagement_pre and engagement_post. This is equivalent to splitting by phase, adding the _pre/_post suffixes, and inner-merging on Participant_Id within Workshop_Level.
+  - Keep only participants present in both phases with both values non-null. This is the effective matched N.
+- Derive is_fulltime_pre = (engagement_pre == 'Fulltime as a career') ? 1 : 0, and is_fulltime_post the same way from engagement_post.
+- Report counts and percentages of the effective matched N for:
+  - Stayed full-time (1/1)
+  - Switched in (0/1)
+  - Switched out (1/0)
+  - Stayed not full-time (0/0)
+- Net change, unpaired basis = Post count - Pre count.
+- Net change, matched basis = switched in - switched out.
+- Switch-in rate = switched in / number of matched pairs with is_fulltime_pre == 0 (switched_to_fulltime).
+- Pre-only participant count and Post-only participant count.
+- Number of participants present in both phases but dropped because at least one engagement value is null.
+
+VALIDATION AND OUTPUT:
+- Confirm the results reconcile with the baseline computation.
+- Print the full audit: grain stats, duplicates, conflicts, denominators, effective N.
+- Round percentages to 2 decimals.
+- State that results describe association and change in a single-arm observational dataset, not causation.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Confirms no deduplication was needed, so raw and deduplicated results are identical. It also adds the engagement category distributions as extra context.
+                </div>
+              </td>
+            </tr>
+          
+            <tr>
+              <td style="font-weight: 700;">#5</td>
+              <td>
+                <strong style="color: var(--gray-900);">Bootstrap Resampling & Wilson Interval Stability of Transition Shares</strong><br/>
+                <span style="font-size: 10px; color: var(--gray-500); text-transform: uppercase;">Resampling / Interval Estimation</span>
+              </td>
+              <td>
+                <span style="font-style: italic; color: var(--gray-800);">"Using only prod_nirman_questionnaire, apply the same load, cast and null rules as the baseline:
+- Participant_Id cast to string.
+- Career_Plan_Social_Action_Engagement cast to string, with nulls (NaN, null, undefined, '', 'NaN', 'null', 'undefined') detected before the cast.
+- Filter to Workshop_Batch_Number == 14 and parseFloat(Workshop_Level) == 0.1.
+
+(1) and (2) Unpaired point estimates:
+- Compute the Pre and Post full-time counts (unique Participant_Id with 'Fulltime as a career') and their non-null denominators.
+- Report the shares with 95% Wilson score intervals.
+
+(3) Matched transitions:
+- Build the matched frame: _pre/_post suffixes, inner merge on Participant_Id and Workshop_Level, then drop pairs with null engagement in either phase.
+- Compute is_fulltime_pre and is_fulltime_post.
+- Classify each pair as Stayed full-time (1/1), Switched in (0/1), Switched out (1/0) or Stayed not full-time (0/0).
+- Report each count and its percentage of N.
+
+Bootstrap:
+- Resample matched participants with replacement for 2,000 iterations, using a fixed-seed PRNG (for example, mulberry32 with seed 42).
+- In each iteration, recompute the four category percentages, the matched net change (switched in − switched out) and the switch-in rate (switched in ÷ pre = 0).
+- Report the bootstrap median and the 2.5th and 97.5th percentiles for each metric.
+- Also report a Wilson 95% interval for the switch-in rate.
+
+Also report:
+- Net change, unpaired basis: Post count minus Pre count.
+- Net change, matched basis.
+- Pre-only and Post-only unmatched counts.
+
+Round to 2 decimals. Confirm that the point estimates equal the deterministic counts. State that the intervals describe sampling variability of an observational association, not a causal workshop effect."</span><br/>
+                <span style="font-size: 11px; color: var(--gray-500); margin-top: 4px; display: block;">
+                  Refined: Use only prod_nirman_questionnaire (no join with demographics).
+
+LOAD/CAST:
+- Cast Participant_Id to string.
+- Before casting Career_Plan_Social_Action_Engagement, flag nulls: values that are NaN, null, undefined, '', 'NaN', 'null' or 'undefined' are null.
+- Then cast Career_Plan_Social_Action_Engagement to string.
+- Cast Workshop_Phase to string ('Pre'/'Post').
+- Filter rows to Workshop_Batch_Number == 14 AND parseFloat(Workshop_Level) == 0.1 (Point 1).
+
+(1)+(2) UNPAIRED POINT ESTIMATES:
+- For each Workshop_Phase ('Pre', 'Post'), compute:
+  - Full-time count: unique Participant_Id where Career_Plan_Social_Action_Engagement == 'Fulltime as a career'.
+  - Denominator: unique Participant_Id with non-null engagement in that phase.
+- Report the share (count/denominator, %) with a 95% Wilson score interval (z = 1.96).
+
+(3) MATCHED TRANSITIONS:
+- Split by Workshop_Phase and suffix the columns _pre/_post.
+- Inner-merge on Participant_Id and Workshop_Level.
+- Drop pairs where Career_Plan_Social_Action_Engagement_pre or _post is null. N = number of remaining matched pairs.
+- Set is_fulltime_pre/post = 1 if the value == 'Fulltime as a career', else 0.
+- Classify each pair:
+  - Stayed full-time (1/1)
+  - Switched in (0/1)
+  - Switched out (1/0)
+  - Stayed not full-time (0/0)
+- Report each count and its % of N.
+- Matched net change = switched in − switched out.
+- Switch-in rate = switched in ÷ count(is_fulltime_pre == 0), with a Wilson 95% interval.
+
+BOOTSTRAP:
+- Resample the N matched participants with replacement for 2,000 iterations, using the seeded PRNG mulberry32(42).
+- In each iteration, recompute:
+  - the four category percentages
+  - the matched net change (count and percentage points)
+  - the switch-in rate
+- Report the bootstrap median and the 2.5th and 97.5th percentiles for each metric.
+
+ALSO REPORT:
+- Unpaired net change = Post full-time count − Pre full-time count.
+- Matched net change.
+- Pre-only unmatched count: Participant_Ids with a non-null Pre row but no matched non-null Post row.
+- Post-only unmatched count: the reverse.
+- The effective N at each step.
+
+OUTPUT RULES:
+- Round all displayed numbers to 2 decimals.
+- Confirm that the point estimates equal the deterministic counts.
+- State that the intervals describe sampling variability of an observational (single-arm) association, not a causal workshop effect.
+                </span>
+              </td>
+              <td>
+                <span class="aligned-tag">
+                  ✓ Aligned
+                </span>
+                <div style="font-size: 11px; color: var(--gray-600); margin-top: 2px;">
+                  Bootstrap medians equal the deterministic point estimates. Intervals quantify sampling variability only and do not change any headline figure.
+                </div>
+              </td>
+            </tr>
+          
+        </tbody>
+        </table>
+      </div>
+    </details>
+
+    <!-- 10. PROGRAMMATIC IMPLEMENTATION & SANDBOX CODE (COLLAPSED BY DEFAULT) -->
+    <details class="collapsible-section" style="margin-top: 32px; margin-bottom: 24px; border: 1px solid var(--gray-200); border-radius: 12px; background: #ffffff; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.03);">
+      <summary style="display: flex; align-items: center; gap: 10px; padding: 14px 18px; background: #faf5ff; cursor: pointer; user-select: none; border-bottom: 1px solid #f3e8ff;">
+        <span style="width: 24px; height: 24px; background: #fae8ff; color: #a21caf; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">10</span>
+        <h2 style="font-size: 16px; font-weight: 800; color: var(--gray-900); margin: 0;">10. Programmatic Implementation &amp; Sandbox Code (5 Runs)</h2>
+        <span style="font-size: 11px; font-weight: 700; color: #86198f; background: #fae8ff; border: 1px solid #f3e8ff; padding: 2px 8px; border-radius: 4px; margin-left: 8px;">Collapsed by Default (Click to Expand)</span>
+        <span style="font-size: 12px; color: var(--gray-500); margin-left: auto; display: inline-flex; align-items: center; gap: 6px;">
+          <span>Danfo.js Code &amp; Telemetry</span>
+          <span class="collapse-chevron" style="display: inline-block; transition: transform 0.2s ease; font-size: 10px;">▼</span>
+        </span>
+      </summary>
+      <div style="padding: 20px;">
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 1: Direct Danfo.js Filter, Unique-Count & Suffix Inner-Merge Baseline</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>Step 1 – Data Ingestion: Get filenames = Object.keys(data || {}). Find the questionnaire file with filenames.find(n => n.toLowerCase().includes('prod_nirman_questionnaire')). If it is missing, print an error and return a summary saying so. Do NOT load or join the demographics table. Print the filename that was found.</li><li>Step 2 – Inspection: Take rows = Array.isArray(data[file]) ? data[file] : []. Print the raw row count. Check that these columns exist: Participant_Id, Workshop_Phase, Workshop_Level, Workshop_Batch_Number, Career_Plan_Social_Action_Engagement. Print any missing columns and stop gracefully if a required one is absent.</li><li>Step 3 – Null-marking: Before any cast or DataFrame build, map over the raw row objects. Set Career_Plan_Social_Action_Engagement to null if the value is null, undefined, NaN (typeof number && isNaN), an empty or whitespace-only string, or the trimmed literal 'NaN', 'null' or 'undefined'. Otherwise set it to String(x).trim(). Print the count of null engagement values after marking.</li><li>Step 4 – Type casting: In the same map, set Participant_Id = String(x).trim() and Workshop_Phase = String(x).trim(). Keep Workshop_Level and Workshop_Batch_Number as raw values for numeric comparison. Build the Danfo DataFrame with new dfd.DataFrame(cleanedRows) and print its shape.</li><li>Step 5 – Filtering: Keep rows where Number(Workshop_Batch_Number) === 14 && Math.abs(parseFloat(Workshop_Level) - 0.1) < 1e-9 (Point 1 workshop, batch 14). Apply it as a boolean mask (df.loc({rows: mask})) or by filtering the cleaned row array and rebuilding the DataFrame. Print the filtered row count. Also print the Workshop_Phase value counts so the 'Pre'/'Post' labels can be checked.</li><li>Step 6 – Helpers: Define round2 = v => Math.round(v * 100) / 100. Define safeDiv = (a, b) => b === 0 ? null : a / b, so every division is guarded and returns null on a zero denominator. Work on plain row arrays from the filtered frame (dfd.toJSON or the filtered array) for the unique-ID set logic.</li><li>Step 7 – PRE metrics: Take rows with Workshop_Phase === 'Pre'. preDenominator = size of the Set of Participant_Id where engagement !== null. preCount = size of the Set of Participant_Id where engagement === 'Fulltime as a career'. preShare = round2(safeDiv(preCount, preDenominator) * 100), or null if the denominator is 0. Print all three values.</li><li>Step 8 – POST metrics: Repeat Step 7 for Workshop_Phase === 'Post' to get postDenominator, postCount and postShare. Print all three values.</li><li>Step 9 – Pre-only / Post-only: Build preIdSet and postIdSet as unique Participant_Id sets per phase within the filtered frame, regardless of engagement null status. preOnlyCount = count of preIds not in postIdSet. postOnlyCount = count of postIds not in preIdSet. Print both counts.</li><li>Step 10 – Prepare transition frames: Build preDf and postDf from the filtered frame by phase. Keep only Participant_Id, Workshop_Level and Career_Plan_Social_Action_Engagement. Rename the engagement column with df.rename({Career_Plan_Social_Action_Engagement: 'Career_Plan_Social_Action_Engagement_pre'}) and likewise to '_post'. Make sure Workshop_Level has the same type in both frames, for example by normalizing to parseFloat, so the merge key matches. Print the shapes of both frames.</li><li>Step 11 – Merge: Run merged = dfd.merge({left: preDf, right: postDf, on: ['Participant_Id','Workshop_Level'], how: 'inner'}). Record totalMergedPairs = merged.shape[0] and print it. Note that duplicate rows per participant/phase, if any, would multiply pairs; print a warning if totalMergedPairs exceeds the unique overlap of IDs.</li><li>Step 12 – Drop null pairs: Convert merged to row objects. Keep pairs where both engagement_pre and engagement_post are not null, not undefined and not NaN (Danfo may convert null to NaN). pairsDroppedNull = totalMergedPairs - kept count. Effective matched N = kept count. Print pairsDroppedNull and N.</li><li>Step 13 – Classification: For each kept pair, set is_fulltime_pre = (pre === 'Fulltime as a career') ? 1 : 0 and is_fulltime_post the same way. Classify each pair as: Stayed full-time (1/1), Switched in (0/1), Switched out (1/0), or Stayed not full-time (0/0). Count each category and compute its percent = round2(safeDiv(count, N) * 100). Print the breakdown table.</li><li>Step 14 – Additional metrics: netChangeUnpaired = postCount - preCount. netChangeMatched = (stayed + switchedIn) - (stayed + switchedOut); also confirm it equals switchedIn - switchedOut. preNotFulltimeN = stayedNot + switchedIn, i.e. pairs with is_fulltime_pre === 0. switchInRate = safeDiv(switchedIn, preNotFulltimeN), rounded to 4 decimals, with switchInRatePct = round2(switchInRate * 100), both null if the denominator is 0. Print all metrics.</li><li>Step 15 – Return summary: Return an object with label: 'association/change only, not causal' and the following fields:
+- filters: batch 14, Workshop_Level 0.1.
+- filteredRowCount.
+- pre: {preDenominator, preCount, preShare}.
+- post: {postDenominator, postCount, postShare}.
+- transition: {totalMergedPairs, pairsDroppedNull, effectiveMatchedN, and categories with count and pct for stayedFulltime, switchedIn, switchedOut, stayedNotFulltime}.
+- metrics: {netChangeUnpaired, netChangeMatched, switchInRate, switchInRatePct, preNotFulltimeN, preOnlyCount, postOnlyCount, pairsDroppedNull}.
+- table_used: 'prod_nirman_questionnaire'.
+Print the final summary with console.log before returning it.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> Using only the prod_nirman_questionnaire table (no demographics join), I filtered to Point 1 workshop (level 0.1), batch 14, which left 296 rows. That is 148 participants in each phase, and every participant appears in both Pre and Post (preOnlyCount = 0, postOnlyCount = 0). The share choosing "Fulltime as a career" rose from 28 of 148 at Pre (18.92%) to 66 of 148 at Post (44.59%), a net unpaired change of +38 participants. No engagement values were null, so no pairs were dropped.
+
+The matched-pair view shows where that change came from. All 148 pairs were usable, and they break down as:
+
+| Category | Count | % of N |
+|---|---|---|
+| Stayed full-time | 26 | 17.57% |
+| Switched in (not full-time → full-time) | 40 | 27.03% |
+| Switched out (full-time → not full-time) | 2 | 1.35% |
+| Stayed not full-time | 80 | 54.05% |
+
+The matched net change is 40 − 2 = +38, which matches the unpaired figure, as it should when the Pre and Post groups are identical. Of the 120 participants who were not full-time at Pre, 40 switched in, a switch-in rate of 33.33%. Almost no one moved the other way: only 2 of the 28 Pre full-timers switched out. These results describe association and change only, not causation. There is no comparison group, so we cannot attribute the shift to the workshop itself.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 2: Pure JavaScript Set-Algebra Reconstruction (No DataFrame Merge)</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>Step 1 – Data Ingestion: List the filenames with Object.keys(data || {}). Find the questionnaire file as the first filename whose lowercase form includes 'prod_nirman_questionnaire'. Take rows = Array.isArray(data[file]) ? data[file] : []. If the file is not found, return an error object. Do not load the demographics table, do not use dfd.merge and do not build any DataFrame join. Work only on the raw row array.</li><li>Step 2 – Inspection: Log the total row count (about 4304 expected). Check that these columns exist in the first rows: Participant_Id, Workshop_Batch_Number, Workshop_Level, Workshop_Phase and Career_Plan_Social_Action_Engagement. Log the distinct values of Workshop_Phase, Workshop_Level and Career_Plan_Social_Action_Engagement, which helps catch spelling or type traps (for example, Workshop_Level read as text or as a number). If a required column is missing, report it.</li><li>Step 3 – Cleaning: Map each row to a new object as follows.
+- pid = String(r.Participant_Id).trim().
+- eng: take raw = r.Career_Plan_Social_Action_Engagement. Set eng = null if raw is null or undefined, if (typeof raw === 'number' && Number.isNaN(raw)), if String(raw).trim() === '', or if the trimmed string is 'NaN', 'null' or 'undefined'. Otherwise set eng = String(raw).trim().
+- phase = String(r.Workshop_Phase).trim().
+- batch = Number(r.Workshop_Batch_Number).
+- level = parseFloat(r.Workshop_Level).</li><li>Step 4 – Filter: Keep only rows where batch === 14 AND Math.abs(level - 0.1) < 1e-9 (Point 1 workshop, batch 14). Record filteredRowCount. For diagnostics, also record the row counts per phase within the filter.</li><li>Step 5 – Phase maps: Build preMap as a Map from pid to an array of eng values (nulls kept, row order preserved) from filtered rows with phase === 'Pre'. Build postMap the same way from rows with phase === 'Post'. Record the number of keys in each map (unique participants per phase).</li><li>Step 6 – Unpaired Pre (1): Iterate preMap. preDenom = Set of pids whose array has at least one non-null eng. preFT = Set of pids whose array contains an element === 'Fulltime as a career'. Report preFT.size, preDenom.size and pct = preDenom.size > 0 ? +(preFT.size / preDenom.size * 100).toFixed(2) : null.</li><li>Step 7 – Unpaired Post (2): Repeat Step 6 on postMap to get postDenom, postFT, the count and the percentage (2 decimals, with the zero-denominator guard).</li><li>Step 8 – Matched key set and duplicate detection (3a): matched = the preMap keys that are also in postMap. For every pid in preMap and postMap whose array length is greater than 1, add an entry {pid, pre_rows, post_rows} to the duplicate report. Also report the number of duplicate pids per phase and flag whether any duplicates exist (scope: all filtered pids, with a note on which ones fall in the matched set).</li><li>Step 9 – Pairing and exclusion (3b): For each matched pid:
+- preEng = the first non-null value in preMap.get(pid), or null if there is none.
+- postEng = the first non-null value in postMap.get(pid), or null if there is none.
+- Flag the pid when either array has length greater than 1 (resolved with the first-non-null rule).
+- If preEng or postEng is null, increment excludedCount and log the pid. Otherwise push {pid, preEng, postEng} into the pairs list.
+The effective matched N is pairs.length.</li><li>Step 10 – Transition tally (3c): For each pair, set ftPre = preEng === 'Fulltime as a career' ? 1 : 0 and ftPost the same way. Count four categories:
+- stayed_fulltime (1/1)
+- switched_in (0/1)
+- switched_out (1/0)
+- stayed_not_fulltime (0/0)
+For each category, compute pct = N > 0 ? +(count / N * 100).toFixed(2) : null. Check that the four counts sum to N.</li><li>Step 11 – Additional metrics:
+- net_change_unpaired = postFT.size − preFT.size.
+- net_change_matched = switched_in − switched_out.
+- switch_in_rate: let d = switched_in + stayed_not_fulltime. The rate is d > 0 ? +(switched_in / d * 100).toFixed(2) : null, with a note when d is 0.
+- pre_only_count = the number of preMap keys not in postMap.
+- post_only_count = the number of postMap keys not in preMap.
+- Consistency check: matched.length + pre_only = the number of preMap keys, and matched.length + post_only = the number of postMap keys.</li><li>Step 12 – Output: Log progress at each step with console.log. Return a structured object with these sections:
+- filter: the criteria, filtered_row_count and rows per phase.
+- unpaired_pre: fulltime_count, denominator and pct.
+- unpaired_post: fulltime_count, denominator and pct.
+- matched: matched_pid_count (intersection), duplicate_report (list plus per-phase counts and flag), duplicate_resolution_rule ('first non-null eng'), excluded_null_count, the excluded pids, effective_n, and the four categories, each with count and pct.
+- additional_metrics: net_change_unpaired, net_change_matched, switch_in_rate_pct, pre_only_count and post_only_count.
+- notes: the table used (questionnaire only, no join) and the explicit caveat: 'Single-arm observational data (no control group): results describe association and Pre→Post change only, not causation; unpaired and matched figures use different denominators and should not be directly equated.'</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> This analysis uses only the raw prod_nirman_questionnaire rows, with no demographics join and no dfd.merge. After filtering to Point 1 workshop (level 0.1), batch 14, **296 rows** remain, 148 Pre and 148 Post. Every pid appears exactly once per phase, so there are **no duplicate pids** in either phase (0 duplicates, nothing flagged). The Pre and Post key sets are identical: 148 matched pids, **0 Pre-only** and **0 Post-only**. No matched pid has a null eng, so the **excluded count is 0** and the **effective matched N is 148**.
+
+**Unpaired view.** Pre: 28 of 148 pids chose "Fulltime as a career" (**18.92%**). Post: 66 of 148 did (**44.59%**). The net change in the full-time set size is **+38**.
+
+**Matched view (N = 148).**
+- Stayed full-time (1/1): 26 (17.57%)
+- Switched in (0/1): 40 (27.03%)
+- Switched out (1/0): 2 (1.35%)
+- Stayed not full-time (0/0): 80 (54.05%)
+
+These four categories sum to 148. The matched net change is 40 − 2 = **+38**, which equals the unpaired net change. That is expected here because the Pre and Post pid sets are identical. The switch-in rate is 40 ÷ (40 + 80) = **33.33%**, meaning about one in three people who were not full-time at Pre said full-time at Post. Very few people moved the other way (2 of 28 Pre full-time respondents).
+
+**Caveat.** This is single-arm observational data with no control group. The results describe association and Pre→Post change only, not causation. Other factors, such as timing, self-selection or social-desirability effects in responses, could also contribute to the shift.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 3: 2x2 Contingency Cross-Tabulation with McNemar Paired Test & Marginal Homogeneity Check</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>Step 1 (Data Ingestion & Inspection): List the keys of the `data` object. Find the file whose name contains 'prod_nirman_questionnaire' and do not load or join the demographics table. Wrap the rows in a Danfo DataFrame, or work on the raw row array for null-safe handling. Log the total row count (expected about 4304). Confirm these columns exist: Participant_Id, Workshop_Name, Workshop_Phase, Workshop_Level, Workshop_Batch_Number and Career_Plan_Social_Action_Engagement. If any is missing, return an error object naming the missing columns.</li><li>Step 2 (Null flag before casting): For each raw row, set the boolean engagement_is_null = true if the raw Career_Plan_Social_Action_Engagement is undefined, null, a numeric NaN, '' or whitespace-only, or the literal strings 'NaN', 'null' or 'undefined'. Compute this before any String() conversion, so nulls never turn into the literal text 'NaN' or 'null'.</li><li>Step 3 (Type casting): Cast Participant_Id, Workshop_Name, Workshop_Phase and Career_Plan_Social_Action_Engagement to trimmed strings. Casting Workshop_Name to string keeps the value 'F' from becoming boolean false. For rows where engagement_is_null is true, store the engagement value as null instead of a string. Keep Workshop_Level and Workshop_Batch_Number numeric for filtering.</li><li>Step 4 (Filter to batch 14, Point 1): Keep rows where Number(Workshop_Batch_Number) === 14 and Math.abs(parseFloat(Workshop_Level) - 0.1) < 1e-9. Log the filtered row count and the number of unique Participant_Id values.</li><li>Step 5 (Grain check): Check that each (Participant_Id, Workshop_Level, Workshop_Phase) appears only once. If duplicates exist, keep the first occurrence and report how many were dropped. Log the distinct Workshop_Phase values; only 'Pre' and 'Post' are expected.</li><li>Step 6 (Unpaired Pre counts): From the filtered rows with Workshop_Phase === 'Pre', compute:
+- pre_denominator: unique Participant_Id with engagement_is_null false.
+- pre_fulltime_count: unique Participant_Id with engagement exactly 'Fulltime as a career'.
+- pre_fulltime_pct = 100 × pre_fulltime_count / pre_denominator, or null if the denominator is 0.
+Note that 'Not yet decided / confused' is a real non-null response. It counts in the denominator as not full-time.</li><li>Step 7 (Unpaired Post counts): Repeat Step 6 for Workshop_Phase === 'Post' to get post_denominator, post_fulltime_count and post_fulltime_pct.</li><li>Step 8 (Split and suffix): Split the filtered rows into a Pre frame and a Post frame. Rename every column except the merge keys (Participant_Id, Workshop_Level) with the suffix _pre or _post. This includes Career_Plan_Social_Action_Engagement and engagement_is_null.</li><li>Step 9 (Inner merge): Inner-merge the Pre and Post frames on Participant_Id and Workshop_Level. Use a merge (dfd.merge with how 'inner', or an equivalent keyed join), not a groupby. Normalise Workshop_Level to a fixed key such as parseFloat(x).toFixed(1) so float representations match. Log the number of merged rows.</li><li>Step 10 (Drop null pairs): Remove merged rows where engagement_is_null_pre or engagement_is_null_post is true. Report the number of pairs removed. The remaining count is the effective N of matched pairs.</li><li>Step 11 (Full-time indicators): For each matched pair, set is_fulltime_pre = 1 if Career_Plan_Social_Action_Engagement_pre === 'Fulltime as a career', else 0. Build is_fulltime_post the same way from the _post column.</li><li>Step 12 (2x2 contingency table): Count the four cells, with rows = is_fulltime_pre and columns = is_fulltime_post:
+- a (1,1) = Stayed full-time
+- b (1,0) = Switched out
+- c (0,1) = Switched in
+- d (0,0) = Stayed not full-time
+Check that a+b+c+d equals N. Give each cell's percentage as 100 × cell / N, guarding against N = 0.</li><li>Step 13 (Marginals and change metrics): Compute the marginals:
+- Matched Pre full-time = a+b
+- Matched Post full-time = a+c
+- Pre not full-time = c+d
+- Post not full-time = b+d
+Then compute the change metrics:
+- Net change, matched basis = (a+c) − (a+b) = c − b.
+- Net change, unpaired basis = post_fulltime_count (from part 2) − pre_fulltime_count (from part 1). Use the computed counts, not the literal numbers 2 and 1 written in the query.
+- Switch-in rate = c / (c+d), or null if c+d = 0; also show it as a percentage.
+- Paired difference in proportions = (c − b) / N, or null if N = 0.</li><li>Step 14 (McNemar continuity-corrected chi-square): Let n_disc = b + c. If n_disc = 0, set chi2 and its p-value to null. Otherwise:
+- chi2 = (|b − c| − 1)² / n_disc, with df = 1.
+- p_chi2 = erfc(sqrt(chi2 / 2)), the survival function of chi-square with 1 df.
+- Implement erfc with a numerical approximation such as Abramowitz–Stegun 7.1.26 or a Numerical Recipes erfc.</li><li>Step 15 (McNemar exact binomial): If n_disc = 0, set p_exact to null. Otherwise let k = min(b, c) and compute p_exact = min(1, 2 × Σ_{i=0..k} C(n_disc, i) × 0.5^n_disc). Compute the terms in log space (log-gamma or a cumulative log-factorial) or with iterative multiplication to avoid overflow.</li><li>Step 16 (Primary p-value): If n_disc < 25, the primary p-value is p_exact and the method label is 'McNemar exact binomial'. Otherwise the primary p-value is p_chi2 and the label is 'McNemar chi-square with continuity correction (df = 1)'. Always report both p-values, plus the discordant count n_disc.</li><li>Step 17 (Unmatched participants): Using the filtered batch 14 / level 0.1 rows, take the set of unique Pre Participant_Id values and the set of unique Post Participant_Id values, ignoring engagement nulls. Then report:
+- Pre-only count = |Pre \ Post|
+- Post-only count = |Post \ Pre|
+- Total participants matched before null-dropping, to show how the pairing shrinks N.</li><li>Step 18 (Rounding and output): Round every displayed number (percentages, rates, chi2, p-values, paired difference) to 2 decimals; leave counts as integers. Return a structured object with these sections:
+- filter_summary: rows, unique participants, duplicates dropped
+- unpaired_pre: count, denominator, pct
+- unpaired_post: count, denominator, pct
+- paired: N, null pairs dropped, cells a/b/c/d with labels and percentages, marginals, net change (matched and unpaired), switch-in rate, paired difference
+- mcnemar: b, c, n_disc, chi2, df, p_chi2, p_exact, primary p-value, method
+- unmatched: pre_only, post_only
+Also add a caveat note for small samples when N or n_disc is small. Tiny p-values may display as 0.00 at 2 decimals; if so, also give '< 0.01'.</li><li>Step 19 (Interpretation note): Include an explicit statement that this is single-arm observational data. The p-value describes association or Pre→Post change among matched participants. It is not causal proof that the workshop caused any shift toward 'Fulltime as a career'. Unpaired and matched figures differ because of non-matched and null-engagement participants.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> **Who and what was analysed:** Using only the prod_nirman_questionnaire table (no demographics join), the batch 14 / Point 1 (level 0.1) filter left 296 rows, which is 148 participants with one Pre and one Post row each. Every participant appears in both phases, and no engagement values were null. There are therefore 0 Pre-only and 0 Post-only participants, and the effective N of matched pairs is 148. This is why the unpaired and matched figures agree.
+
+**Findings:**
+- **Unpaired counts:** "Fulltime as a career" rose from 28 of 148 participants at Pre (18.92%) to 66 of 148 at Post (44.59%).
+- **Paired view:** 26 participants (17.57%) stayed full-time, 2 (1.35%) switched out, 40 (27.03%) switched in, and 80 (54.05%) stayed not full-time.
+- **Marginals:** Matched Pre full-time is 28 and Post full-time is 66. Pre not full-time is 120 and Post not full-time is 82.
+- **Net change:** The net change is +38 on both the matched basis (c − b) and the unpaired basis (66 − 28).
+- **Switch-in rate:** 40 of the 120 participants who were not full-time at Pre switched in, a rate of 33.33%.
+- **Paired difference in proportions:** The difference is 0.26, or about 25.68 percentage points.
+
+**McNemar test:** Only 42 participants changed category (b + c), and 40 of them moved toward full-time. Because b + c is 42 (25 or more), the continuity-corrected chi-square is the primary result: χ² = 32.60, df = 1, p < 0.01. The exact binomial p-value is also < 0.01 (shown as 0.00 after rounding, not exactly zero), so both methods agree. The shift toward full-time is very unlikely to be chance alone, and almost all movement went one way.
+
+**Caveat:** This is single-arm observational data with no comparison group. The p-value shows an association, meaning a statistically clear Pre-to-Post change among matched participants. It is not causal proof that the workshop caused the change. Other factors, such as time passing or participants' own circumstances, could also contribute.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 4: Participant-Level Deduplication & Grain-Audit Aggregation</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>Step 1 – Data Ingestion: List Object.keys(data) and locate the questionnaire file by name (lowercase includes 'prod_nirman_questionnaire'). Do NOT load or join prod_nirman_demographics. Read the rows as an array. Log the total raw row count and confirm these columns exist: Participant_Id, Workshop_Phase, Workshop_Level, Workshop_Batch_Number, Career_Plan_Social_Action_Engagement. If any column is missing, log it and stop with an error object.</li><li>Step 2 – Inspection: Log a sample of 3 rows. Log the distinct raw values of Workshop_Phase, Workshop_Level and Workshop_Batch_Number. Log the raw value counts of Career_Plan_Social_Action_Engagement so the exact allowed strings ('Fulltime as a career', 'Part time', 'Volunteering frequently', 'Occasionally', 'Monetary contribution', 'Not yet decided / confused') can be verified.</li><li>Step 3 – Cast and clean at row level (plain JS map; Danfo is optional):
+- Participant_Id = String(v).trim().
+- Workshop_Phase = String(v).trim().
+- Workshop_Level_num = parseFloat(v).
+- Workshop_Batch_Number_num = Number(v).
+- Engagement: define isNullLike(v) as true for null, undefined, NaN (typeof number && isNaN), '', 'NaN', 'null' or 'undefined' after trim. Set the value to null in those cases, otherwise String(v).trim().
+- Keep 'Not yet decided / confused' as a non-null string. It counts in the denominators but is not full-time.</li><li>Step 4 – Filter: keep rows where Workshop_Batch_Number_num === 14 AND Math.abs(Workshop_Level_num - 0.1) < 1e-9. Log the filtered row count and the Pre/Post row split. If the count is 0, return an explicit empty-result message.</li><li>Step 5 – Grain audit: build key = Participant_Id + '|' + Workshop_Level_num + '|' + Workshop_Phase and group the filtered rows into a Map(key -> rows[]). Compute:
+- total_rows
+- distinct_keys
+- keys_with_duplicates: the count and list of keys with more than one row, including each key's row count.</li><li>Step 6 – Deduplicate to one row per key. For each key, collect the non-null engagement values in original row order.
+- If there is at least one non-null value, keep the first one.
+- If the set of distinct non-null values has size > 1, add the key and its values to the conflicts list.
+- If all values are null, keep a row with engagement = null.
+The result, dedupFrame, is an array of {Participant_Id, Workshop_Level, Workshop_Phase, engagement}. Log the conflict count and the conflicting keys.</li><li>Step 7 – PRE phase metrics: from dedupFrame rows with Workshop_Phase === 'Pre', compute:
+- pre_denominator = size of the Set of Participant_Id where engagement != null.
+- pre_count = size of the Set of Participant_Id where engagement === 'Fulltime as a career'.
+- pre_pct = pre_count / pre_denominator * 100, rounded to 2 decimals. Guard against division by zero by returning null.
+Also log the Pre engagement value distribution.</li><li>Step 8 – POST phase metrics: repeat Step 7 for Workshop_Phase === 'Post' to get post_denominator, post_count and post_pct (2 decimals). Log the Post engagement distribution.</li><li>Step 9 – Build the matched (wide) frame from dedupFrame:
+- Create preMap (Participant_Id -> engagement) and postMap the same way. Each map has at most one entry per participant because Workshop_Level is constant at 0.1.
+- Compute the participant sets:
+  - pre_ids = all Participant_Ids in preMap
+  - post_ids = all Participant_Ids in postMap
+  - both_ids = intersection of the two
+  - pre_only = pre_ids minus post_ids
+  - post_only = post_ids minus pre_ids
+- For each id in both_ids, build {Participant_Id, engagement_pre, engagement_post}. This is equivalent to the suffix-and-inner-merge recipe.
+- Dropped_null_in_both = ids in both_ids where engagement_pre or engagement_post is null.
+- Matched = the remaining rows, with effective_matched_N = Matched.length.</li><li>Step 10 – Transition derivation: on Matched rows, set is_fulltime_pre = engagement_pre === 'Fulltime as a career' ? 1 : 0, and set is_fulltime_post the same way. Count:
+- stayed_fulltime (1/1)
+- switched_in (0/1)
+- switched_out (1/0)
+- stayed_not_fulltime (0/0)
+For each count, compute its percentage of effective_matched_N, rounded to 2 decimals. Verify that the four counts sum to effective_matched_N.</li><li>Step 11 – Change metrics:
+- net_change_unpaired = post_count - pre_count.
+- net_change_matched = switched_in - switched_out.
+- switch_in_base = matched pairs with is_fulltime_pre === 0, which equals switched_in + stayed_not_fulltime.
+- switch_in_rate_pct = switched_in / switch_in_base * 100 (2 decimals), labelled as the switched_to_fulltime rate.
+- Report pre_only_count, post_only_count and dropped_null_count.</li><li>Step 12 – Reconciliation and validation checks (log each check as PASS/FAIL):
+(a) Recompute pre_count, pre_denominator, post_count and post_denominator directly from the filtered raw frame using unique Participant_Id. They should match the deduplicated results, unless conflicts exist; if they differ, explain the difference.
+(b) Matched-basis Pre full-time (stayed + switched_out) must be <= pre_count, and matched-basis Post full-time (stayed + switched_in) must be <= post_count.
+(c) both_ids.size = effective_matched_N + dropped_null_count.
+(d) pre_ids.size = both_ids.size + pre_only_count, and the same identity holds for Post.
+(e) Transition counts sum to effective_matched_N.
+(f) The difference between net_change_unpaired and net_change_matched equals the contribution of non-matched participants. State this explicitly.</li><li>Step 13 – Output: console.log the full audit, then return a structured object with these sections:
+- filter: batch 14, level 0.1, row counts
+- grain_audit: total_rows, distinct_keys, keys_with_duplicates and its list, conflicts count and list
+- pre: denominator, count, pct
+- post: denominator, count, pct
+- matched: participants present in both phases, dropped_null, effective_matched_N, pre_only, post_only
+- transition_table: the 4 categories with count and pct
+- change: net_unpaired, net_matched, switch_in_base, switch_in_rate_pct
+- validation: check results
+Round all percentages to 2 decimals. Optionally include a 2x2 transition table (Pre full-time yes/no × Post full-time yes/no) for display.</li><li>Step 14 – Interpretation note: include a caveat string stating that NIRMAN is a single-arm observational dataset with no control group. The results describe association and Pre-to-Post change among Batch 14 Point-1 participants. They do not prove that the workshop caused any shift toward full-time social-action careers. Denominators differ between the unpaired and matched bases, and 'Not yet decided / confused' is counted as non-null and not full-time.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> **Data and grain.** The table has 4,304 raw rows. Filtering to Batch 14 and Workshop_Level 0.1 leaves 296 rows, 148 Pre and 148 Post. The grain audit is clean. There are 296 distinct (Participant_Id, Workshop_Level, Workshop_Phase) keys and none has more than one row. That means no duplicates, no engagement conflicts, and nothing to deduplicate. All 148 participants appear in both phases with non-null engagement values. The effective matched N is therefore 148, with 0 Pre-only, 0 Post-only and 0 dropped for nulls.
+
+**Results.** The share choosing "Fulltime as a career" rose from 28 of 148 at Pre (18.92%) to 66 of 148 at Post (44.59%). That is a net gain of 38 participants, and it is the same on the unpaired and matched bases because the two groups are identical. The transition table shows where the change came from:
+
+| Transition | Count | % of 148 |
+|---|---|---|
+| Stayed full-time (1/1) | 26 | 17.57% |
+| Switched in (0/1) | 40 | 27.03% |
+| Switched out (1/0) | 2 | 1.35% |
+| Stayed not full-time (0/0) | 80 | 54.05% |
+
+Net change on the matched basis is 40 − 2 = 38. The switch-in rate is 40 of the 120 participants who were not full-time at Pre, or 33.33%. Most of the shift came from "Volunteering frequently" falling from 52 to 16 and "Monetary contribution" (8) disappearing at Post, while "Part time" rose from 51 to 65. All validation checks pass, including reconciliation of the raw and deduplicated results, the transition counts summing to 148, and the net-change identity.
+
+**Interpretation.** These results describe association and change in a single-arm observational dataset with no control group. They do not show that the workshop caused the shift toward full-time social-action careers. Other factors, such as time, self-selection or response tendencies, could also contribute. Because the Pre and Post groups are the same 148 people, the unpaired and matched figures agree. That would not necessarily hold in other batches or levels.
+              </div>
+            
+          </div>
+        
+          <div class="run-card">
+            <div class="run-header">
+              <span class="run-title">Run 5: Bootstrap Resampling & Wilson Interval Stability of Transition Shares</span>
+              <span style="font-size: 11px; font-weight: 700; color: var(--primary);">Status: COMPLETED</span>
+            </div>
+            
+            
+              <div style="margin: 8px 0; font-size: 12px;">
+                <strong>Execution Plan:</strong>
+                <ol style="margin-left: 18px; margin-top: 4px;">
+                  <li>Step 1 – Data Ingestion & Inspection: List the keys of the `data` object. Find the table whose name contains 'prod_nirman_questionnaire'. Load its rows into an array and a Danfo DataFrame. Do NOT load or join prod_nirman_demographics. Confirm these columns exist: Participant_Id, Workshop_Phase, Workshop_Level, Workshop_Batch_Number, Career_Plan_Social_Action_Engagement. Log the total row count (expected about 4304) and the distinct values of Workshop_Phase, Workshop_Level, Workshop_Batch_Number and Career_Plan_Social_Action_Engagement.</li><li>Step 2 – Null flagging before cast: For each row, compute engagement_is_null = true if the raw Career_Plan_Social_Action_Engagement is any of: NaN, null, undefined, '' (empty after trim), 'NaN', 'null' or 'undefined'. Do this BEFORE any string cast, so real nulls are not turned into the text 'null' or 'NaN'. Log the null count across the whole table (schema says about 4).</li><li>Step 3 – Type conversion: Cast Participant_Id to String(x).trim(). Cast Career_Plan_Social_Action_Engagement to String(x).trim(), leaving the null flag in place. Cast Workshop_Phase to String(x).trim() and normalise it to exactly 'Pre' or 'Post'. Parse Workshop_Level with parseFloat. Parse Workshop_Batch_Number with Number().</li><li>Step 4 – Filtering: Keep rows where Workshop_Batch_Number == 14 AND Math.abs(parseFloat(Workshop_Level) - 0.1) < 1e-9 (Point 1). Log the effective N after the filter: total rows, rows per phase, and unique Participant_Id per phase. Check for duplicate (Participant_Id, Workshop_Level, Workshop_Phase) rows. If any exist, log them and keep the first occurrence so the pairing stays one-to-one.</li><li>Step 5 – Define helpers: (a) mulberry32(seed), the standard 32-bit seeded PRNG returning floats in [0,1). (b) wilson(k, n, z=1.96), returning the point estimate p = k/n and the bounds (p + z²/2n ± z·sqrt(p(1-p)/n + z²/4n²)) / (1 + z²/n). Return nulls if n == 0. (c) percentile(sortedArr, q), using linear interpolation. (d) round2(x) = Math.round(x*100)/100, applied only to displayed values.</li><li>Step 6 – Unpaired point estimates (parts 1 and 2): For each phase in ['Pre','Post']: denominator = size of the Set of Participant_Id where the phase matches and engagement_is_null is false. Full-time count = size of the Set of Participant_Id where engagement == 'Fulltime as a career'. Share % = 100·count/denominator. Compute Wilson 95% CI bounds × 100. Record the effective N (denominator) for each phase.</li><li>Step 7 – Matched pairing (part 3): Split the filtered frame into Pre and Post. Rename the columns with _pre/_post suffixes, keeping Participant_Id and Workshop_Level as keys. Inner-merge on [Participant_Id, Workshop_Level], using Danfo merge or an equivalent Map-based join. Log the raw merged pair count. Then drop pairs where engagement_is_null_pre or engagement_is_null_post is true. N = number of remaining matched pairs; log it.</li><li>Step 8 – Classify transitions: For each pair, set is_fulltime_pre = (engagement_pre == 'Fulltime as a career') ? 1 : 0, and the same for is_fulltime_post. Assign a category: Stayed full-time (1/1), Switched in (0/1), Switched out (1/0), Stayed not full-time (0/0). Count each category and its % of N. Verify that the four counts sum to N.</li><li>Step 9 – Matched metrics: Matched net change (count) = switched_in − switched_out. Net change in percentage points = 100·(switched_in − switched_out)/N. Switch-in rate denominator = count of pairs with is_fulltime_pre == 0. Switch-in rate = switched_in / that denominator, with a Wilson 95% CI, all in %. Log the denominator as an effective N.</li><li>Step 10 – Unmatched counts: Pre-only unmatched = Participant_Ids with a non-null Pre row that are NOT in the set of matched non-null pair IDs. Post-only unmatched = Participant_Ids with a non-null Post row not in that set. Report both counts. Also report unpaired net change = Post full-time count − Pre full-time count, from Step 6.</li><li>Step 11 – Bootstrap: Initialise rng = mulberry32(42). Store the N matched pairs as an array of {pre, post} 0/1 flags. For each of 2000 iterations: draw N indices with Math.floor(rng()*N), with replacement. Recompute the four category percentages, the net change count, the net change in percentage points, and the switch-in rate (%). If the resampled pre==0 denominator is 0, record NaN and exclude it. Store each metric in its own array.</li><li>Step 12 – Bootstrap summaries: For each metric array, drop any NaN values and sort it. Compute the median (50th percentile), the 2.5th percentile and the 97.5th percentile. Record how many iterations were valid for each metric.</li><li>Step 13 – Consistency checks: Confirm that the reported point estimates equal the deterministic counts. Check that the unpaired counts and shares come straight from the Set sizes. Check that the matched category counts and percentages, the net change and the switch-in rate come from the full matched sample, not the bootstrap. Check that the four category counts sum to N. Set boolean flags for each check, e.g. point_estimates_equal_deterministic_counts = true, and log any mismatch.</li><li>Step 14 – Final output: Return a JSON summary with all displayed numbers rounded to 2 decimals. Include: (a) filters applied and table used (questionnaire only, no join); (b) effective N at each step: total rows, rows after the batch 14 / Point 1 filter, non-null unique participants per phase, raw merged pairs, final matched N, and the pre-not-full-time denominator; (c) unpaired Pre and Post full-time count, denominator, share % and Wilson CI; (d) unpaired net change; (e) matched transition table with count and % of N for each category; (f) matched net change as a count and in percentage points; (g) switch-in rate with Wilson CI; (h) bootstrap median and 2.5/97.5 percentiles for every metric (2000 iterations, mulberry32(42)); (i) Pre-only and Post-only unmatched counts; (j) the consistency-check confirmation; (k) a caveat that the intervals describe sampling variability of an observational, single-arm association within batch 14, Point 1, and are not evidence of a causal workshop effect.</li>
+                </ol>
+              </div>
+            
+
+            
+
+            
+              <div style="margin-top: 10px; font-size: 12px; color: var(--gray-700); background: #ffffff; padding: 10px; border-radius: 6px; border: 1px solid var(--gray-200);">
+                <strong>Technical Findings Narrative:</strong> Within Batch 14, Point 1, the full-time share rose from 18.92% at Pre (28 of 148; 95% Wilson interval 13.43%-25.98%) to 44.59% at Post (66 of 148; 36.82%-52.64%). The unpaired net change is +38 participants. The effective N was 4,304 rows in the table, then 296 after the filter (148 Pre and 148 Post, no duplicates dropped, no null engagement values). That gave 148 unique participants per phase and 148 matched pairs, with 0 Pre-only and 0 Post-only unmatched. Because every participant matched, the unpaired and matched net changes coincide.
+
+Among the 148 matched pairs, 26 (17.57%) stayed full-time, 40 (27.03%) switched in, 2 (1.35%) switched out, and 80 (54.05%) stayed not full-time. These sum to N = 148. The matched net change is 40 − 2 = +38, or +25.68 percentage points. The switch-in rate is 40 of the 120 participants who were not full-time at Pre, or 33.33% (Wilson 25.53%-42.17%).
+
+The bootstrap (2,000 resamples of matched pairs, mulberry32(42)) gives these medians and 95% percentile intervals:
+
+| Metric | Median | 2.5th-97.5th percentile |
+|---|---|---|
+| Stayed full-time | 17.57% | 11.49%-23.65% |
+| Switched in | 27.03% | 20.27%-34.46% |
+| Switched out | 1.35% | 0.00%-3.38% |
+| Stayed not full-time | 54.05% | 45.95%-62.16% |
+| Net change (count) | 38 | 27-49 |
+| Net change (pp) | 25.68 | 18.24-33.11 |
+| Switch-in rate | 33.33% | 25.00%-41.53% |
+
+The bootstrap medians equal the deterministic point estimates, which were computed from the full sample (unpaired counts from unique-ID sets, matched counts from the full matched sample), not from the bootstrap. Movement was almost entirely in one direction: 40 switched in against 2 switched out, and the net-change interval stays well above zero. These intervals describe sampling variability of an observational, single-arm association. They are not evidence of a causal workshop effect.
+              </div>
+            
+          </div>
+        
+      </div>
+    </details>
+
+    
+      <!-- 11. INTERACTIVE EXPLAINER CONSULTATION LOG -->
+      <div style="margin-top: 36px; margin-bottom: 28px;">
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--gray-200);">
+          <span style="width: 26px; height: 26px; background: #dbeafe; color: #1d4ed8; font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px;">11</span>
+          <h2 style="font-size: 18px; font-weight: 800; color: var(--gray-900);">11. Interactive Explainer Consultation Log</h2>
+          <span style="font-size: 12px; font-weight: 700; color: #2563eb; background: #eff6ff; border: 1px solid #bfdbfe; padding: 3px 10px; border-radius: 9999px; margin-left: auto;">
+            1 Inquiry Documented
+          </span>
+        </div>
+        <p style="font-size: 12.5px; color: var(--gray-600); margin-bottom: 18px; line-height: 1.5;">
+          Direct consultation transcripts between the user and the Explainer Agent. Includes technical clarifications, sensitivity deep-dives, empirical tables, and statistical range explanations.
+        </p>
+
+        <div style="display: flex; flex-direction: column; gap: 18px;">
+          
+            <div style="background: #ffffff; border: 1px solid #cbd5e1; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); overflow: hidden;">
+              <!-- User Question Header -->
+              <div style="background: linear-gradient(135deg, #eff6ff 0%, #f8fafc 100%); border-bottom: 1px solid #bfdbfe; padding: 12px 18px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                  <span style="background: #2563eb; color: #ffffff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: 0.05em;">
+                    Inquiry #1
+                  </span>
+                  <span style="font-size: 13.5px; font-weight: 700; color: #1e3a8a;">
+                    in simple words, what is the user question, the take away, the answer. How consistent are the different approaches with the answer.  Make it easy to understand, simple short sweet way. Give analogy example if it makes sense.
+                  </span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px; font-size: 11px; color: #64748b;">
+                  <span>🕒 04:59 PM</span>
+                  <span style="background: #e2e8f0; color: #475569; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600;">Consultation Record</span>
+                </div>
+              </div>
+
+              <!-- Explainer Answer Body (Formatted HTML) -->
+              <div style="padding: 18px 20px; background: #ffffff;">
+                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 12px; font-size: 11px; font-weight: 700; color: #047857; text-transform: uppercase; letter-spacing: 0.04em;">
+                  <span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; display: inline-block;"></span>
+                  Explainer Agent Response &amp; Empirical Findings
+                </div>
+                <div style="font-size: 12.5px; color: #334155; line-height: 1.6;">
+                  <h2 style="font-size: 16px; font-weight: 800; color: #0f172a; margin: 20px 0 10px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px;">Plain-English Summary</h2>
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">1. What was the user asking?</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The user wanted to know whether participants in <strong>Batch 14</strong> of the <strong>Point 1 workshop (level 0.1)</strong> became more likely to choose <strong>"Fulltime as a career"</strong> in social action after the workshop. The questions were:
+      </p>
+    
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;">How many said "full-time" <strong>before</strong> (Pre) and <strong>after</strong> (Post)?</li><li style="margin-bottom: 5px;">Looking at the <strong>same people</strong> before and after, who stayed full-time, who switched in, who switched out, and who stayed not full-time?</li><li style="margin-bottom: 5px;">What was the net change?</li><li style="margin-bottom: 5px;">The result should be reported as <strong>association, not proof the workshop caused it</strong>.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">2. The answer</h3>
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;"></th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Before (Pre)</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">After (Post)</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Full-time</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>28 of 148</strong> (18.92%)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>66 of 148</strong> (44.59%)</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        All 148 people answered both times, so the before and after groups are the same people.
+      </p>
+    
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">What happened to each person</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Count</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">% of 148</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Stayed full-time</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">26</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">17.57%</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>Switched in</strong> (not full-time → full-time)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;"><strong>40</strong></td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">27.03%</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Switched out (full-time → not full-time)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">2</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">1.35%</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Stayed not full-time</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">80</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">54.05%</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>Net change: +38 people</strong>, on both the unpaired and matched bases (66 − 28 = 40 − 2).</li><li style="margin-bottom: 5px;"><strong>Switch-in rate: 40 of 120 = 33.33%.</strong> About 1 in 3 people who were not full-time at Pre said full-time at Post.</li><li style="margin-bottom: 5px;"><strong>Unmatched people: 0</strong> Pre-only and 0 Post-only.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">3. The takeaway</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The share choosing full-time rose from about <strong>1 in 5 to almost 1 in 2</strong>. Almost all of the movement went one way: <strong>40 moved toward full-time and only 2 moved away.</strong> This is a before/after association in a single group with no comparison group. It <strong>does not prove the workshop caused the change</strong>.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Analogy:</strong> Think of a class where 28 students say they want to be pilots on day 1, and 66 say so on the last day. The 28→66 shift is real. But with no comparison class, you can't say the flying lessons caused it, because the students may also have been influenced by a school trip, by growing up, or by wanting to give the "right" answer.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">4. How consistent were the five approaches?</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Fully consistent: 5 of 5 runs gave identical numbers.</strong>
+      </p>
+    
+
+          <div style="overflow-x: auto; margin: 16px 0; border: 1px solid #cbd5e1; border-radius: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.04); background: #ffffff;">
+            <table style="width: 100%; border-collapse: collapse; font-size: 12px; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; text-align: left;">
+              <thead>
+                <tr style="background: #f1f5f9; border-bottom: 2px solid #cbd5e1; color: #0f172a;">
+                  <th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Run</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Method (simple terms)</th><th style="padding: 10px 14px; font-weight: 700; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; text-align: left; border-right: 1px solid #e2e8f0;">Same answer?</th>
+                </tr>
+              </thead>
+              <tbody>
+                
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">1</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Standard filter, count and merge Pre with Post</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">✅</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">2</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Rebuilt the numbers by hand with lists and sets (no merge)</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">✅</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">3</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">2×2 before/after table plus the McNemar significance test</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">✅ (and p &lt; 0.01)</td>
+                    </tr>
+                  
+                    <tr style="background: #f8fafc; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">4</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Checked for duplicate rows first, then recounted</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">✅ (0 duplicates)</td>
+                    </tr>
+                  
+                    <tr style="background: #ffffff; border-bottom: 1px solid #e2e8f0;">
+                      <td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">5</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">Added confidence ranges using bootstrap and Wilson intervals</td><td style="padding: 10px 14px; color: #1e293b; font-size: 12px; line-height: 1.5; text-align: left; border-right: 1px solid #f1f5f9;">✅ (net change likely 27–49)</td>
+                    </tr>
+                  
+              </tbody>
+            </table>
+          </div>
+        
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Analogy:</strong> Five accountants add up the same receipts using a calculator, pen and paper, a spreadsheet, a duplicate check and a margin-of-error check. They all reach the same total.
+      </p>
+    
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        <strong>Why they agree so well:</strong> the data is clean. There is exactly one row per person per phase, no missing answers and no mismatched people. So the choice of method can't change the result.
+      </p>
+    
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">5. Extra findings (runs 3 and 5)</h3>
+
+        <ul style="margin: 10px 0 14px 24px; font-size: 12.5px; color: #334155; line-height: 1.6;">
+          <li style="margin-bottom: 5px;"><strong>McNemar test:</strong> χ² ≈ 32.6, p &lt; 0.01. Of the 42 people who changed, 40 moved toward full-time, so the shift is very unlikely to be chance alone.</li><li style="margin-bottom: 5px;"><strong>Bootstrap:</strong> the +38 net change has a 95% range of roughly <strong>27 to 49</strong>, well above zero.</li><li style="margin-bottom: 5px;">These add statistical confidence. They do <strong>not</strong> change any of the counts.</li>
+        </ul>
+      
+<h3 style="font-size: 15px; font-weight: 800; color: #1e3a8a; margin: 18px 0 8px 0;">Bottom line</h3>
+
+      <p style="font-size: 13px; color: #334155; line-height: 1.65; margin: 10px 0;">
+        The numbers are <strong>solid and reproducible</strong>: 28 → 66 full-time, with 40 switching in and 2 out. The result shows a <strong>strong positive association</strong>, but because there is no comparison group, it is <strong>not proof of causation</strong>.
+      </p>
+    
+                </div>
+                <div style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #f1f5f9; display: flex; justify-content: space-between; font-size: 10.5px; color: #94a3b8;">
+                  <span>Explainer Model: claude-sonnet-5-5</span>
+                  <span>Cross-Validation Status: Invariance Verified</span>
+                </div>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+    
+
+    <!-- Sign-off footer -->
+    <div style="margin-top: 48px; pt-6; border-top: 2px solid var(--gray-200); display: flex; justify-content: space-between; font-size: 11px; color: var(--gray-500);">
+      <span>Answer Consistency Engine &bull; Multi-Run Verification Module</span>
+      <span>Statistical Agreement Threshold: &ge; 80% (4/5 runs)</span>
+    </div>
+  </div>
+</body>
+</html>
